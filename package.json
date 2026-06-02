@@ -2,6 +2,7 @@
   "name": "flowlinepro-app",
   "version": "0.12.1",
   "private": true,
+  "packageManager": "pnpm@11.4.0",
   "engines": {
     "node": ">=22.12.0",
     "pnpm": ">=9.0.0"
