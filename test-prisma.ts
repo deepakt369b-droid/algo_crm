@@ -1,0 +1,1 @@
+import { prismadb } from "./lib/prisma.ts"; async function run() { try { const user = await prismadb.users.findFirst(); console.log(user); } catch (e) { console.error("ERROR:", e); } finally { process.exit(0); } } run();

@@ -1,0 +1,360 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { addDays, nextSaturday } from "date-fns";
+import { format, addHours } from "date-fns";
+
+import {
+  Archive,
+  ArchiveX,
+  Clock,
+  Forward,
+  MoreVertical,
+  Reply,
+  ReplyAll,
+  Trash2,
+  Mail,
+  Settings,
+} from "lucide-react";
+
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { Mail as MailType } from "@/app/[locale]/(routes)/emails/data";
+import { getEmail, deleteEmail } from "@/actions/emails/messages";
+import { ComposeModal } from "@/app/[locale]/(routes)/emails/components/ComposeModal";
+
+interface MailDisplayProps {
+  mail: MailType | null;
+  activeAccountId: string | null;
+  hasAccounts?: boolean;
+}
+
+export function MailDisplay({ mail, activeAccountId, hasAccounts = true }: MailDisplayProps) {
+  const today = new Date();
+  const router = useRouter();
+
+  const [fullEmail, setFullEmail] = useState<Awaited<ReturnType<typeof getEmail>> | null>(null);
+
+  useEffect(() => {
+    if (!mail?.id) {
+      setFullEmail(null);
+      return;
+    }
+    let cancelled = false;
+    getEmail(mail.id)
+      .then((data) => { if (!cancelled) setFullEmail(data); })
+      .catch(() => { if (!cancelled) setFullEmail(null); });
+    return () => { cancelled = true; };
+  }, [mail?.id]);
+
+  const senderName = fullEmail?.fromName ?? fullEmail?.fromEmail ?? "?";
+  const senderInitials = senderName
+    .split(" ")
+    .map((c) => c[0])
+    .join("")
+    .toUpperCase();
+
+  async function handleDelete() {
+    if (!mail?.id) return;
+    try {
+      await deleteEmail(mail.id);
+      router.refresh();
+    } catch (e) {
+      console.error("Failed to delete email", e);
+    }
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center p-2">
+        <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" disabled={!mail}>
+                <Archive className="h-4 w-4" />
+                <span className="sr-only">Archive</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Archive</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" disabled={!mail}>
+                <ArchiveX className="h-4 w-4" />
+                <span className="sr-only">Move to junk</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Move to junk</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={!mail}
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Move to trash</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Move to trash</TooltipContent>
+          </Tooltip>
+          <Separator orientation="vertical" className="mx-1 h-6" />
+          <Tooltip>
+            <Popover>
+              <PopoverTrigger asChild>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" disabled={!mail}>
+                    <Clock className="h-4 w-4" />
+                    <span className="sr-only">Snooze</span>
+                  </Button>
+                </TooltipTrigger>
+              </PopoverTrigger>
+              <PopoverContent className="flex w-[535px] p-0">
+                <div className="flex flex-col gap-2 border-r px-2 py-4">
+                  <div className="px-4 text-sm font-medium">Snooze until</div>
+                  <div className="grid min-w-[250px] gap-1">
+                    <Button
+                      variant="ghost"
+                      className="justify-start font-normal"
+                    >
+                      Later today{" "}
+                      <span className="ml-auto text-muted-foreground">
+                        {format(addHours(today, 4), "E, h:m b")}
+                      </span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start font-normal"
+                    >
+                      Tomorrow
+                      <span className="ml-auto text-muted-foreground">
+                        {format(addDays(today, 1), "E, h:m b")}
+                      </span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start font-normal"
+                    >
+                      This weekend
+                      <span className="ml-auto text-muted-foreground">
+                        {format(nextSaturday(today), "E, h:m b")}
+                      </span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start font-normal"
+                    >
+                      Next week
+                      <span className="ml-auto text-muted-foreground">
+                        {format(addDays(today, 7), "E, h:m b")}
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+                <div className="p-2">
+                  <Calendar />
+                </div>
+              </PopoverContent>
+            </Popover>
+            <TooltipContent>Snooze</TooltipContent>
+          </Tooltip>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <ComposeModal
+                accountId={activeAccountId ?? ""}
+                mode="reply"
+                replyTo={fullEmail ? (fullEmail as unknown as MailType) : undefined}
+                trigger={
+                  <Button variant="ghost" size="icon" disabled={!mail}>
+                    <Reply className="h-4 w-4" />
+                    <span className="sr-only">Reply</span>
+                  </Button>
+                }
+              />
+            </TooltipTrigger>
+            <TooltipContent>Reply</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" disabled={!mail}>
+                <ReplyAll className="h-4 w-4" />
+                <span className="sr-only">Reply all</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reply all</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <ComposeModal
+                accountId={activeAccountId ?? ""}
+                mode="forward"
+                replyTo={fullEmail ? (fullEmail as unknown as MailType) : undefined}
+                trigger={
+                  <Button variant="ghost" size="icon" disabled={!mail}>
+                    <Forward className="h-4 w-4" />
+                    <span className="sr-only">Forward</span>
+                  </Button>
+                }
+              />
+            </TooltipTrigger>
+            <TooltipContent>Forward</TooltipContent>
+          </Tooltip>
+        </div>
+        <Separator orientation="vertical" className="mx-2 h-6" />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" disabled={!mail}>
+              <MoreVertical className="h-4 w-4" />
+              <span className="sr-only">More</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>Mark as unread</DropdownMenuItem>
+            <DropdownMenuItem>Star thread</DropdownMenuItem>
+            <DropdownMenuItem>Add label</DropdownMenuItem>
+            <DropdownMenuItem>Mute thread</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <Separator />
+      {!hasAccounts ? (
+        <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-background/50 relative">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+          <div className="wa-card max-w-md p-8 border border-border/40 relative z-10 flex flex-col items-center gap-4 bg-card/60 backdrop-blur-sm">
+            <div className="p-4 rounded-full bg-primary/10 text-primary animate-pulse">
+              <Mail className="w-8 h-8" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="font-extrabold text-lg tracking-tight text-foreground">No Mailboxes Connected</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Connect your individual SMTP and IMAP mailbox credentials under Profile Settings to compose, receive, and sync transactional emails directly in NextCRM.
+              </p>
+            </div>
+            <Button
+              onClick={() => router.push("/profile?tab=emails")}
+              className="mt-2 rounded-xl h-10 px-5 bg-primary text-white hover:bg-primary/95 gap-2 font-semibold text-xs transition-transform active:scale-95 shadow-md shadow-primary/10"
+              type="button"
+            >
+              <Settings className="w-4 h-4" />
+              Configure Mailbox
+            </Button>
+          </div>
+        </div>
+      ) : mail ? (
+        <div className="flex flex-1 flex-col">
+          <div className="flex items-start p-4">
+            <div className="flex items-start gap-4 text-sm">
+              <Avatar>
+                <AvatarImage alt={senderName} />
+                <AvatarFallback>{senderInitials}</AvatarFallback>
+              </Avatar>
+              <div className="grid gap-1">
+                <div className="font-semibold">
+                  {fullEmail?.fromName ?? fullEmail?.fromEmail ?? "(unknown)"}
+                </div>
+                <div className="line-clamp-1 text-xs">
+                  {fullEmail?.subject ?? "(no subject)"}
+                </div>
+                <div className="line-clamp-1 text-xs">
+                  <span className="font-medium">From:</span>{" "}
+                  {fullEmail?.fromEmail ?? ""}
+                </div>
+                {Array.isArray(fullEmail?.toRecipients) && fullEmail.toRecipients.length > 0 && (
+                  <div className="line-clamp-1 text-xs">
+                    <span className="font-medium">To:</span>{" "}
+                    {(fullEmail.toRecipients as { name?: string; email: string }[])
+                      .map((r) => r.name ?? r.email).join(", ")}
+                  </div>
+                )}
+                {Array.isArray(fullEmail?.ccRecipients) && fullEmail.ccRecipients.length > 0 && (
+                  <div className="line-clamp-1 text-xs">
+                    <span className="font-medium">CC:</span>{" "}
+                    {(fullEmail.ccRecipients as { name?: string; email: string }[])
+                      .map((r) => r.name ?? r.email).join(", ")}
+                  </div>
+                )}
+              </div>
+            </div>
+            {fullEmail?.sentAt && (
+              <div className="ml-auto text-xs text-muted-foreground">
+                {format(new Date(fullEmail.sentAt), "PPpp")}
+              </div>
+            )}
+          </div>
+          <Separator />
+          <div className="flex-1 overflow-auto">
+            {fullEmail?.bodyHtml ? (
+              <iframe
+                srcDoc={fullEmail.bodyHtml}
+                sandbox="allow-popups allow-popups-to-escape-sandbox"
+                referrerPolicy="no-referrer"
+                className="w-full border-0"
+                style={{ height: "600px", maxHeight: "600px" }}
+                title="Email body"
+              />
+            ) : (
+              <pre className="whitespace-pre-wrap p-4 text-sm font-sans">
+                {fullEmail?.bodyText ?? (fullEmail ? "(No content)" : "Loading...")}
+              </pre>
+            )}
+          </div>
+          <Separator className="mt-auto" />
+          <div className="p-4">
+            <form>
+              <div className="grid gap-4">
+                <Textarea
+                  className="p-4"
+                  placeholder={`Reply to ${fullEmail?.fromName ?? fullEmail?.fromEmail ?? "..."}...`}
+                />
+                <div className="flex items-center">
+                  <Label
+                    htmlFor="mute"
+                    className="flex items-center gap-2 text-xs font-normal"
+                  >
+                    <Switch id="mute" aria-label="Mute thread" /> Mute this
+                    thread
+                  </Label>
+                  <Button size="sm" className="ml-auto">
+                    Send
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : (
+        <div className="p-8 text-center text-muted-foreground">
+          No message selected
+        </div>
+      )}
+    </div>
+  );
+}
