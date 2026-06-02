@@ -80,11 +80,11 @@ function isDecimalLike(val: unknown): val is Decimal {
  * Serialize Decimal and Date fields in an object, preserving the original
  * structure and references to prevent React hydration issues.
  */
-export function serializeDecimals<T extends object>(obj: T): T {
+export function serializeDecimals<T>(obj: T): T {
   if (obj === null || typeof obj !== "object") return obj;
 
   // Create a shallow copy with spread operator to preserve object reference structure
-  const result: Record<string, unknown> = { ...obj };
+  const result = { ...obj } as Record<string, unknown>;
 
   for (const key of Object.keys(result)) {
     const val = result[key];
@@ -135,6 +135,6 @@ export function serializeDecimals<T extends object>(obj: T): T {
 /**
  * Serialize Decimal and Date fields in an array of objects.
  */
-export function serializeDecimalsList<T extends object>(list: T[]): T[] {
+export function serializeDecimalsList<T>(list: T[]): T[] {
   return list.map(serializeDecimals);
 }
