@@ -7,7 +7,6 @@ import {
 } from "@/lib/authz";
 
 
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { minioClient, MINIO_BUCKET } from "@/lib/minio";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -36,11 +35,7 @@ export async function deleteDocument(documentId: string) {
   (await supabaseAdmin.from("documents").delete().select("*").single().eq("id", documentId).select("*").single()).data;
 
   if (document.key) {
-    await minioClient.send(
-      new DeleteObjectCommand({
-        Bucket: MINIO_BUCKET,
-        Key: document.key,
-      })
-    );
+    // Remove the object from Supabase storage
+    await supabaseAdmin.storage.from(MINIO_BUCKET).remove([document.key]);
   }
 }

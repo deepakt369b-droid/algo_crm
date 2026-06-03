@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { minioClient, MINIO_BUCKET, MINIO_PUBLIC_URL } from "@/lib/minio";
 import { randomUUID } from "crypto";
 import {
@@ -13,7 +11,6 @@ import {
   validationError,
   softDeleteData,
 } from "../helpers";
-import { supabaseAdmin } from "@/lib/supabase-admin";
 
 // Map entity types to their Prisma junction table accessor names (camelCase, lowercase first)
 const ENTITY_LINK_MAP: Record<string, string> = {
@@ -124,12 +121,9 @@ export const crmDocumentTools = [
                       processing_status: "PENDING",
                     }).select("*").single()).data;
 
-      const command = new PutObjectCommand({
-        Bucket: MINIO_BUCKET,
-        Key: key,
-        ContentType: args.contentType,
-      });
-      const presignedUrl = await getSignedUrl(minioClient, command, { expiresIn: 600 });
+      const uploadRes = await supabaseAdmin.storage.from(MINIO_BUCKET).createSignedUploadUrl(key, 600);
+      if (!uploadRes || (uploadRes as any).error) throw (uploadRes as any).error ?? new Error("Failed to create upload URL");
+      const presignedUrl = (uploadRes as any).data?.signedUploadUrl || (uploadRes as any).data?.signedURL || (uploadRes as any).data?.url || (uploadRes as any).signedUploadUrl || (uploadRes as any).signedURL || (uploadRes as any).url;
 
       return itemResponse({ ...doc, presignedUrl, expiresIn: 600 });
     },
@@ -142,12 +136,9 @@ export const crmDocumentTools = [
       const doc = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).single()).data;
       if (!doc) notFound("Document");
       if (!doc.key) validationError("Document has no storage key");
-      const command = new PutObjectCommand({
-        Bucket: MINIO_BUCKET,
-        Key: doc.key!,
-        ContentType: doc.document_file_mimeType,
-      });
-      const presignedUrl = await getSignedUrl(minioClient, command, { expiresIn: 600 });
+      const uploadRes = await supabaseAdmin.storage.from(MINIO_BUCKET).createSignedUploadUrl(doc.key!, 600);
+      if (!uploadRes || (uploadRes as any).error) throw (uploadRes as any).error ?? new Error("Failed to create upload URL");
+      const presignedUrl = (uploadRes as any).data?.signedUploadUrl || (uploadRes as any).data?.signedURL || (uploadRes as any).data?.url || (uploadRes as any).signedUploadUrl || (uploadRes as any).signedURL || (uploadRes as any).url;
       return itemResponse({ id: doc.id, url: presignedUrl, expiresIn: 600 });
     },
   },
@@ -159,11 +150,9 @@ export const crmDocumentTools = [
       const doc = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).single()).data;
       if (!doc) notFound("Document");
       if (!doc.key) validationError("Document has no storage key");
-      const command = new GetObjectCommand({
-        Bucket: MINIO_BUCKET,
-        Key: doc.key!,
-      });
-      const presignedUrl = await getSignedUrl(minioClient, command, { expiresIn: 3600 });
+      const downloadRes = await supabaseAdmin.storage.from(MINIO_BUCKET).createSignedUrl(doc.key!, 3600);
+      if (!downloadRes || (downloadRes as any).error) throw (downloadRes as any).error ?? new Error("Failed to create download URL");
+      const presignedUrl = (downloadRes as any).data?.signedUrl || (downloadRes as any).data?.signedURL || (downloadRes as any).signedUrl || (downloadRes as any).signedURL || (downloadRes as any).url;
       return itemResponse({ id: doc.id, url: presignedUrl, expiresIn: 3600 });
     },
   },

@@ -6,7 +6,6 @@ import {
 } from "@/lib/authz";
 
 import { revalidatePath } from "next/cache";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { minioClient, MINIO_BUCKET } from "@/lib/minio";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -29,13 +28,9 @@ export async function bulkDeleteDocuments(documentIds: string[]) {
 
   const documents = (await supabaseAdmin.from("documents").select("id, key").in("id", documentIds)).data;
 
-  // Delete from MinIO
+  // Delete from Supabase storage
   await Promise.allSettled(
-    documents.map((doc) =>
-      doc.key
-        ? minioClient.send(new DeleteObjectCommand({ Bucket: MINIO_BUCKET, Key: doc.key }))
-        : Promise.resolve()
-    )
+    documents.map((doc) => (doc.key ? supabaseAdmin.storage.from(MINIO_BUCKET).remove([doc.key]) : Promise.resolve()))
   );
 
   // Delete from DB (cascade handles chunks, embeddings, junction tables)
