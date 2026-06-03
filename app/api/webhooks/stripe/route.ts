@@ -1,11 +1,12 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   const body = await req.text();
   const signature = headers().get("Stripe-Signature") as string;
 
+  const stripe = await getStripe();
   let event;
 
   try {

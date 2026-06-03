@@ -1,17 +1,27 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Initialize the Supabase admin client with the service role key.
-// This bypasses Row Level Security (RLS) and should ONLY be used in server-side logic
-// where you need to perform administrative database operations.
+const isValidHttpUrl = (value?: string) => {
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const validSupabaseUrl = isValidHttpUrl(supabaseUrl) ? supabaseUrl : undefined;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables.");
+if (!validSupabaseUrl || !supabaseServiceKey) {
+  console.warn(
+    "Missing or invalid SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY environment variables. Using dummy client for build-time initialization."
+  );
 }
 
 export const supabaseAdmin = createClient(
-  supabaseUrl || "https://dummy.supabase.co",
+  validSupabaseUrl || "https://dummy.supabase.co",
   supabaseServiceKey || "dummy-key",
   {
     auth: {

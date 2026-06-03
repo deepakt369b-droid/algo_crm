@@ -3,12 +3,19 @@ import { getSession } from "@/lib/auth-server";
 
 
 import { decrypt } from "@/lib/email-crypto";
-import nodemailer from "nodemailer";
 import { EmailFolder } from "@/lib/prisma-types";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const PAGE_SIZE = 50;
 const MAX_COUNT = 10_000;
+
+const importOptionalModule = async <T = any>(pkg: string): Promise<T | null> => {
+  try {
+    return (await eval("import(pkg)") as Promise<T>);
+  } catch {
+    return null;
+  }
+};
 
 async function requireSession() {
   const session = await getSession();
@@ -129,6 +136,13 @@ export async function sendEmail(input: SendInput) {
   if (!account) throw new Error("Account not found");
 
   const password = decrypt(account.passwordEncrypted);
+
+  const nodemailer = await importOptionalModule<typeof import("nodemailer")>("nodemailer");
+  if (!nodemailer) {
+    throw new Error(
+      "nodemailer is not installed. Install nodemailer or configure a different email transport provider."
+    );
+  }
 
   const transporter = nodemailer.createTransport({
     host: account.smtpHost,
