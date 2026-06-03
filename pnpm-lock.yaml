@@ -185,6 +185,9 @@ importers:
       entities:
         specifier: ^7.0.1
         version: 7.0.1
+      esbuild:
+        specifier: ^0.28.0
+        version: 0.28.0
       eslint:
         specifier: ^9.39.3
         version: 9.39.4(jiti@2.7.0)
@@ -372,9 +375,6 @@ importers:
       dotenv:
         specifier: ^17.3.1
         version: 17.4.2
-      esbuild:
-        specifier: ^0.28.0
-        version: 0.28.0
       jest:
         specifier: ^30.3.0
         version: 30.4.2(@types/node@25.9.1)(ts-node@10.9.2(@swc/core@1.15.40(@swc/helpers@0.5.23))(@types/node@25.9.1)(typescript@5.9.3))
