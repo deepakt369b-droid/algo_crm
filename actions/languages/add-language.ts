@@ -28,6 +28,14 @@ export async function addLanguage(
     };
   }
 
+  // Disable dynamic filesystem operations in production/Cloudflare Workers
+  if (process.env.NODE_ENV === "production") {
+    return {
+      success: false,
+      message: "Dynamic language addition is disabled in production environments due to serverless/edge file system constraints. Please add languages locally and deploy.",
+    };
+  }
+
   try {
     const rootDir = process.cwd();
     const localesDir = path.join(rootDir, "locales");

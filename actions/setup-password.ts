@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { prismadb } from "@/lib/prisma";
 import { headers } from "next/headers";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function setupPassword(password: string) {
   try {

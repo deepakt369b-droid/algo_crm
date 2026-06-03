@@ -2,7 +2,6 @@ import { ImageResponse } from "next/og";
 import { TbBrandNextjs, TbBrandTypescript } from "react-icons/tb";
 import { BiLogoMongodb, BiLogoTailwindCss } from "react-icons/bi";
 import { SiPrisma, SiReact, SiOpenai } from "react-icons/si";
-import fs from "fs";
 import path from "path";
 
 //export const runtime = "edge";
@@ -11,12 +10,11 @@ const websiteUrl = process.env.NEXT_PUBLIC_APP_URL;
 
 export async function GET(request: Request) {
   try {
-    const interExtrabold = fs.readFileSync(
-      path.resolve("./public/fonts/Inter-Bold.ttf")
-    );
-    /*     const interExtrabold = fetch(
-      new URL("../../../public/Inter-Bold.ttf", import.meta.url)
-    ).then((res) => res.arrayBuffer()); */
+    // Use fetch with import.meta.url so Next.js/OpenNext bundles the asset properly for Cloudflare edge
+    const interExtrabold = await fetch(
+      new URL("../../../public/fonts/Inter-Bold.ttf", import.meta.url)
+    ).then((res) => res.arrayBuffer());
+    
     const { searchParams } = new URL(request.url);
 
     const hasTitle = searchParams.has("title");
