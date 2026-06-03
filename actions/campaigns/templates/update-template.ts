@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteTemplate,
@@ -32,5 +32,5 @@ export const updateTemplate = async (
     throw e;
   }
 
-  return prismadb.crm_campaign_templates.update({ where: { id }, data });
+  return supabaseAdmin.from("crm_campaign_templates").update({ where: { id }, data });
 };

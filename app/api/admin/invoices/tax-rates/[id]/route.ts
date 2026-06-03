@@ -4,7 +4,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 async function ensureAdmin(): Promise<NextResponse | null> {
   try {
@@ -28,15 +28,12 @@ export async function PATCH(
   if (denied) return denied;
 
   const body = await request.json();
-  const taxRate = await prismadb.invoice_TaxRates.update({
-    where: { id },
-    data: {
-      ...(body.name !== undefined && { name: body.name }),
-      ...(body.rate !== undefined && { rate: body.rate }),
-      ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
-      ...(body.active !== undefined && { active: body.active }),
-    },
-  });
+  const taxRate = (await supabaseAdmin.from("invoice_TaxRates").update({
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.rate !== undefined && { rate: body.rate }),
+        ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
+        ...(body.active !== undefined && { active: body.active }),
+      }).eq("id", id).select("*").single()).data;
 
   return NextResponse.json({ data: taxRate });
 }
@@ -49,6 +46,6 @@ export async function DELETE(
   const denied = await ensureAdmin();
   if (denied) return denied;
 
-  await prismadb.invoice_TaxRates.delete({ where: { id } });
+  (await supabaseAdmin.from("invoice_TaxRates").delete().eq("id", id).select("*").single()).data;
   return NextResponse.json({ success: true });
 }

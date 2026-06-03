@@ -1,6 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { junctionTableHelpers } from "@/lib/junction-helpers";
 import { revalidatePath } from "next/cache";
 import NewTaskCommentEmail from "@/emails/NewTaskComment";
@@ -11,6 +11,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const addCommentToTask = async (data: {
   taskId: string;
@@ -32,12 +33,7 @@ export const addCommentToTask = async (data: {
   if (!comment) return { error: "Missing comment" };
 
   // Resolve parent board (if any) via assigned_section relation for scope check.
-  const taskBoardLookup = await prismadb.tasks.findUnique({
-    where: { id: taskId },
-    select: {
-      assigned_section: { select: { board_relation: { select: { id: true } } } },
-    },
-  });
+  const taskBoardLookup = (await supabaseAdmin.from("tasks").select("assigned_section(board_relation(id))").eq("id", taskId).single()).data;
   const parentBoardId =
     taskBoardLookup?.assigned_section?.board_relation?.id;
   if (parentBoardId) {
@@ -50,34 +46,25 @@ export const addCommentToTask = async (data: {
   }
 
   try {
-    const task = await prismadb.tasks.findUnique({
-      where: { id: taskId },
-    });
+    const task = (await supabaseAdmin.from("tasks").select("*").eq("id", taskId).single()).data;
 
     if (!task) return { error: "Task not found" };
     if (!task.section) return { error: "Task section not found" };
 
-    const section = await prismadb.sections.findUnique({
-      where: { id: task.section },
-    });
+    const section = (await supabaseAdmin.from("sections").select("*").eq("id", task.section).single()).data;
 
     if (section) {
       // Task from Projects module - add user as board watcher
-      await prismadb.boards.update({
-        where: { id: section.board },
-        data: {
-          watchers: junctionTableHelpers.addWatcher(session.user.id),
-        },
-      });
+      (await supabaseAdmin.from("boards").update({
+                  watchers: junctionTableHelpers.addWatcher(session.user.id),
+                }).eq("id", section.board).select("*").single()).data;
 
-      const newComment = await prismadb.tasksComments.create({
-        data: {
-          v: 0,
-          comment,
-          task: taskId,
-          user: session.user.id,
-        },
-      });
+      const newComment = (await supabaseAdmin.from("tasksComments").insert({
+                v: 0,
+                comment,
+                task: taskId,
+                user: session.user.id,
+              }).select("*").single()).data;
 
       // Send email to all board watchers except the commenter
       try {
@@ -89,13 +76,7 @@ export const addCommentToTask = async (data: {
         }
 
         if (resend) {
-          const boardWatchers = await prismadb.boardWatchers.findMany({
-            where: {
-              board_id: section.board,
-              user_id: { not: session.user.id },
-            },
-            include: { user: true },
-          });
+          const boardWatchers = (await supabaseAdmin.from("boardWatchers").select("*").eq("board_id", section.board)).data;
 
           const emailRecipients = boardWatchers.map(
             (w: (typeof boardWatchers)[number]) => w.user
@@ -103,9 +84,7 @@ export const addCommentToTask = async (data: {
 
           // Also add task creator if different from commenter
           if (task.createdBy) {
-            const taskCreator = await prismadb.users.findUnique({
-              where: { id: task.createdBy },
-            });
+            const taskCreator = (await supabaseAdmin.from("users").select("*").eq("id", task.createdBy).single()).data;
             if (taskCreator && taskCreator.id !== session.user.id) {
               emailRecipients.push(taskCreator);
             }
@@ -142,14 +121,12 @@ export const addCommentToTask = async (data: {
       return { data: newComment };
     } else {
       // Task from CRM module (no section board)
-      const newComment = await prismadb.tasksComments.create({
-        data: {
-          v: 0,
-          comment,
-          task: taskId,
-          user: session.user.id,
-        },
-      });
+      const newComment = (await supabaseAdmin.from("tasksComments").insert({
+                v: 0,
+                comment,
+                task: taskId,
+                user: session.user.id,
+              }).select("*").single()).data;
 
       revalidatePath("/[locale]/(routes)/projects", "page");
       return { data: newComment };

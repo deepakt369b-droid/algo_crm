@@ -1,3 +1,4 @@
+              import React from "react";
 import { pauseCampaign } from "@/actions/campaigns/pause-campaign";
 import StepsTimeline from "./StepsTimeline";
 import RecipientsTable from "./RecipientsTable";
@@ -49,7 +50,6 @@ export default function CampaignDetail({ campaign }: { campaign: CampaignWithDat
         {canPause && (
           <form
             action={async () => {
-              "use server";
               await pauseCampaign(campaign.id);
             }}
           >

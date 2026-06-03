@@ -6,8 +6,8 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function bulkLinkToAccount(documentIds: string[], accountId: string) {
   let user;
@@ -35,7 +35,7 @@ export async function bulkLinkToAccount(documentIds: string[], accountId: string
     throw new Error("Forbidden");
   }
 
-  await prismadb.documentsToAccounts.createMany({
+  await supabaseAdmin.from("documentsToAccounts").createMany({
     data: documentIds.map((document_id) => ({ document_id, account_id: accountId })),
     skipDuplicates: true,
   });

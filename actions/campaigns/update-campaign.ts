@@ -1,11 +1,12 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteCampaign,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const updateCampaign = async (
   id: string,
@@ -33,5 +34,5 @@ export const updateCampaign = async (
     throw e;
   }
 
-  return prismadb.crm_campaigns.update({ where: { id }, data });
+  return supabaseAdmin.from("crm_campaigns").update({ where: { id }, data });
 };

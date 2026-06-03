@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import {
   paginationSchema,
   paginationArgs,
@@ -8,6 +8,7 @@ import {
   notFound,
   softDeleteData,
 } from "../helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const crmTargetListTools = [
   {
@@ -17,13 +18,8 @@ export const crmTargetListTools = [
     async handler(args: { limit: number; offset: number }, _userId: string) {
       const where = { deletedAt: null };
       const [data, total] = await Promise.all([
-        prismadb.crm_TargetLists.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { created_on: "desc" },
-          include: { _count: { select: { targets: true } } },
-        }),
-        prismadb.crm_TargetLists.count({ where }),
+        (await supabaseAdmin.from("crm_TargetLists").select("*, _count(targets)").order("created_on", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_TargetLists").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -39,16 +35,7 @@ export const crmTargetListTools = [
       args: { id: string; limit: number; offset: number },
       _userId: string
     ) {
-      const tl = await prismadb.crm_TargetLists.findFirst({
-        where: { id: args.id, deletedAt: null },
-        include: {
-          targets: {
-            ...paginationArgs(args),
-            include: { target: true },
-          },
-          _count: { select: { targets: true } },
-        },
-      });
+      const tl = (await supabaseAdmin.from("crm_TargetLists").select("*, targets(*, target), _count(targets)").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!tl) notFound("TargetList");
       return itemResponse(tl);
     },
@@ -61,9 +48,7 @@ export const crmTargetListTools = [
       description: z.string().optional(),
     }),
     async handler(args: { name: string; description?: string }, userId: string) {
-      const tl = await prismadb.crm_TargetLists.create({
-        data: { name: args.name, description: args.description, created_by: userId },
-      });
+      const tl = (await supabaseAdmin.from("crm_TargetLists").insert({ name: args.name, description: args.description, created_by: userId }).select("*").single()).data;
       return itemResponse(tl);
     },
   },
@@ -79,12 +64,10 @@ export const crmTargetListTools = [
       args: { id: string; name?: string; description?: string },
       _userId: string
     ) {
-      const existing = await prismadb.crm_TargetLists.findFirst({
-        where: { id: args.id, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("TargetList");
       const { id, ...updateData } = args;
-      const tl = await prismadb.crm_TargetLists.update({
+      const tl = await supabaseAdmin.from("crm_TargetLists").update({
         where: { id },
         data: updateData,
       });
@@ -96,11 +79,9 @@ export const crmTargetListTools = [
     description: "Soft-delete a target list (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const existing = await prismadb.crm_TargetLists.findFirst({
-        where: { id: args.id, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("TargetList");
-      const tl = await prismadb.crm_TargetLists.update({
+      const tl = await supabaseAdmin.from("crm_TargetLists").update({
         where: { id: args.id },
         data: softDeleteData(_userId),
       });
@@ -118,11 +99,9 @@ export const crmTargetListTools = [
       args: { target_list_id: string; target_ids: string[] },
       _userId: string
     ) {
-      const tl = await prismadb.crm_TargetLists.findFirst({
-        where: { id: args.target_list_id, deletedAt: null },
-      });
+      const tl = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.target_list_id).eq("deletedAt", null).single()).data;
       if (!tl) notFound("TargetList");
-      await prismadb.targetsToTargetLists.createMany({
+      await supabaseAdmin.from("targetsToTargetLists").insertMany({
         data: args.target_ids.map((tid) => ({
           target_id: tid,
           target_list_id: args.target_list_id,
@@ -146,12 +125,7 @@ export const crmTargetListTools = [
       args: { target_list_id: string; target_ids: string[] },
       _userId: string
     ) {
-      await prismadb.targetsToTargetLists.deleteMany({
-        where: {
-          target_list_id: args.target_list_id,
-          target_id: { in: args.target_ids },
-        },
-      });
+      (await supabaseAdmin.from("targetsToTargetLists").delete().eq("target_list_id", args.target_list_id).in("target_id", args.target_ids)).data;
       return itemResponse({
         target_list_id: args.target_list_id,
         removed: args.target_ids.length,

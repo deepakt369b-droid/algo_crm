@@ -1,8 +1,7 @@
 import { ImageResponse } from "next/og";
 import { TbBrandNextjs, TbBrandTypescript } from "react-icons/tb";
-import { BiLogoMongodb, BiLogoTailwindCss } from "react-icons/bi";
-import { SiPrisma, SiReact, SiOpenai } from "react-icons/si";
-import path from "path";
+import { BiLogoTailwindCss } from "react-icons/bi";
+import { SiReact, SiOpenai } from "react-icons/si";
 
 //export const runtime = "edge";
 
@@ -12,7 +11,7 @@ export async function GET(request: Request) {
   try {
     // Use fetch with import.meta.url so Next.js/OpenNext bundles the asset properly for Cloudflare edge
     const interExtrabold = await fetch(
-      new URL("../../../public/fonts/Inter-Bold.ttf", import.meta.url)
+      new URL("../../../public/Inter-Bold.ttf", import.meta.url)
     ).then((res) => res.arrayBuffer());
     
     const { searchParams } = new URL(request.url);
@@ -26,7 +25,7 @@ export async function GET(request: Request) {
 
     const description = hasDescription
       ? searchParams.get("description")?.slice(0, 200)
-      : "Flowline Pro is an open source CRM build on top of NextJS. Technology stack: NextJS with Typescrtipt, MongoDB, TailwindCSS, React, Prisma, shadCN, resend.com, react.email and more. ";
+      : "Flowline Pro is a modern CRM built on NextJS, Supabase, and Cloudflare. Technology stack: NextJS with TypeScript, Supabase, TailwindCSS, React, shadCN, and more.";
 
     return new ImageResponse(
       (
@@ -51,8 +50,6 @@ export async function GET(request: Request) {
             <span tw="py-5">
               <TbBrandNextjs size={50} color={"white"} />
               <TbBrandTypescript size={50} color={"blue"} />
-              <BiLogoMongodb size={50} color={"green"} />
-              <SiPrisma size={50} color={"purple"} />
               <SiReact size={50} color={"blue"} />
               <BiLogoTailwindCss size={50} color={"blue"} />
               <SiOpenai size={50} color={"white"} />
@@ -79,3 +76,4 @@ export async function GET(request: Request) {
     return new Response("Failed to generate OG image", { status: 500 });
   }
 }
+

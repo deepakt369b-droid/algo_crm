@@ -1,6 +1,7 @@
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+
 import { serializeDecimalsList } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getAllCrmData = cache(async () => {
   const [
@@ -21,25 +22,22 @@ export const getAllCrmData = cache(async () => {
     exchangeRates,
     productCategories,
   ] = await Promise.all([
-    prismadb.crm_Accounts.findMany({ where: { deletedAt: null } }),
-    prismadb.crm_Opportunities.findMany({ where: { deletedAt: null } }),
-    prismadb.crm_Leads.findMany({ where: { deletedAt: null } }),
-    prismadb.crm_Contacts.findMany({ where: { deletedAt: null } }),
-    prismadb.crm_Contracts.findMany({ where: { deletedAt: null } }),
-    prismadb.crm_Opportunities_Type.findMany({}),
-    prismadb.crm_Opportunities_Sales_Stages.findMany({}),
-    prismadb.crm_campaigns.findMany({ where: { deletedAt: null } }),
-    prismadb.crm_Industry_Type.findMany({}),
-    prismadb.crm_Contact_Types.findMany({ orderBy: { name: "asc" } }),
-    prismadb.crm_Lead_Sources.findMany({ orderBy: { name: "asc" } }),
-    prismadb.crm_Lead_Statuses.findMany({ orderBy: { name: "asc" } }),
-    prismadb.crm_Lead_Types.findMany({ orderBy: { name: "asc" } }),
-    prismadb.currency.findMany({ where: { isEnabled: true }, orderBy: { code: "asc" } }),
-    prismadb.exchangeRate.findMany(),
-    prismadb.crm_ProductCategories.findMany({
-      where: { isActive: true },
-      orderBy: { order: "asc" },
-    }),
+    (await supabaseAdmin.from("crm_Accounts").select("*").eq("deletedAt", null)).data,
+    (await supabaseAdmin.from("crm_Opportunities").select("*").eq("deletedAt", null)).data,
+    (await supabaseAdmin.from("crm_Leads").select("*").eq("deletedAt", null)).data,
+    (await supabaseAdmin.from("crm_Contacts").select("*").eq("deletedAt", null)).data,
+    (await supabaseAdmin.from("crm_Contracts").select("*").eq("deletedAt", null)).data,
+    (await supabaseAdmin.from("crm_Opportunities_Type").select("*")).data,
+    (await supabaseAdmin.from("crm_Opportunities_Sales_Stages").select("*")).data,
+    (await supabaseAdmin.from("crm_campaigns").select("*").eq("deletedAt", null)).data,
+    (await supabaseAdmin.from("crm_Industry_Type").select("*")).data,
+    (await supabaseAdmin.from("crm_Contact_Types").select("*").order("name", { ascending: true })).data,
+    (await supabaseAdmin.from("crm_Lead_Sources").select("*").order("name", { ascending: true })).data,
+    (await supabaseAdmin.from("crm_Lead_Statuses").select("*").order("name", { ascending: true })).data,
+    (await supabaseAdmin.from("crm_Lead_Types").select("*").order("name", { ascending: true })).data,
+    (await supabaseAdmin.from("currency").select("*").eq("isEnabled", true).order("code", { ascending: true })).data,
+    (await supabaseAdmin.from("exchangeRate").select("*")).data,
+    (await supabaseAdmin.from("crm_ProductCategories").select("*").eq("isActive", true).order("order", { ascending: true })).data,
   ]);
 
   const data = {

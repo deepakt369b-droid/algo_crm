@@ -1,11 +1,12 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { UpdatePurchaseOrderStatus } from "./schema";
 import { InputType, ReturnType } from "./types";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 // Valid status transitions
 const validTransitions: Record<string, string[]> = {
@@ -29,7 +30,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const { id, status, rejectionReason } = data;
 
   try {
-    const existing = await prismadb.purchaseOrders.findUnique({ where: { id } });
+    const existing = (await supabaseAdmin.from("purchaseOrders").select("*").eq("id", id).single()).data;
     if (!existing || existing.deletedAt) {
       return { error: "Purchase order not found" };
     }
@@ -59,7 +60,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       updateData.deliveredDate = new Date();
     }
 
-    const updated = await prismadb.purchaseOrders.update({
+    const updated = await supabaseAdmin.from("purchaseOrders").update({
       where: { id },
       data: updateData,
     });

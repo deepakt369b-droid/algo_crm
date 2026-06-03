@@ -4,10 +4,11 @@ import {
   filterAuthorizedDocumentIds,
   AuthenticationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { minioClient, MINIO_BUCKET } from "@/lib/minio";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function bulkDeleteDocuments(documentIds: string[]) {
   let user;
@@ -26,10 +27,7 @@ export async function bulkDeleteDocuments(documentIds: string[]) {
     throw new Error("Forbidden");
   }
 
-  const documents = await prismadb.documents.findMany({
-    where: { id: { in: documentIds } },
-    select: { id: true, key: true },
-  });
+  const documents = (await supabaseAdmin.from("documents").select("id, key").in("id", documentIds)).data;
 
   // Delete from MinIO
   await Promise.allSettled(
@@ -41,9 +39,7 @@ export async function bulkDeleteDocuments(documentIds: string[]) {
   );
 
   // Delete from DB (cascade handles chunks, embeddings, junction tables)
-  await prismadb.documents.deleteMany({
-    where: { id: { in: documentIds } },
-  });
+  (await supabaseAdmin.from("documents").delete().in("id", documentIds)).data;
 
   revalidatePath("/[locale]/(routes)/documents");
 }

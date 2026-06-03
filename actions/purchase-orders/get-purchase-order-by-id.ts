@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export interface PurchaseOrderDetail {
   id: string;
@@ -40,20 +40,7 @@ export interface PurchaseOrderLineItemDetail {
 }
 
 export async function getPurchaseOrderById(id: string): Promise<PurchaseOrderDetail | null> {
-  const order = await prismadb.purchaseOrders.findUnique({
-    where: { id },
-    include: {
-      vendor: { select: { id: true, name: true, email: true, website: true } },
-      requestedByUser: { select: { id: true, name: true } },
-      approvedByUser: { select: { id: true, name: true } },
-      lineItems: {
-        orderBy: { sortOrder: "asc" },
-        include: {
-          product: { select: { id: true, name: true, sku: true } },
-        },
-      },
-    },
-  });
+  const order = (await supabaseAdmin.from("purchaseOrders").select("*, vendor(id, name, email, website), requestedByUser(id, name), approvedByUser(id, name), lineItems(*, product(id, name, sku))").eq("id", id).single()).data;
 
   if (!order || order.deletedAt) return null;
 

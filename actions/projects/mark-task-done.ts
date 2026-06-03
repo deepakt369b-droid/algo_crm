@@ -1,6 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import {
   requireAuthenticated,
@@ -8,6 +8,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const markTaskDone = async (taskId: string) => {
   let authzUser;
@@ -31,13 +32,10 @@ export const markTaskDone = async (taskId: string) => {
   }
 
   try {
-    await prismadb.tasks.update({
-      where: { id: taskId },
-      data: {
-        taskStatus: "COMPLETE",
-        updatedBy: session.user.id,
-      },
-    });
+    (await supabaseAdmin.from("tasks").update({
+              taskStatus: "COMPLETE",
+              updatedBy: session.user.id,
+            }).eq("id", taskId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

@@ -1,12 +1,13 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadAccount,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function getAccountById(accountId: string) {
   let user;
@@ -24,10 +25,7 @@ export async function getAccountById(accountId: string) {
     throw e;
   }
 
-  const account = await prismadb.crm_Accounts.findFirst({
-    where: { id: accountId, deletedAt: null },
-    select: { id: true, name: true },
-  });
+  const account = (await supabaseAdmin.from("crm_Accounts").select("id, name").eq("id", accountId).eq("deletedAt", null).single()).data;
 
   return account ?? null;
 }

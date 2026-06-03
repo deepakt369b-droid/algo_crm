@@ -18,7 +18,7 @@ import {
   Ruler,
 } from "lucide-react";
 import moment from "moment";
-import { Decimal } from "@prisma/client/runtime/client";
+import Decimal from "decimal.js";
 import { formatCurrency } from "@/lib/currency";
 
 interface BasicViewProps {

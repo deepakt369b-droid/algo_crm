@@ -1,11 +1,12 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadTemplate,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getTemplate = async (id: string) => {
   let user;
@@ -23,8 +24,5 @@ export const getTemplate = async (id: string) => {
     throw e;
   }
 
-  return prismadb.crm_campaign_templates.findFirst({
-    where: { id, deletedAt: null },
-    include: { created_by_user: { select: { name: true } } },
-  });
+  return (await supabaseAdmin.from("crm_campaign_templates").select("*, created_by_user(name)").eq("id", id).eq("deletedAt", null).single()).data;
 };

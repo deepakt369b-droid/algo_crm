@@ -1,7 +1,8 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const reorderOpportunityLineItems = async (
   items: { id: string; sort_order: number }[]
@@ -12,12 +13,9 @@ export const reorderOpportunityLineItems = async (
   }
 
   try {
-    await prismadb.$transaction(
+    await Promise.all(
       items.map((item) =>
-        prismadb.crm_OpportunityLineItems.update({
-          where: { id: item.id },
-          data: { sort_order: item.sort_order },
-        })
+        (await supabaseAdmin.from("crm_OpportunityLineItems").update({ sort_order: item.sort_order }).eq("id", item.id).select("*").single()).data
       )
     );
 

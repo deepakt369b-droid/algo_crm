@@ -4,7 +4,7 @@ import { render } from "@react-email/render";
 import { SendMailToAll } from "./schema";
 import { InputType, ReturnType } from "./types";
 
-import { prismadb } from "@/lib/prisma";
+
 import resendHelper from "@/lib/resend";
 import { createSafeAction } from "@/lib/create-safe-action";
 import MessageToAllUsers from "@/emails/admin/MessageToAllUser";
@@ -14,6 +14,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   try {
@@ -39,23 +40,12 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   }
 
   try {
-    const users = await prismadb.users.findMany({
-      /*       where: {
-        email: {
-          //contains: "pavel@softbase.cz",
-          equals: "pavel@softbase.cz",
-        },
-      }, */
-    });
+    const users = (await supabaseAdmin.from("users").select("*")).data;
     //console.log(users.length, "user.length");
 
     //For each user, send mail
     for (const user of users) {
-      const resendKey = await prismadb.systemServices.findFirst({
-        where: {
-          name: "resend_smtp",
-        },
-      });
+      const resendKey = (await supabaseAdmin.from("systemServices").select("*").eq("name", "resend_smtp").single()).data;
 
       if (!resendKey?.serviceKey || !process.env.RESEND_API_KEY) {
         const emailHtml = render(

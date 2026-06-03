@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import {
   paginationSchema,
   paginationArgs,
@@ -10,6 +10,7 @@ import {
   notFound,
   softDeleteData,
 } from "../helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const crmAccountTools = [
   {
@@ -21,12 +22,8 @@ export const crmAccountTools = [
     async handler(args: { limit: number; offset: number }, userId: string) {
       const where = { assigned_to: userId, ...isNotDeleted() };
       const [data, total] = await Promise.all([
-        prismadb.crm_Accounts.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { createdAt: "desc" },
-        }),
-        prismadb.crm_Accounts.count({ where }),
+        (await supabaseAdmin.from("crm_Accounts").select("*").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Accounts").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -36,9 +33,7 @@ export const crmAccountTools = [
     description: "Get a single CRM account by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const account = await prismadb.crm_Accounts.findFirst({
-        where: { id: args.id, assigned_to: userId, ...isNotDeleted() },
-      });
+      const account = (await supabaseAdmin.from("crm_Accounts").select("*").eq("id", args.id).eq("assigned_to", userId).single()).data;
       if (!account) notFound("Account");
       return itemResponse(account);
     },
@@ -60,12 +55,8 @@ export const crmAccountTools = [
         OR: [ilike("name", args.query), ilike("website", args.query)],
       };
       const [data, total] = await Promise.all([
-        prismadb.crm_Accounts.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { createdAt: "desc" },
-        }),
-        prismadb.crm_Accounts.count({ where }),
+        (await supabaseAdmin.from("crm_Accounts").select("*").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Accounts").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -91,17 +82,15 @@ export const crmAccountTools = [
       userId: string
     ) {
       const { name, ...rest } = args;
-      const account = await prismadb.crm_Accounts.create({
-        data: {
-          v: 0,
-          name,
-          ...rest,
-          assigned_to: userId,
-          createdBy: userId,
-          updatedBy: userId,
-          status: "Active",
-        },
-      });
+      const account = (await supabaseAdmin.from("crm_Accounts").insert({
+                v: 0,
+                name,
+                ...rest,
+                assigned_to: userId,
+                createdBy: userId,
+                updatedBy: userId,
+                status: "Active",
+              }).select("*").single()).data;
       return itemResponse(account);
     },
   },
@@ -127,15 +116,10 @@ export const crmAccountTools = [
       },
       userId: string
     ) {
-      const existing = await prismadb.crm_Accounts.findFirst({
-        where: { id: args.id, assigned_to: userId, ...isNotDeleted() },
-      });
+      const existing = (await supabaseAdmin.from("crm_Accounts").select("*").eq("id", args.id).eq("assigned_to", userId).single()).data;
       if (!existing) notFound("Account");
       const { id, ...updateData } = args;
-      const account = await prismadb.crm_Accounts.update({
-        where: { id },
-        data: { ...updateData, updatedBy: userId },
-      });
+      const account = (await supabaseAdmin.from("crm_Accounts").update({ ...updateData, updatedBy: userId }).eq("id", id).select("*").single()).data;
       return itemResponse(account);
     },
   },
@@ -144,11 +128,9 @@ export const crmAccountTools = [
     description: "Soft-delete a CRM account by ID (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = await prismadb.crm_Accounts.findFirst({
-        where: { id: args.id, assigned_to: userId, ...isNotDeleted() },
-      });
+      const existing = (await supabaseAdmin.from("crm_Accounts").select("*").eq("id", args.id).eq("assigned_to", userId).single()).data;
       if (!existing) notFound("Account");
-      const account = await prismadb.crm_Accounts.update({
+      const account = await supabaseAdmin.from("crm_Accounts").update({
         where: { id: args.id },
         data: softDeleteData(userId),
       });

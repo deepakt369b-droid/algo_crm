@@ -1,5 +1,6 @@
-import { prismadb } from "@/lib/prisma";
+
 import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: Request) {
   if (req.headers.get("content-type") !== "application/json") {
@@ -46,17 +47,15 @@ export async function POST(req: Request) {
       );
     }
     try {
-      await prismadb.crm_Leads.create({
-        data: {
-          v: 1,
-          firstName,
-          lastName,
-          company: account,
-          jobTitle: job,
-          email,
-          phone,
-        },
-      });
+      (await supabaseAdmin.from("crm_Leads").insert({
+                  v: 1,
+                  firstName,
+                  lastName,
+                  company: account,
+                  jobTitle: job,
+                  email,
+                  phone,
+                }).select("*").single()).data;
 
       return NextResponse.json({ message: "New lead created successfully" });
       //return res.status(200).json({ json: "newContact" });

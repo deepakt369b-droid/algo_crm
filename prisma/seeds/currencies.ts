@@ -1,4 +1,4 @@
-import { PrismaClient, ExchangeRateSource } from "@prisma/client";
+import { PrismaClient, ExchangeRateSource } from "@/lib/prisma-types";
 
 const currencies = [
   { code: "EUR", name: "Euro", symbol: "€", isEnabled: true, isDefault: true },

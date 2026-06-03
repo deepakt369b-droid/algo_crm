@@ -1,10 +1,10 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
 import { TransferStock } from "./schema";
 import { InputType, ReturnType } from "./types";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await getSession();
@@ -19,64 +19,57 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return { error: "Source and destination warehouses must be different" };
     }
 
-    const product = await prismadb.crm_Products.findUnique({ where: { id: productId } });
+    const product = (await supabaseAdmin.from("crm_Products").select("*").eq("id", productId).single()).data;
     if (!product || product.deletedAt) {
       return { error: "Product not found" };
     }
 
-    const fromWarehouse = await prismadb.inventoryWarehouse.findUnique({ where: { id: fromWarehouseId } });
-    const toWarehouse = await prismadb.inventoryWarehouse.findUnique({ where: { id: toWarehouseId } });
+    const fromWarehouse = (await supabaseAdmin.from("inventoryWarehouse").select("*").eq("id", fromWarehouseId).single()).data;
+    const toWarehouse = (await supabaseAdmin.from("inventoryWarehouse").select("*").eq("id", toWarehouseId).single()).data;
     if (!fromWarehouse || !toWarehouse) {
       return { error: "Warehouse not found" };
     }
 
     // Get source stock
-    const fromStock = await prismadb.inventoryStock.findUnique({
-      where: { productId_warehouseId: { productId, warehouseId: fromWarehouseId } },
-    });
+    const fromStock = (await supabaseAdmin.from("inventoryStock").select("*").eq("productId", productId).eq("warehouseId", fromWarehouseId).single()).data;
 
     const fromQuantity = fromStock ? Number(fromStock.quantity) : 0;
     if (fromQuantity < quantity) {
       return { error: `Insufficient stock. Available: ${fromQuantity}, Requested: ${quantity}` };
     }
 
+    const toStock = (await supabaseAdmin.from("inventoryStock").select("*").eq("productId", productId).eq("warehouseId", toWarehouseId).single()).data;
+    const toQuantity = toStock ? Number(toStock.quantity) : 0;
+
     // Deduct from source
-    await prismadb.inventoryStock.upsert({
-      where: { productId_warehouseId: { productId, warehouseId: fromWarehouseId } },
-      update: { quantity: { decrement: quantity } },
-      create: { productId, warehouseId: fromWarehouseId, quantity: -quantity },
-    });
+    await supabaseAdmin.from("inventoryStock").upsert({
+      productId, warehouseId: fromWarehouseId, quantity: fromQuantity - quantity
+    }, { onConflict: "productId,warehouseId" });
 
     // Add to destination
-    await prismadb.inventoryStock.upsert({
-      where: { productId_warehouseId: { productId, warehouseId: toWarehouseId } },
-      update: { quantity: { increment: quantity } },
-      create: { productId, warehouseId: toWarehouseId, quantity },
-    });
+    await supabaseAdmin.from("inventoryStock").upsert({
+      productId, warehouseId: toWarehouseId, quantity: toQuantity + quantity
+    }, { onConflict: "productId,warehouseId" });
 
     // Record movements
-    await prismadb.inventoryMovement.create({
-      data: {
-        productId,
-        warehouseId: fromWarehouseId,
-        type: "TRANSFER_OUT",
-        quantity,
-        reference: `Transferred to ${toWarehouse.name}`,
-        note: note || undefined,
-        createdBy: session.user.id,
-      },
+    await supabaseAdmin.from("inventoryMovement").insert({
+      productId,
+      warehouseId: fromWarehouseId,
+      type: "TRANSFER_OUT",
+      quantity,
+      reference: `Transferred to ${toWarehouse.name}`,
+      note: note || undefined,
+      createdBy: session.user.id,
     });
 
-    await prismadb.inventoryMovement.create({
-      data: {
-        productId,
-        warehouseId: toWarehouseId,
-        type: "TRANSFER_IN",
-        quantity,
-        reference: `Transferred from ${fromWarehouse.name}`,
-        note: note || undefined,
-        createdBy: session.user.id,
-      },
+    await supabaseAdmin.from("inventoryMovement").insert({
+      productId,
+      warehouseId: toWarehouseId,
+      type: "TRANSFER_IN",
+      quantity,
+      reference: `Transferred from ${fromWarehouse.name}`,
+      note: note || undefined,
+      createdBy: session.user.id,
     });
 
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");

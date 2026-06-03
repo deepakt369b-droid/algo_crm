@@ -1,45 +1,18 @@
-import { prismadb } from "@/lib/prisma";
 import { AuthzUser } from "../session";
 import { AuthorizationError } from "../errors";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
-type ContactWhere = NonNullable<
-  Parameters<typeof prismadb.crm_Contacts.updateMany>[0]
->["where"];
-type TargetWhere = NonNullable<
-  Parameters<typeof prismadb.crm_Targets.updateMany>[0]
->["where"];
 
-function contactScopedWhere(user: AuthzUser, contactId: string): ContactWhere {
-  if (user.role === "admin" || user.role === "manager") {
-    return { id: contactId };
-  }
-  // user role: own contact (assigned or creator).
-  return {
-    id: contactId,
-    OR: [
-      { assigned_to: user.id },
-      { createdBy: user.id },
-    ],
-  };
-}
-
-function targetScopedWhere(user: AuthzUser, targetId: string): TargetWhere {
-  if (user.role === "admin" || user.role === "manager") {
-    return { id: targetId };
-  }
-  return { id: targetId, created_by: user.id };
-}
 
 export async function tryScopedUpdateContact(
   user: AuthzUser,
   contactId: string,
   data: Record<string, string>,
 ): Promise<boolean> {
-  const result = await prismadb.crm_Contacts.updateMany({
-    where: contactScopedWhere(user, contactId),
-    data: { ...data, updatedBy: user.id },
-  });
-  return result.count > 0;
+  const row = await findContactInScope(user, contactId);
+  if (!row) return false;
+  const result = await supabaseAdmin.from("crm_Contacts").update({ ...data, updatedBy: user.id }).eq("id", contactId);
+  return result.error == null;
 }
 
 export async function tryScopedUpdateTarget(
@@ -47,23 +20,22 @@ export async function tryScopedUpdateTarget(
   targetId: string,
   data: Record<string, string>,
 ): Promise<boolean> {
-  const result = await prismadb.crm_Targets.updateMany({
-    where: targetScopedWhere(user, targetId),
-    data: { ...data, updatedBy: user.id },
-  });
-  return result.count > 0;
+  const row = await findTargetInScope(user, targetId);
+  if (!row) return false;
+  const result = await supabaseAdmin.from("crm_Targets").update({ ...data, updatedBy: user.id }).eq("id", targetId);
+  return result.error == null;
 }
 
 // Phase B1 write scope helper (kept for assertCanWriteContact).
 // Read path now uses contactReadScopeWhere (D2) which adds linked-account scope.
 async function findContactInScope(user: AuthzUser, contactId: string) {
   if (user.role === "admin" || user.role === "manager") {
-    return prismadb.crm_Contacts.findFirst({
+    return supabaseAdmin.from("crm_Contacts").findFirst({
       where: { id: contactId },
       select: { id: true },
     });
   }
-  return prismadb.crm_Contacts.findFirst({
+  return supabaseAdmin.from("crm_Contacts").findFirst({
     where: {
       id: contactId,
       OR: [
@@ -77,12 +49,12 @@ async function findContactInScope(user: AuthzUser, contactId: string) {
 
 async function findTargetInScope(user: AuthzUser, targetId: string) {
   if (user.role === "admin" || user.role === "manager") {
-    return prismadb.crm_Targets.findFirst({
+    return supabaseAdmin.from("crm_Targets").findFirst({
       where: { id: targetId },
       select: { id: true },
     });
   }
-  return prismadb.crm_Targets.findFirst({
+  return supabaseAdmin.from("crm_Targets").findFirst({
     where: { id: targetId, created_by: user.id },
     select: { id: true },
   });
@@ -92,7 +64,7 @@ export async function assertCanReadContact(
   user: AuthzUser,
   contactId: string,
 ): Promise<void> {
-  const row = await prismadb.crm_Contacts.findFirst({
+  const row = await supabaseAdmin.from("crm_Contacts").findFirst({
     where: { id: contactId, ...contactReadScopeWhere(user) },
     select: { id: true },
   });
@@ -128,7 +100,7 @@ export async function filterAuthorizedContactIds(
   contactIds: string[],
 ): Promise<string[]> {
   if (contactIds.length === 0) return [];
-  const rows = await prismadb.crm_Contacts.findMany({
+  const rows = await supabaseAdmin.from("crm_Contacts").findMany({
     where: { id: { in: contactIds }, ...contactReadScopeWhere(user) },
     select: { id: true },
   });
@@ -140,7 +112,7 @@ export async function filterAuthorizedAccountIds(
   accountIds: string[],
 ): Promise<string[]> {
   if (accountIds.length === 0) return [];
-  const rows = await prismadb.crm_Accounts.findMany({
+  const rows = await supabaseAdmin.from("crm_Accounts").findMany({
     where: { id: { in: accountIds }, ...accountReadScopeWhere(user) },
     select: { id: true },
   });
@@ -152,7 +124,7 @@ export async function filterAuthorizedLeadIds(
   leadIds: string[],
 ): Promise<string[]> {
   if (leadIds.length === 0) return [];
-  const rows = await prismadb.crm_Leads.findMany({
+  const rows = await supabaseAdmin.from("crm_Leads").findMany({
     where: { id: { in: leadIds }, ...leadReadScopeWhere(user) },
     select: { id: true },
   });
@@ -164,7 +136,7 @@ export async function filterAuthorizedOpportunityIds(
   opportunityIds: string[],
 ): Promise<string[]> {
   if (opportunityIds.length === 0) return [];
-  const rows = await prismadb.crm_Opportunities.findMany({
+  const rows = await supabaseAdmin.from("crm_Opportunities").findMany({
     where: { id: { in: opportunityIds }, ...opportunityReadScopeWhere(user) },
     select: { id: true },
   });
@@ -175,7 +147,7 @@ export async function assertCanCancelContactEnrichment(
   user: AuthzUser,
   enrichmentId: string,
 ): Promise<void> {
-  const row = (await prismadb.crm_Contact_Enrichment.findUnique({
+  const row = (await supabaseAdmin.from("crm_Contact_Enrichment").findUnique({
     where: { id: enrichmentId },
     select: { id: true, triggeredBy: true },
   })) as { id: string; triggeredBy: string | null } | null;
@@ -188,7 +160,7 @@ export async function assertCanCancelTargetEnrichment(
   user: AuthzUser,
   enrichmentId: string,
 ): Promise<void> {
-  const row = (await prismadb.crm_Target_Enrichment.findUnique({
+  const row = (await supabaseAdmin.from("crm_Target_Enrichment").findUnique({
     where: { id: enrichmentId },
     select: { id: true, triggeredBy: true },
   })) as { id: string; triggeredBy: string | null } | null;
@@ -206,7 +178,7 @@ export async function filterAuthorizedTargetIds(
     user.role === "admin" || user.role === "manager"
       ? { id: { in: targetIds } }
       : { id: { in: targetIds }, created_by: user.id };
-  const rows = await prismadb.crm_Targets.findMany({
+  const rows = await supabaseAdmin.from("crm_Targets").findMany({
     where: baseWhere,
     select: { id: true },
   });
@@ -241,7 +213,7 @@ export async function assertCanReadAccount(
   user: AuthzUser,
   accountId: string,
 ): Promise<void> {
-  const row = await prismadb.crm_Accounts.findFirst({
+  const row = await supabaseAdmin.from("crm_Accounts").findFirst({
     where: { id: accountId, ...accountReadScopeWhere(user) },
     select: { id: true },
   });
@@ -259,7 +231,7 @@ export async function assertCanWriteAccount(
           id: accountId,
           OR: accountUserScopeOR(user.id),
         };
-  const row = await prismadb.crm_Accounts.findFirst({
+  const row = await supabaseAdmin.from("crm_Accounts").findFirst({
     where,
     select: { id: true },
   });
@@ -335,7 +307,7 @@ export async function assertCanReadLead(
   user: AuthzUser,
   leadId: string,
 ): Promise<void> {
-  const row = await prismadb.crm_Leads.findFirst({
+  const row = await supabaseAdmin.from("crm_Leads").findFirst({
     where: { id: leadId, ...leadReadScopeWhere(user) },
     select: { id: true },
   });
@@ -346,7 +318,7 @@ export async function assertCanReadOpportunity(
   user: AuthzUser,
   opportunityId: string,
 ): Promise<void> {
-  const row = await prismadb.crm_Opportunities.findFirst({
+  const row = await supabaseAdmin.from("crm_Opportunities").findFirst({
     where: { id: opportunityId, ...opportunityReadScopeWhere(user) },
     select: { id: true },
   });
@@ -357,7 +329,7 @@ export async function assertCanReadContract(
   user: AuthzUser,
   contractId: string,
 ): Promise<void> {
-  const row = await prismadb.crm_Contracts.findFirst({
+  const row = await supabaseAdmin.from("crm_Contracts").findFirst({
     where: { id: contractId, ...contractReadScopeWhere(user) },
     select: { id: true },
   });
@@ -384,7 +356,7 @@ export async function assertCanReadTargetList(
   user: AuthzUser,
   listId: string,
 ): Promise<void> {
-  const row = await prismadb.crm_TargetLists.findFirst({
+  const row = await supabaseAdmin.from("crm_TargetLists").findFirst({
     where: { id: listId, ...targetListReadScopeWhere(user) },
     select: { id: true },
   });
@@ -451,7 +423,7 @@ export async function assertCanReadDocument(
   user: AuthzUser,
   documentId: string,
 ): Promise<void> {
-  const row = await prismadb.documents.findFirst({
+  const row = await supabaseAdmin.from("documents").findFirst({
     where: { id: documentId, ...documentReadScopeWhere(user) },
     select: { id: true },
   });
@@ -470,7 +442,7 @@ export async function filterAuthorizedDocumentIds(
   documentIds: string[],
 ): Promise<string[]> {
   if (documentIds.length === 0) return [];
-  const rows = await prismadb.documents.findMany({
+  const rows = await supabaseAdmin.from("documents").findMany({
     where: { id: { in: documentIds }, ...documentReadScopeWhere(user) },
     select: { id: true },
   });
@@ -535,7 +507,7 @@ export async function assertCanReadCampaign(
   user: AuthzUser,
   id: string,
 ): Promise<void> {
-  const row = await prismadb.crm_campaigns.findFirst({
+  const row = await supabaseAdmin.from("crm_campaigns").findFirst({
     where: { id, ...campaignReadScopeWhere(user) },
     select: { id: true },
   });
@@ -553,7 +525,7 @@ export async function assertCanReadTemplate(
   user: AuthzUser,
   id: string,
 ): Promise<void> {
-  const row = await prismadb.crm_campaign_templates.findFirst({
+  const row = await supabaseAdmin.from("crm_campaign_templates").findFirst({
     where: { id, ...campaignTemplateReadScopeWhere(user) },
     select: { id: true },
   });
@@ -601,7 +573,7 @@ export async function assertCanReadBoard(
   user: AuthzUser,
   boardId: string,
 ): Promise<void> {
-  const row = await prismadb.boards.findFirst({
+  const row = await supabaseAdmin.from("boards").findFirst({
     where: { id: boardId, ...boardReadScopeWhere(user) },
     select: { id: true },
   });
@@ -612,7 +584,7 @@ export async function assertCanWriteBoard(
   user: AuthzUser,
   boardId: string,
 ): Promise<void> {
-  const row = await prismadb.boards.findFirst({
+  const row = await supabaseAdmin.from("boards").findFirst({
     where: { id: boardId, ...boardWriteScopeWhere(user) },
     select: { id: true },
   });
@@ -623,7 +595,7 @@ export async function assertCanReadTask(
   user: AuthzUser,
   taskId: string,
 ): Promise<void> {
-  const task = await prismadb.tasks.findUnique({
+  const task = await supabaseAdmin.from("tasks").findUnique({
     where: { id: taskId },
     select: {
       assigned_section: {
@@ -640,7 +612,7 @@ export async function assertCanWriteTask(
   user: AuthzUser,
   taskId: string,
 ): Promise<void> {
-  const task = await prismadb.tasks.findUnique({
+  const task = await supabaseAdmin.from("tasks").findUnique({
     where: { id: taskId },
     select: {
       user: true,

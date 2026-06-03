@@ -5,9 +5,10 @@ import {
   notFoundOrForbiddenResponse,
   AuthenticationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+
 import { canReadInvoice, type InvoiceStatus } from "@/lib/invoices/permissions";
 import { getInvoicePdfPresignedUrl } from "@/lib/invoices/storage";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(
   _request: NextRequest,
@@ -22,10 +23,7 @@ export async function GET(
     throw e;
   }
 
-  const invoice = await prismadb.invoices.findUnique({
-    where: { id: invoiceId },
-    select: { createdBy: true, status: true, pdfStorageKey: true },
-  });
+  const invoice = (await supabaseAdmin.from("invoices").select("createdBy, status, pdfStorageKey").eq("id", invoiceId).single()).data;
   if (!invoice) return notFoundOrForbiddenResponse();
 
   if (

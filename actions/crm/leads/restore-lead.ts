@@ -1,8 +1,9 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { writeAuditLog } from "@/lib/audit-log";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const restoreLead = async (leadId: string) => {
   const session = await getSession();
@@ -11,10 +12,7 @@ export const restoreLead = async (leadId: string) => {
   if (!leadId) return { error: "leadId is required" };
 
   try {
-    await prismadb.crm_Leads.update({
-      where: { id: leadId },
-      data: { deletedAt: null, deletedBy: null },
-    });
+    (await supabaseAdmin.from("crm_Leads").update({ deletedAt: null, deletedBy: null }).eq("id", leadId).select("*").single()).data;
     await writeAuditLog({
       entityType: "lead",
       entityId: leadId,

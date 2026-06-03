@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prismadb } from "@/lib/prisma";
+
 import { AgentEnrichmentStrategy } from "@/lib/enrichment/strategies/agent-enrichment-strategy";
 import type { EnrichmentField } from "@/lib/enrichment/types";
 import type { StoredEnrichmentResult } from "@/lib/enrichment/types/stored-result";
@@ -15,6 +15,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 
@@ -58,10 +59,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "NO_API_KEY" }, { status: 402 });
   }
 
-  const target = await prismadb.crm_Targets.findUnique({
-    where: { id: targetId },
-    select: { id: true, email: true, company: true, company_website: true },
-  });
+  const target = (await supabaseAdmin.from("crm_Targets").select("id, email, company, company_website").eq("id", targetId).single()).data;
 
   if (!target) {
     return NextResponse.json({ error: "Target not found" }, { status: 404 });
@@ -76,14 +74,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const enrichmentRecord = await prismadb.crm_Target_Enrichment.create({
-    data: {
-      targetId,
-      status: "RUNNING",
-      fields: fields.map((f) => f.name),
-      triggeredBy: user.id,
-    },
-  });
+  const enrichmentRecord = (await supabaseAdmin.from("crm_Target_Enrichment").insert({
+        targetId,
+        status: "RUNNING",
+        fields: fields.map((f) => f.name),
+        triggeredBy: user.id,
+      }).select("*").single()).data;
 
   const sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   const abortController = new AbortController();
@@ -124,19 +120,13 @@ export async function POST(request: NextRequest) {
           error: result.error,
         };
 
-        await prismadb.crm_Target_Enrichment.update({
-          where: { id: enrichmentRecord.id },
-          data: { status: "COMPLETED", result: stored as object },
-        });
+        (await supabaseAdmin.from("crm_Target_Enrichment").update({ status: "COMPLETED", result: stored as object }).eq("id", enrichmentRecord.id).select("*").single()).data;
 
         enqueue({ type: "result", result: stored, enrichmentId: enrichmentRecord.id });
         enqueue({ type: "complete" });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
-        await prismadb.crm_Target_Enrichment.update({
-          where: { id: enrichmentRecord.id },
-          data: { status: "FAILED", error: message },
-        }).catch(() => {});
+        await (await supabaseAdmin.from("crm_Target_Enrichment").update({ status: "FAILED", error: message }).eq("id", enrichmentRecord.id).select("*").single()).data.catch(() => {});
         enqueue({ type: "error", error: message });
       } finally {
         activeSessions.delete(sessionId);
@@ -183,10 +173,7 @@ export async function DELETE(request: NextRequest) {
   entry.controller.abort();
   activeSessions.delete(sessionId);
 
-  await prismadb.crm_Target_Enrichment.update({
-    where: { id: entry.enrichmentId },
-    data: { status: "FAILED", error: "Cancelled by user" },
-  }).catch(() => {});
+  await (await supabaseAdmin.from("crm_Target_Enrichment").update({ status: "FAILED", error: "Cancelled by user" }).eq("id", entry.enrichmentId).select("*").single()).data.catch(() => {});
 
   return NextResponse.json({ success: true });
 }

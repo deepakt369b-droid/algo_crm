@@ -1,10 +1,11 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import resendHelper from "@/lib/resend";
 import NewTaskFromCRMEmail from "@/emails/NewTaskFromCRM";
 import NewTaskFromCRMToWatchersEmail from "@/emails/NewTaskFromCRMToWatchers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const createTask = async (data: {
   title: string;
@@ -31,27 +32,23 @@ export const createTask = async (data: {
   }
 
   try {
-    const task = await prismadb.crm_Accounts_Tasks.create({
-      data: {
-        v: 0,
-        priority,
-        title,
-        content,
-        account,
-        dueDateAt,
-        createdBy: user,
-        updatedBy: user,
-        user,
-        taskStatus: "ACTIVE",
-      },
-    });
+    const task = (await supabaseAdmin.from("crm_Accounts_Tasks").insert({
+            v: 0,
+            priority,
+            title,
+            content,
+            account,
+            dueDateAt,
+            createdBy: user,
+            updatedBy: user,
+            user,
+            taskStatus: "ACTIVE",
+          }).select("*").single()).data;
 
     // Notification to user who is not a task creator
     if (user !== session.user.id) {
       try {
-        const notifyRecipient = await prismadb.users.findUnique({
-          where: { id: user },
-        });
+        const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", user).single()).data;
 
         await resend.emails.send({
           from:
@@ -79,13 +76,7 @@ export const createTask = async (data: {
 
     // Notification to account watchers
     try {
-      const accountWatchers = await prismadb.accountWatchers.findMany({
-        where: {
-          account_id: account,
-          user_id: { not: session.user.id },
-        },
-        include: { user: true },
-      });
+      const accountWatchers = (await supabaseAdmin.from("accountWatchers").select("*").eq("account_id", account)).data;
 
       for (const watcher of accountWatchers) {
         await resend.emails.send({

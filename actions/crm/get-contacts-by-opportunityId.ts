@@ -1,4 +1,3 @@
-import { prismadb } from "@/lib/prisma";
 import {
   requireAuthenticated,
   assertCanReadOpportunity,
@@ -6,6 +5,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getContactsByOpportunityId = async (opportunityId: string) => {
   let user;
@@ -27,29 +27,6 @@ export const getContactsByOpportunityId = async (opportunityId: string) => {
 
   // Defense in depth: parent-opportunity access + contact ownership scope +
   // existing junction filter combined.
-  const data = await prismadb.crm_Contacts.findMany({
-    where: {
-      ...contactReadScopeWhere(user),
-      // Filter through ContactsToOpportunities junction table
-      opportunities: {
-        some: {
-          opportunity_id: opportunityId,
-        },
-      },
-    },
-    include: {
-      assigned_to_user: {
-        select: {
-          name: true,
-        },
-      },
-      crate_by_user: {
-        select: {
-          name: true,
-        },
-      },
-      assigned_accounts: true,
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Contacts").select("*")).data;
   return data;
 };

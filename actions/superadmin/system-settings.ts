@@ -1,10 +1,9 @@
 "use server";
 
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { encrypt, decrypt } from "@/lib/email-crypto";
-import { ApiKeyProvider } from "@prisma/client";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function getSystemSettings() {
   const session = await getSession();
@@ -12,18 +11,12 @@ export async function getSystemSettings() {
     throw new Error("Access denied. Superadmin privileges required.");
   }
 
-  const settings = await prismadb.crm_SystemSettings.findMany();
+  const settings = (await supabaseAdmin.from("crm_SystemSettings").select("*")).data;
   const settingsMap = new Map(settings.map(s => [s.key, s.value]));
 
-  const openaiKeyRow = await prismadb.apiKeys.findFirst({
-    where: { scope: "SYSTEM", provider: "OPENAI" },
-    select: { encryptedKey: true },
-  });
+  const openaiKeyRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", "OPENAI").single()).data;
 
-  const anthropicKeyRow = await prismadb.apiKeys.findFirst({
-    where: { scope: "SYSTEM", provider: "ANTHROPIC" },
-    select: { encryptedKey: true },
-  });
+  const anthropicKeyRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", "ANTHROPIC").single()).data;
   
   let maskedOpenaiApiKey = "";
   if (process.env.OPENAI_API_KEY) {
@@ -98,18 +91,14 @@ export async function saveSystemSettings(data: Record<string, string>) {
     if (data.openaiApiKey && !data.openaiApiKey.includes("••••")) {
       const encryptedKey = encrypt(data.openaiApiKey);
       operations.push(
-        prismadb.apiKeys.deleteMany({
-          where: { scope: "SYSTEM", provider: "OPENAI" },
-        })
+        (await supabaseAdmin.from("apiKeys").delete().eq("scope", "SYSTEM").eq("provider", "OPENAI")).data
       );
       operations.push(
-        prismadb.apiKeys.create({
-          data: {
-            scope: "SYSTEM",
-            provider: "OPENAI",
-            encryptedKey,
-          },
-        })
+        (await supabaseAdmin.from("apiKeys").insert({
+                      scope: "SYSTEM",
+                      provider: "OPENAI",
+                      encryptedKey,
+                    }).select("*").single()).data
       );
     }
 
@@ -117,18 +106,14 @@ export async function saveSystemSettings(data: Record<string, string>) {
     if (data.anthropicApiKey && !data.anthropicApiKey.includes("••••")) {
       const encryptedKey = encrypt(data.anthropicApiKey);
       operations.push(
-        prismadb.apiKeys.deleteMany({
-          where: { scope: "SYSTEM", provider: "ANTHROPIC" },
-        })
+        (await supabaseAdmin.from("apiKeys").delete().eq("scope", "SYSTEM").eq("provider", "ANTHROPIC")).data
       );
       operations.push(
-        prismadb.apiKeys.create({
-          data: {
-            scope: "SYSTEM",
-            provider: "ANTHROPIC",
-            encryptedKey,
-          },
-        })
+        (await supabaseAdmin.from("apiKeys").insert({
+                      scope: "SYSTEM",
+                      provider: "ANTHROPIC",
+                      encryptedKey,
+                    }).select("*").single()).data
       );
     }
     
@@ -148,15 +133,14 @@ export async function saveSystemSettings(data: Record<string, string>) {
 
     Object.entries(filteredData).forEach(([key, value]) => {
       operations.push(
-        prismadb.crm_SystemSettings.upsert({
-          where: { key },
-          update: { value: String(value) },
-          create: { key, value: String(value) },
-        })
+        supabaseAdmin.from("crm_SystemSettings").upsert({
+          key,
+          value: String(value)
+        }, { onConflict: "key" })
       );
     });
 
-    await prismadb.$transaction(operations);
+    await Promise.all(operations);
     revalidatePath("/superadmin/settings");
     return { success: true };
   } catch (error: any) {
@@ -164,4 +148,3 @@ export async function saveSystemSettings(data: Record<string, string>) {
     return { error: error.message || "Failed to save system settings." };
   }
 }
-

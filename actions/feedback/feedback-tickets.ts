@@ -1,10 +1,11 @@
 "use server";
 
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import resendHelper from "@/lib/resend";
-import { FeedbackPriority, FeedbackStatus } from "@prisma/client";
+import { FeedbackPriority, FeedbackStatus } from "@/lib/prisma-types";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export type CreateTicketInput = {
   subject?: string;
@@ -30,7 +31,7 @@ export async function createFeedbackTicket(data: CreateTicketInput) {
 
   try {
     // 1. Create ticket in the database
-    const ticket = await prismadb.feedbackTicket.create({
+    const ticket = await supabaseAdmin.from("feedbackTicket").insert({
       data: {
         userId: session.user.id,
         subject: subject || "No Subject",
@@ -99,7 +100,7 @@ export async function getSuperadminFeedbackTickets() {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // Hard delete tickets older than 30 days to keep the log only for one month
-    await prismadb.feedbackTicket.deleteMany({
+    await supabaseAdmin.from("feedbackTicket").deleteMany({
       where: {
         createdAt: {
           lt: thirtyDaysAgo,
@@ -107,28 +108,7 @@ export async function getSuperadminFeedbackTickets() {
       },
     });
 
-    return await prismadb.feedbackTicket.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          },
-        },
-        responder: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+    return (await supabaseAdmin.from("feedbackTicket").select("*, user(id, name, email, avatar), responder(id, name, email)").order("createdAt", { ascending: false })).data;
   } catch (error) {
     console.error("[FEEDBACK_FETCH_ALL_ERROR]", error);
     throw new Error("Failed to retrieve feedback tickets.");
@@ -156,7 +136,7 @@ export async function updateTicketStatus(
       updateData.respondedAt = new Date();
     }
 
-    const ticket = await prismadb.feedbackTicket.update({
+    const ticket = await supabaseAdmin.from("feedbackTicket").update({
       where: { id: ticketId },
       data: updateData,
     });

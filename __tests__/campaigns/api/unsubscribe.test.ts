@@ -8,6 +8,7 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 describe("unsubscribe handler", () => {
   it("sets unsubscribed_at when token is valid", async () => {
@@ -29,9 +30,7 @@ describe("unsubscribe handler", () => {
 
   it("returns 404 when token does not exist", async () => {
     (prismadb.crm_campaign_sends.findUnique as jest.Mock).mockResolvedValue(null);
-    const send = await prismadb.crm_campaign_sends.findUnique({
-      where: { unsubscribe_token: "bad-token" },
-    });
+    const send = (await supabaseAdmin.from("crm_campaign_sends").select("*").eq("unsubscribe_token", "bad-token").single()).data;
     expect(send).toBeNull();
   });
 });

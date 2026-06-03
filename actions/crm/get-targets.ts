@@ -1,10 +1,11 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   targetReadScopeWhere,
   AuthenticationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getTargets = async () => {
   let user;
@@ -15,13 +16,6 @@ export const getTargets = async () => {
     throw e;
   }
 
-  const targets = await prismadb.crm_Targets.findMany({
-    where: { ...targetReadScopeWhere(user) },
-    orderBy: { created_on: "desc" },
-    include: {
-      crate_by_user: { select: { name: true } },
-      target_lists: { include: { target_list: { select: { id: true, name: true } } } },
-    },
-  });
+  const targets = (await supabaseAdmin.from("crm_Targets").select("*, crate_by_user(name), target_lists(*, target_list(id, name))").order("created_on", { ascending: false })).data;
   return targets;
 };

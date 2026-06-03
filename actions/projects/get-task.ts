@@ -1,4 +1,4 @@
-import { prismadb } from "@/lib/prisma";
+
 import { junctionTableHelpers } from "@/lib/junction-helpers";
 import {
   requireAuthenticated,
@@ -6,6 +6,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getTask = async (taskId: string) => {
   let user;
@@ -23,44 +24,6 @@ export const getTask = async (taskId: string) => {
     throw e;
   }
 
-  const data = await prismadb.tasks.findFirst({
-    where: {
-      id: taskId,
-    },
-    include: {
-      assigned_user: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      // Include documents through DocumentsToTasks junction table
-      documents: {
-        include: {
-          document: {
-            select: {
-              id: true,
-              document_name: true,
-              document_file_url: true,
-            },
-          },
-        },
-      },
-      comments: {
-        select: {
-          id: true,
-          comment: true,
-          createdAt: true,
-          assigned_user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const data = (await supabaseAdmin.from("tasks").select("*, assigned_user(id, name), documents(*, document(id, document_name, document_file_url)), comments(id, comment, createdAt, assigned_user(id, name, avatar))").eq("id", taskId).single()).data;
   return data;
 };

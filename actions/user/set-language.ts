@@ -1,8 +1,9 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
-import { Language } from "@prisma/client";
+import { Language } from "@/lib/prisma-types";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const setLanguage = async (data: {
   userId: string;
@@ -22,10 +23,7 @@ export const setLanguage = async (data: {
   }
 
   try {
-    await prismadb.users.update({
-      data: { userLanguage: language as Language },
-      where: { id: userId },
-    });
+    (await supabaseAdmin.from("users").update({ userLanguage: language as Language }).eq("id", userId).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/profile", "page");
     return { language };
   } catch (error) {

@@ -1,55 +1,6 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getCrMTask = async (taskId: string) => {
-  const data = await prismadb.crm_Accounts_Tasks.findFirst({
-    where: {
-      id: taskId,
-    },
-    include: {
-      assigned_user: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      // Include documents through DocumentsToCrmAccountsTasks junction table
-      documents: {
-        include: {
-          document: {
-            select: {
-              id: true,
-              document_name: true,
-              document_file_url: true,
-              document_file_mimeType: true,
-              assigned_to_user: {
-                select: {
-                  name: true,
-                },
-              },
-              created_by: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      },
-      comments: {
-        select: {
-          id: true,
-          comment: true,
-          createdAt: true,
-          assigned_user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Accounts_Tasks").select("*, assigned_user(id, name), documents(*, document(id, document_name, document_file_url, document_file_mimeType, assigned_to_user(name), created_by(name))), comments(id, comment, createdAt, assigned_user(id, name, avatar))").eq("id", taskId).single()).data;
   return data;
 };

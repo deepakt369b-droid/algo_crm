@@ -1,7 +1,8 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { junctionTableHelpers } from "@/lib/junction-helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const unwatchAccount = async (accountId: string) => {
   const session = await getSession();
@@ -10,15 +11,12 @@ export const unwatchAccount = async (accountId: string) => {
   if (!accountId) return { error: "accountId is required" };
 
   try {
-    await prismadb.crm_Accounts.update({
-      where: { id: accountId },
-      data: {
-        watchers: junctionTableHelpers.removeAccountWatcher(
-          accountId,
-          session.user.id
-        ),
-      },
-    });
+    (await supabaseAdmin.from("crm_Accounts").update({
+              watchers: junctionTableHelpers.removeAccountWatcher(
+                accountId,
+                session.user.id
+              ),
+            }).eq("id", accountId).select("*").single()).data;
     return { success: true };
   } catch (error) {
     console.log("[UNWATCH_ACCOUNT]", error);

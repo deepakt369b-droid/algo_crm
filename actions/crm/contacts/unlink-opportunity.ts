@@ -1,7 +1,8 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const unlinkOpportunity = async (data: {
   contactId: string;
@@ -16,14 +17,7 @@ export const unlinkOpportunity = async (data: {
   if (!opportunityId) return { error: "opportunityId is required" };
 
   try {
-    await prismadb.contactsToOpportunities.delete({
-      where: {
-        contact_id_opportunity_id: {
-          contact_id: contactId,
-          opportunity_id: opportunityId,
-        },
-      },
-    });
+    (await supabaseAdmin.from("contactsToOpportunities").delete().select("*").single()).data;
     revalidatePath("/[locale]/(routes)/crm/contacts", "page");
     return { success: true };
   } catch (error) {

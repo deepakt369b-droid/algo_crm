@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import {
   paginationSchema,
   paginationArgs,
@@ -7,6 +7,7 @@ import {
   itemResponse,
   notFound,
 } from "../helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const lineItemSchema = z.object({
   productId: z.string().uuid().optional(),
@@ -41,13 +42,8 @@ export const crmContractTools = [
         ...(args.account && { account: args.account }),
       };
       const [data, total] = await Promise.all([
-        prismadb.crm_Contracts.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { createdAt: "desc" },
-          include: { lineItems: true, assigned_account: { select: { id: true, name: true } } },
-        }),
-        prismadb.crm_Contracts.count({ where }),
+        (await supabaseAdmin.from("crm_Contracts").select("*, lineItems, assigned_account(id, name)").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Contracts").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -57,13 +53,7 @@ export const crmContractTools = [
     description: "Get a single CRM contract by ID with line items",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const contract = await prismadb.crm_Contracts.findFirst({
-        where: { id: args.id, deletedAt: null },
-        include: {
-          lineItems: { orderBy: { sort_order: "asc" } },
-          assigned_account: { select: { id: true, name: true } },
-        },
-      });
+      const contract = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!contract) notFound("Contract");
       return itemResponse(contract);
     },
@@ -85,7 +75,7 @@ export const crmContractTools = [
     }),
     async handler(args: Record<string, any>, userId: string) {
       const { lineItems, startDate, endDate, ...contractData } = args;
-      const contract = await prismadb.crm_Contracts.create({
+      const contract = await supabaseAdmin.from("crm_Contracts").insert({
         data: {
           v: 0,
           ...contractData,
@@ -125,20 +115,15 @@ export const crmContractTools = [
       currency: z.string().length(3).optional(),
     }),
     async handler(args: Record<string, any>, userId: string) {
-      const existing = await prismadb.crm_Contracts.findFirst({
-        where: { id: args.id, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Contract");
       const { id, startDate, endDate, ...rest } = args;
-      const contract = await prismadb.crm_Contracts.update({
-        where: { id },
-        data: {
-          ...rest,
-          ...(startDate !== undefined && { startDate: new Date(startDate) }),
-          ...(endDate !== undefined && { endDate: new Date(endDate) }),
-          updatedBy: userId,
-        },
-      });
+      const contract = (await supabaseAdmin.from("crm_Contracts").update({
+                ...rest,
+                ...(startDate !== undefined && { startDate: new Date(startDate) }),
+                ...(endDate !== undefined && { endDate: new Date(endDate) }),
+                updatedBy: userId,
+              }).eq("id", id).select("*").single()).data;
       return itemResponse(contract);
     },
   },
@@ -147,14 +132,9 @@ export const crmContractTools = [
     description: "Soft-delete a CRM contract (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = await prismadb.crm_Contracts.findFirst({
-        where: { id: args.id, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Contract");
-      const contract = await prismadb.crm_Contracts.update({
-        where: { id: args.id },
-        data: { deletedAt: new Date(), deletedBy: userId },
-      });
+      const contract = (await supabaseAdmin.from("crm_Contracts").update({ deletedAt: new Date(), deletedBy: userId }).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: contract.id, status: "DELETED" });
     },
   },

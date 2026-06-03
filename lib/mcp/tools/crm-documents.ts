@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { minioClient, MINIO_BUCKET, MINIO_PUBLIC_URL } from "@/lib/minio";
@@ -13,6 +13,7 @@ import {
   validationError,
   softDeleteData,
 } from "../helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 // Map entity types to their Prisma junction table accessor names (camelCase, lowercase first)
 const ENTITY_LINK_MAP: Record<string, string> = {
@@ -71,12 +72,8 @@ export const crmDocumentTools = [
         };
       }
       const [data, total] = await Promise.all([
-        prismadb.documents.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { createdAt: "desc" },
-        }),
-        prismadb.documents.count({ where }),
+        (await supabaseAdmin.from("documents").select("*").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("documents").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -86,16 +83,7 @@ export const crmDocumentTools = [
     description: "Get a single document by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const doc = await prismadb.documents.findFirst({
-        where: { id: args.id, created_by_user: userId, deletedAt: null },
-        include: {
-          accounts: true,
-          contacts: true,
-          leads: true,
-          opportunities: true,
-          tasks: true,
-        },
-      });
+      const doc = (await supabaseAdmin.from("documents").select("*, accounts, contacts, leads, opportunities, tasks").eq("id", args.id).eq("created_by_user", userId).eq("deletedAt", null).single()).data;
       if (!doc) notFound("Document");
       return itemResponse(doc);
     },
@@ -124,19 +112,17 @@ export const crmDocumentTools = [
       const key = `documents/${randomUUID()}.${ext}`;
       const fileUrl = `${MINIO_PUBLIC_URL}/${MINIO_BUCKET}/${key}`;
 
-      const doc = await prismadb.documents.create({
-        data: {
-          document_name: args.document_name,
-          document_file_mimeType: args.contentType,
-          document_file_url: fileUrl,
-          key,
-          description: args.description,
-          visibility: args.visibility,
-          created_by_user: userId,
-          createdBy: userId,
-          processing_status: "PENDING",
-        },
-      });
+      const doc = (await supabaseAdmin.from("documents").insert({
+                document_name: args.document_name,
+                document_file_mimeType: args.contentType,
+                document_file_url: fileUrl,
+                key,
+                description: args.description,
+                visibility: args.visibility,
+                created_by_user: userId,
+                createdBy: userId,
+                processing_status: "PENDING",
+              }).select("*").single()).data;
 
       const command = new PutObjectCommand({
         Bucket: MINIO_BUCKET,
@@ -153,9 +139,7 @@ export const crmDocumentTools = [
     description: "Get a presigned upload URL for an existing document",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const doc = await prismadb.documents.findFirst({
-        where: { id: args.id, created_by_user: userId },
-      });
+      const doc = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).single()).data;
       if (!doc) notFound("Document");
       if (!doc.key) validationError("Document has no storage key");
       const command = new PutObjectCommand({
@@ -172,9 +156,7 @@ export const crmDocumentTools = [
     description: "Get a presigned download URL for a document",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const doc = await prismadb.documents.findFirst({
-        where: { id: args.id, created_by_user: userId },
-      });
+      const doc = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).single()).data;
       if (!doc) notFound("Document");
       if (!doc.key) validationError("Document has no storage key");
       const command = new GetObjectCommand({
@@ -198,9 +180,7 @@ export const crmDocumentTools = [
       args: { document_id: string; entityType: string; entityId: string },
       userId: string
     ) {
-      const doc = await prismadb.documents.findFirst({
-        where: { id: args.document_id, created_by_user: userId },
-      });
+      const doc = (await supabaseAdmin.from("documents").select("*").eq("id", args.document_id).eq("created_by_user", userId).single()).data;
       if (!doc) notFound("Document");
 
       const table = ENTITY_LINK_MAP[args.entityType];
@@ -230,9 +210,7 @@ export const crmDocumentTools = [
       args: { document_id: string; entityType: string; entityId: string },
       userId: string
     ) {
-      const doc = await prismadb.documents.findFirst({
-        where: { id: args.document_id, created_by_user: userId },
-      });
+      const doc = (await supabaseAdmin.from("documents").select("*").eq("id", args.document_id).eq("created_by_user", userId).single()).data;
       if (!doc) notFound("Document");
 
       const table = ENTITY_LINK_MAP[args.entityType];
@@ -261,11 +239,9 @@ export const crmDocumentTools = [
     description: "Soft-delete a document (sets status to DELETED)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = await prismadb.documents.findFirst({
-        where: { id: args.id, created_by_user: userId, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Document");
-      const doc = await prismadb.documents.update({
+      const doc = await supabaseAdmin.from("documents").update({
         where: { id: args.id },
         data: softDeleteData(userId),
       });

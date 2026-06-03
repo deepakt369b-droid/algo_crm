@@ -1,6 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import NewTaskFromProject from "@/emails/NewTaskFromProject";
 import resendHelper from "@/lib/resend";
@@ -10,6 +10,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const createTask = async (data: {
   title: string;
@@ -45,37 +46,27 @@ export const createTask = async (data: {
   }
 
   try {
-    const sectionId = await prismadb.sections.findFirst({
-      where: { board },
-      orderBy: { position: "asc" },
-    });
+    const sectionId = (await supabaseAdmin.from("sections").select("*").eq("board", board).order("position", { ascending: true }).single()).data;
 
     if (!sectionId) return { error: "No section found" };
 
-    const tasksCount = await prismadb.tasks.count({
-      where: { section: sectionId.id },
-    });
+    const tasksCount = (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("section", sectionId.id)).count;
 
-    const task = await prismadb.tasks.create({
-      data: {
-        v: 0,
-        priority,
-        title,
-        content,
-        dueDateAt,
-        section: sectionId.id,
-        createdBy: session.user.id,
-        updatedBy: session.user.id,
-        position: tasksCount > 0 ? tasksCount : 0,
-        user,
-        taskStatus: "ACTIVE",
-      },
-    });
+    const task = (await supabaseAdmin.from("tasks").insert({
+            v: 0,
+            priority,
+            title,
+            content,
+            dueDateAt,
+            section: sectionId.id,
+            createdBy: session.user.id,
+            updatedBy: session.user.id,
+            position: tasksCount > 0 ? tasksCount : 0,
+            user,
+            taskStatus: "ACTIVE",
+          }).select("*").single()).data;
 
-    await prismadb.boards.update({
-      where: { id: board },
-      data: { updatedAt: new Date() },
-    });
+    (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).eq("id", board).select("*").single()).data;
 
     // Send email notification if assigning to a different user
     if (user !== session.user.id) {
@@ -88,13 +79,9 @@ export const createTask = async (data: {
         }
 
         if (resend) {
-          const notifyRecipient = await prismadb.users.findUnique({
-            where: { id: user },
-          });
+          const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", user).single()).data;
 
-          const boardData = await prismadb.boards.findUnique({
-            where: { id: board },
-          });
+          const boardData = (await supabaseAdmin.from("boards").select("*").eq("id", board).single()).data;
 
           if (notifyRecipient?.email) {
             await resend.emails.send({

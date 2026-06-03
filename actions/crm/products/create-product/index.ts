@@ -1,11 +1,12 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { CreateProduct } from "./schema";
 import { InputType, ReturnType } from "./types";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import { requireRole, AuthenticationError, AuthorizationError } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   let actor;
@@ -29,31 +30,29 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
   try {
     if (sku) {
-      const existing = await prismadb.crm_Products.findUnique({ where: { sku } });
+      const existing = (await supabaseAdmin.from("crm_Products").select("*").eq("sku", sku).single()).data;
       if (existing) {
         return { error: `A product with SKU "${sku}" already exists` };
       }
     }
 
-    const product = await prismadb.crm_Products.create({
-      data: {
-        name,
-        description: description || undefined,
-        sku: sku || undefined,
-        type,
-        status: status || "DRAFT",
-        unit_price: parseFloat(unit_price),
-        unit_cost: unit_cost ? parseFloat(unit_cost) : undefined,
-        currency,
-        tax_rate: tax_rate ? parseFloat(tax_rate) : undefined,
-        unit: unit || undefined,
-        is_recurring: is_recurring || false,
-        billing_period: is_recurring ? billing_period : undefined,
-        categoryId: categoryId || undefined,
-        createdBy: userId,
-        updatedBy: userId,
-      },
-    });
+    const product = (await supabaseAdmin.from("crm_Products").insert({
+            name,
+            description: description || undefined,
+            sku: sku || undefined,
+            type,
+            status: status || "DRAFT",
+            unit_price: parseFloat(unit_price),
+            unit_cost: unit_cost ? parseFloat(unit_cost) : undefined,
+            currency,
+            tax_rate: tax_rate ? parseFloat(tax_rate) : undefined,
+            unit: unit || undefined,
+            is_recurring: is_recurring || false,
+            billing_period: is_recurring ? billing_period : undefined,
+            categoryId: categoryId || undefined,
+            createdBy: userId,
+            updatedBy: userId,
+          }).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "product",

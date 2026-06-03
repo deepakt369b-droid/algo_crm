@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import {
   paginationSchema,
   paginationArgs,
@@ -9,6 +9,7 @@ import {
   notFound,
   softDeleteData,
 } from "../helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const crmTargetTools = [
   {
@@ -18,12 +19,8 @@ export const crmTargetTools = [
     async handler(args: { limit: number; offset: number }, userId: string) {
       const where = { created_by: userId, deletedAt: null };
       const [data, total] = await Promise.all([
-        prismadb.crm_Targets.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { created_on: "desc" },
-        }),
-        prismadb.crm_Targets.count({ where }),
+        (await supabaseAdmin.from("crm_Targets").select("*").order("created_on", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Targets").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -33,9 +30,7 @@ export const crmTargetTools = [
     description: "Get a single CRM target by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const target = await prismadb.crm_Targets.findFirst({
-        where: { id: args.id, created_by: userId, deletedAt: null },
-      });
+      const target = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).eq("deletedAt", null).single()).data;
       if (!target) notFound("Target");
       return itemResponse(target);
     },
@@ -59,12 +54,8 @@ export const crmTargetTools = [
         ],
       };
       const [data, total] = await Promise.all([
-        prismadb.crm_Targets.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { created_on: "desc" },
-        }),
-        prismadb.crm_Targets.count({ where }),
+        (await supabaseAdmin.from("crm_Targets").select("*").order("created_on", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Targets").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -94,9 +85,7 @@ export const crmTargetTools = [
       userId: string
     ) {
       const { last_name, ...rest } = args;
-      const target = await prismadb.crm_Targets.create({
-        data: { last_name, ...rest, created_by: userId },
-      });
+      const target = (await supabaseAdmin.from("crm_Targets").insert({ last_name, ...rest, created_by: userId }).select("*").single()).data;
       return itemResponse(target);
     },
   },
@@ -126,15 +115,10 @@ export const crmTargetTools = [
       },
       userId: string
     ) {
-      const existing = await prismadb.crm_Targets.findFirst({
-        where: { id: args.id, created_by: userId, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Target");
       const { id, ...updateData } = args;
-      const target = await prismadb.crm_Targets.update({
-        where: { id },
-        data: { ...updateData, updatedBy: userId },
-      });
+      const target = (await supabaseAdmin.from("crm_Targets").update({ ...updateData, updatedBy: userId }).eq("id", id).select("*").single()).data;
       return itemResponse(target);
     },
   },
@@ -143,11 +127,9 @@ export const crmTargetTools = [
     description: "Soft-delete a CRM target by ID (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = await prismadb.crm_Targets.findFirst({
-        where: { id: args.id, created_by: userId, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Target");
-      const target = await prismadb.crm_Targets.update({
+      const target = await supabaseAdmin.from("crm_Targets").update({
         where: { id: args.id },
         data: softDeleteData(userId),
       });

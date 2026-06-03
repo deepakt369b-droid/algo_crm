@@ -1,9 +1,10 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import { sumLineTotals } from "@/lib/line-items";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const removeOpportunityLineItem = async (id: string) => {
   const session = await getSession();
@@ -12,22 +13,17 @@ export const removeOpportunityLineItem = async (id: string) => {
   }
 
   try {
-    const lineItem = await prismadb.crm_OpportunityLineItems.findUnique({ where: { id } });
+    const lineItem = (await supabaseAdmin.from("crm_OpportunityLineItems").select("*").eq("id", id).single()).data;
     if (!lineItem) {
       return { error: "Line item not found" };
     }
 
-    await prismadb.crm_OpportunityLineItems.delete({ where: { id } });
+    (await supabaseAdmin.from("crm_OpportunityLineItems").delete().eq("id", id).select("*").single()).data;
 
-    const remaining = await prismadb.crm_OpportunityLineItems.findMany({
-      where: { opportunityId: lineItem.opportunityId },
-    });
+    const remaining = (await supabaseAdmin.from("crm_OpportunityLineItems").select("*").eq("opportunityId", lineItem.opportunityId)).data;
     if (remaining.length > 0) {
       const newTotal = sumLineTotals(remaining);
-      await prismadb.crm_Opportunities.update({
-        where: { id: lineItem.opportunityId },
-        data: { expected_revenue: newTotal },
-      });
+      (await supabaseAdmin.from("crm_Opportunities").update({ expected_revenue: newTotal }).eq("id", lineItem.opportunityId).select("*").single()).data;
     }
 
     await writeAuditLog({

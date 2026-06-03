@@ -1,8 +1,9 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { writeAuditLog } from "@/lib/audit-log";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const restoreOpportunity = async (opportunityId: string) => {
   const session = await getSession();
@@ -11,10 +12,7 @@ export const restoreOpportunity = async (opportunityId: string) => {
   if (!opportunityId) return { error: "opportunityId is required" };
 
   try {
-    await prismadb.crm_Opportunities.update({
-      where: { id: opportunityId },
-      data: { deletedAt: null, deletedBy: null },
-    });
+    (await supabaseAdmin.from("crm_Opportunities").update({ deletedAt: null, deletedBy: null }).eq("id", opportunityId).select("*").single()).data;
     await writeAuditLog({
       entityType: "opportunity",
       entityId: opportunityId,

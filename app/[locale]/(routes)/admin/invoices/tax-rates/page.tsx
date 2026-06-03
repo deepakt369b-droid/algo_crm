@@ -1,11 +1,10 @@
-import { prismadb } from "@/lib/prisma";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TaxRatesTable } from "./_components/TaxRatesTable";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export default async function TaxRatesPage() {
-  const rates = await prismadb.invoice_TaxRates.findMany({
-    orderBy: { rate: "desc" },
-  });
+  const rates = (await supabaseAdmin.from("invoice_TaxRates").select("*").order("rate", { ascending: false })).data;
 
   return (
     <div className="space-y-6">

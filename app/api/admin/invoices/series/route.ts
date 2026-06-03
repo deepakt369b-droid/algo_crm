@@ -4,7 +4,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 async function ensureAdmin(): Promise<NextResponse | null> {
   try {
@@ -23,9 +23,7 @@ export async function GET() {
   const denied = await ensureAdmin();
   if (denied) return denied;
 
-  const series = await prismadb.invoice_Series.findMany({
-    orderBy: { name: "asc" },
-  });
+  const series = (await supabaseAdmin.from("invoice_Series").select("*").order("name", { ascending: true })).data;
 
   return NextResponse.json({ data: series });
 }
@@ -44,15 +42,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const series = await prismadb.invoice_Series.create({
-    data: {
-      name,
-      prefixTemplate,
-      resetPolicy: resetPolicy ?? "YEARLY",
-      isDefault: isDefault ?? false,
-      active: active ?? true,
-    },
-  });
+  const series = (await supabaseAdmin.from("invoice_Series").insert({
+        name,
+        prefixTemplate,
+        resetPolicy: resetPolicy ?? "YEARLY",
+        isDefault: isDefault ?? false,
+        active: active ?? true,
+      }).select("*").single()).data;
 
   return NextResponse.json({ data: series }, { status: 201 });
 }

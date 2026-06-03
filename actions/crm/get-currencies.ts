@@ -1,13 +1,9 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getCurrencies = async () => {
   try {
-    const currencies = await prismadb.currency.findMany({
-      where: { isEnabled: true },
-      select: { code: true, name: true, symbol: true },
-      orderBy: { code: "asc" },
-    });
+    const currencies = (await supabaseAdmin.from("currency").select("code, name, symbol").eq("isEnabled", true).order("code", { ascending: true })).data;
     return { data: currencies };
   } catch (error) {
     return { error: "Failed to fetch currencies" };

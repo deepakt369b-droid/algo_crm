@@ -1,8 +1,9 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import { requireRole, AuthenticationError, AuthorizationError } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const deleteProduct = async (id: string) => {
   let actor;
@@ -15,13 +16,10 @@ export const deleteProduct = async (id: string) => {
   }
 
   try {
-    await prismadb.crm_Products.update({
-      where: { id },
-      data: {
-        deletedAt: new Date(),
-        deletedBy: actor.id,
-      },
-    });
+    (await supabaseAdmin.from("crm_Products").update({
+              deletedAt: new Date(),
+              deletedBy: actor.id,
+            }).eq("id", id).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "product",

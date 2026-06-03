@@ -1,17 +1,11 @@
-import { prismadb } from "@/lib/prisma";
+
 import { CreatePurchaseOrderForm } from "./_components/CreatePurchaseOrderForm";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export default async function NewPurchaseOrderPage() {
   const [vendors, currencies] = await Promise.all([
-    prismadb.crm_Accounts.findMany({
-      where: { deletedAt: null },
-      select: { id: true, name: true, email: true, website: true },
-      orderBy: { name: "asc" },
-    }),
-    prismadb.currency.findMany({
-      where: { isEnabled: true },
-      select: { code: true, name: true, symbol: true },
-    }),
+    (await supabaseAdmin.from("crm_Accounts").select("id, name, email, website").eq("deletedAt", null).order("name", { ascending: true })).data,
+    (await supabaseAdmin.from("currency").select("code, name, symbol").eq("isEnabled", true)).data,
   ]);
 
   return (

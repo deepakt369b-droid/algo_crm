@@ -1,9 +1,10 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { prismadb } from "@/lib/prisma";
+
 import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function setupPassword(password: string) {
   try {
@@ -28,33 +29,21 @@ export async function setupPassword(password: string) {
     // Let's just update `Users.password` if it exists, and `accounts` table if `emailAndPassword` creates an account record.
     
     // Better-auth uses `accounts` table with `providerId="credential"` and `password` field.
-    const user = await prismadb.users.findUnique({
-      where: { id: session.user.id },
-    });
+    const user = (await supabaseAdmin.from("users").select("*").eq("id", session.user.id).single()).data;
     
     if (!user) return { error: "User not found" };
 
-    const account = await prismadb.account.findFirst({
-      where: {
-        userId: user.id,
-        providerId: "credential",
-      }
-    });
+    const account = (await supabaseAdmin.from("account").select("*").eq("userId", user.id).eq("providerId", "credential").single()).data;
 
     if (account) {
-      await prismadb.account.update({
-        where: { id: account.id },
-        data: { password: hashedPassword },
-      });
+      (await supabaseAdmin.from("account").update({ password: hashedPassword }).eq("id", account.id).select("*").single()).data;
     } else {
-      await prismadb.account.create({
-        data: {
-          userId: user.id,
-          accountId: user.email,
-          providerId: "credential",
-          password: hashedPassword,
-        }
-      });
+      (await supabaseAdmin.from("account").insert({
+                  userId: user.id,
+                  accountId: user.email,
+                  providerId: "credential",
+                  password: hashedPassword,
+                }).select("*").single()).data;
     }
 
     return { success: true };

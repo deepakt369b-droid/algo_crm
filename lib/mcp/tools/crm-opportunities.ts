@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import {
   paginationSchema,
   paginationArgs,
@@ -9,6 +9,7 @@ import {
   notFound,
   softDeleteData,
 } from "../helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const crmOpportunityTools = [
   {
@@ -18,12 +19,8 @@ export const crmOpportunityTools = [
     async handler(args: { limit: number; offset: number }, userId: string) {
       const where = { assigned_to: userId, deletedAt: null };
       const [data, total] = await Promise.all([
-        prismadb.crm_Opportunities.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { createdAt: "desc" },
-        }),
-        prismadb.crm_Opportunities.count({ where }),
+        (await supabaseAdmin.from("crm_Opportunities").select("*").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -33,9 +30,7 @@ export const crmOpportunityTools = [
     description: "Get a single CRM opportunity by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const opp = await prismadb.crm_Opportunities.findFirst({
-        where: { id: args.id, assigned_to: userId, deletedAt: null },
-      });
+      const opp = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
       if (!opp) notFound("Opportunity");
       return itemResponse(opp);
     },
@@ -54,12 +49,8 @@ export const crmOpportunityTools = [
         OR: [ilike("name", args.query), ilike("description", args.query)],
       };
       const [data, total] = await Promise.all([
-        prismadb.crm_Opportunities.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { createdAt: "desc" },
-        }),
-        prismadb.crm_Opportunities.count({ where }),
+        (await supabaseAdmin.from("crm_Opportunities").select("*").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -89,19 +80,17 @@ export const crmOpportunityTools = [
       userId: string
     ) {
       const { name, budget, expected_revenue, close_date, ...rest } = args;
-      const opp = await prismadb.crm_Opportunities.create({
-        data: {
-          v: 0,
-          name,
-          ...rest,
-          ...(budget !== undefined && { budget }),
-          ...(expected_revenue !== undefined && { expected_revenue }),
-          ...(close_date !== undefined && { close_date: new Date(close_date) }),
-          assigned_to: userId,
-          createdBy: userId,
-          updatedBy: userId,
-        },
-      });
+      const opp = (await supabaseAdmin.from("crm_Opportunities").insert({
+                v: 0,
+                name,
+                ...rest,
+                ...(budget !== undefined && { budget }),
+                ...(expected_revenue !== undefined && { expected_revenue }),
+                ...(close_date !== undefined && { close_date: new Date(close_date) }),
+                assigned_to: userId,
+                createdBy: userId,
+                updatedBy: userId,
+              }).select("*").single()).data;
       return itemResponse(opp);
     },
   },
@@ -131,22 +120,17 @@ export const crmOpportunityTools = [
       },
       userId: string
     ) {
-      const existing = await prismadb.crm_Opportunities.findFirst({
-        where: { id: args.id, assigned_to: userId, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Opportunity");
       const { id, budget, expected_revenue, close_date, currency, ...rest } = args;
-      const opp = await prismadb.crm_Opportunities.update({
-        where: { id },
-        data: {
-          ...rest,
-          ...(currency !== undefined && { currency }),
-          ...(budget !== undefined && { budget }),
-          ...(expected_revenue !== undefined && { expected_revenue }),
-          ...(close_date !== undefined && { close_date: new Date(close_date) }),
-          updatedBy: userId,
-        },
-      });
+      const opp = (await supabaseAdmin.from("crm_Opportunities").update({
+                ...rest,
+                ...(currency !== undefined && { currency }),
+                ...(budget !== undefined && { budget }),
+                ...(expected_revenue !== undefined && { expected_revenue }),
+                ...(close_date !== undefined && { close_date: new Date(close_date) }),
+                updatedBy: userId,
+              }).eq("id", id).select("*").single()).data;
       return itemResponse(opp);
     },
   },
@@ -155,11 +139,9 @@ export const crmOpportunityTools = [
     description: "Soft-delete a CRM opportunity by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = await prismadb.crm_Opportunities.findFirst({
-        where: { id: args.id, assigned_to: userId, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Opportunity");
-      const opp = await prismadb.crm_Opportunities.update({
+      const opp = await supabaseAdmin.from("crm_Opportunities").update({
         where: { id: args.id },
         data: softDeleteData(userId),
       });

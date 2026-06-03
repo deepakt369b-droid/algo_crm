@@ -1,7 +1,8 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const assignDocumentToCrmTask = async (data: {
   documentId: string;
@@ -15,18 +16,14 @@ export const assignDocumentToCrmTask = async (data: {
   if (!taskId) return { error: "Missing task ID" };
 
   try {
-    const task = await prismadb.crm_Accounts_Tasks.findUnique({
-      where: { id: taskId },
-    });
+    const task = (await supabaseAdmin.from("crm_Accounts_Tasks").select("*").eq("id", taskId).single()).data;
 
     if (!task) return { error: "CRM task not found" };
 
-    await prismadb.documentsToCrmAccountsTasks.create({
-      data: {
-        document_id: documentId,
-        crm_accounts_task_id: taskId,
-      },
-    });
+    (await supabaseAdmin.from("documentsToCrmAccountsTasks").insert({
+              document_id: documentId,
+              crm_accounts_task_id: taskId,
+            }).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/crm", "page");
     return { success: true };
@@ -48,20 +45,11 @@ export const disconnectDocumentFromCrmTask = async (data: {
   if (!taskId) return { error: "Missing task ID" };
 
   try {
-    const task = await prismadb.crm_Accounts_Tasks.findUnique({
-      where: { id: taskId },
-    });
+    const task = (await supabaseAdmin.from("crm_Accounts_Tasks").select("*").eq("id", taskId).single()).data;
 
     if (!task) return { error: "CRM task not found" };
 
-    await prismadb.documentsToCrmAccountsTasks.delete({
-      where: {
-        document_id_crm_accounts_task_id: {
-          document_id: documentId,
-          crm_accounts_task_id: taskId,
-        },
-      },
-    });
+    (await supabaseAdmin.from("documentsToCrmAccountsTasks").delete().select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/crm", "page");
     return { success: true };

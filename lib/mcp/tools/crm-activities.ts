@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import {
   paginationSchema,
   paginationArgs,
@@ -8,6 +8,7 @@ import {
   notFound,
   softDeleteData,
 } from "../helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const entityLinkSchema = z.object({
   entityType: z.enum(["account", "contact", "lead", "opportunity", "contract"]),
@@ -50,13 +51,8 @@ export const crmActivityTools = [
           }),
       };
       const [data, total] = await Promise.all([
-        prismadb.crm_Activities.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { date: "desc" },
-          include: { links: true },
-        }),
-        prismadb.crm_Activities.count({ where }),
+        (await supabaseAdmin.from("crm_Activities").select("*, links").order("date", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Activities").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -66,10 +62,7 @@ export const crmActivityTools = [
     description: "Get a single CRM activity by ID with entity links",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const activity = await prismadb.crm_Activities.findFirst({
-        where: { id: args.id, createdBy: userId, deletedAt: null },
-        include: { links: true },
-      });
+      const activity = (await supabaseAdmin.from("crm_Activities").select("*, links").eq("id", args.id).eq("createdBy", userId).eq("deletedAt", null).single()).data;
       if (!activity) notFound("Activity");
       return itemResponse(activity);
     },
@@ -101,7 +94,7 @@ export const crmActivityTools = [
       userId: string
     ) {
       const { links, date, ...rest } = args;
-      const activity = await prismadb.crm_Activities.create({
+      const activity = await supabaseAdmin.from("crm_Activities").insert({
         data: {
           ...rest,
           type: rest.type as any,
@@ -149,20 +142,15 @@ export const crmActivityTools = [
       },
       userId: string
     ) {
-      const existing = await prismadb.crm_Activities.findFirst({
-        where: { id: args.id, createdBy: userId, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Activities").select("*").eq("id", args.id).eq("createdBy", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Activity");
       const { id, date, status, ...rest } = args;
-      const activity = await prismadb.crm_Activities.update({
-        where: { id },
-        data: {
-          ...rest,
-          ...(date !== undefined && { date: new Date(date) }),
-          ...(status !== undefined && { status: status as any }),
-          updatedBy: userId,
-        },
-      });
+      const activity = (await supabaseAdmin.from("crm_Activities").update({
+                ...rest,
+                ...(date !== undefined && { date: new Date(date) }),
+                ...(status !== undefined && { status: status as any }),
+                updatedBy: userId,
+              }).eq("id", id).select("*").single()).data;
       return itemResponse(activity);
     },
   },
@@ -171,11 +159,9 @@ export const crmActivityTools = [
     description: "Soft-delete a CRM activity by ID (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = await prismadb.crm_Activities.findFirst({
-        where: { id: args.id, createdBy: userId, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Activities").select("*").eq("id", args.id).eq("createdBy", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Activity");
-      const activity = await prismadb.crm_Activities.update({
+      const activity = await supabaseAdmin.from("crm_Activities").update({
         where: { id: args.id },
         data: softDeleteData(userId),
       });

@@ -1,8 +1,9 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { writeAuditLog } from "@/lib/audit-log";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const restoreAccount = async (accountId: string) => {
   const session = await getSession();
@@ -11,10 +12,7 @@ export const restoreAccount = async (accountId: string) => {
   if (!accountId) return { error: "accountId is required" };
 
   try {
-    await prismadb.crm_Accounts.update({
-      where: { id: accountId },
-      data: { deletedAt: null, deletedBy: null },
-    });
+    (await supabaseAdmin.from("crm_Accounts").update({ deletedAt: null, deletedBy: null }).eq("id", accountId).select("*").single()).data;
     await writeAuditLog({
       entityType: "account",
       entityId: accountId,

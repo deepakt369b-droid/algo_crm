@@ -1,3 +1,4 @@
+    "use server";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,13 +10,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { ExternalLink, MailCheck } from "lucide-react";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const WorkerMailCard = async () => {
   const setWorkerMail = async (formData: FormData) => {
-    "use server";
     const schema = z.object({
       id: z.string().optional(),
       mailerUrl: z.string(),
@@ -28,22 +29,17 @@ const WorkerMailCard = async () => {
     });
 
     if (!parsed.id) {
-      await prismadb.systemServices.create({
-        data: {
-          v: 0,
-          name: "worker_mailer",
-          serviceUrl: parsed.mailerUrl,
-          serviceKey: parsed.apiKey,
-        },
-      });
+      (await supabaseAdmin.from("systemServices").insert({
+                  v: 0,
+                  name: "worker_mailer",
+                  serviceUrl: parsed.mailerUrl,
+                  serviceKey: parsed.apiKey,
+                }).select("*").single()).data;
     } else {
-      await prismadb.systemServices.update({
-        where: { id: parsed.id },
-        data: {
-          serviceUrl: parsed.mailerUrl,
-          serviceKey: parsed.apiKey,
-        },
-      });
+      (await supabaseAdmin.from("systemServices").update({
+                  serviceUrl: parsed.mailerUrl,
+                  serviceKey: parsed.apiKey,
+                }).eq("id", parsed.id).select("*").single()).data;
     }
     revalidatePath("/admin/services");
   };
@@ -52,14 +48,12 @@ const WorkerMailCard = async () => {
     "use server";
     const id = formData.get("id") as string;
     if (id) {
-      await prismadb.systemServices.delete({ where: { id } });
+      (await supabaseAdmin.from("systemServices").delete().eq("id", id).select("*").single()).data;
       revalidatePath("/admin/services");
     }
   };
 
-  const workerMail = await prismadb.systemServices.findFirst({
-    where: { name: "worker_mailer" },
-  });
+  const workerMail = (await supabaseAdmin.from("systemServices").select("*").eq("name", "worker_mailer").single()).data;
 
   const envUrl = process.env.WORKER_MAILER_URL;
   const envKey = process.env.WORKER_MAILER_API_KEY;

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ApiKeyProvider } from "@prisma/client";
+import { ApiKeyProvider } from "@/lib/prisma-types";
 import type { UserProviderStatus } from "../../actions/api-keys";
 import {
   upsertUserApiKey,

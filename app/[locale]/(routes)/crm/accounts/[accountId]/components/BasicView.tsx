@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { crm_Opportunities } from "@prisma/client";
+import { crm_Opportunities } from "@/lib/prisma-types";
 import {
   CalendarDays,
   ClipboardList,
@@ -24,11 +24,12 @@ import {
 } from "lucide-react";
 import moment from "moment";
 import { Clapperboard } from "lucide-react";
-import { prismadb } from "@/lib/prisma";
+
 import Link from "next/link";
 import { EnvelopeClosedIcon, LightningBoltIcon } from "@radix-ui/react-icons";
 import { LucideLandmark } from "lucide-react";
 import { AccountDetailActions } from "./AccountDetailActions";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface OppsViewProps {
   data: any;
@@ -36,7 +37,7 @@ interface OppsViewProps {
 
 export async function BasicView({ data }: OppsViewProps) {
   //console.log(data, "data");
-  const users = await prismadb.users.findMany();
+  const users = (await supabaseAdmin.from("users").select("*")).data;
   if (!data) return <div>Opportunity not found</div>;
   return (
     <div className="pb-3 space-y-5">

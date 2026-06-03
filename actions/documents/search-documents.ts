@@ -5,11 +5,12 @@ import {
   filterAuthorizedDocumentIds,
   AuthenticationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+
 import {
   generateEmbedding,
   toVectorLiteral,
 } from "@/inngest/lib/embedding-utils";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export interface DocumentSearchResult {
   id: string;
@@ -33,28 +34,14 @@ export async function searchDocuments(
 
   // Keyword search — scope OR (visibility/ownership) goes at top level;
   // user-supplied search OR moves into AND so it cannot replace the scope OR.
-  const kwResults = await prismadb.documents.findMany({
-    where: {
-      parent_document_id: null,
-      ...documentReadScopeWhere(user),
-      AND: [
-        {
-          OR: [
-            { document_name: { contains: query, mode: "insensitive" } },
-            { summary: { contains: query, mode: "insensitive" } },
-          ],
-        },
-      ],
-    },
-    take: 5,
-    select: {
-      id: true,
-      document_name: true,
-      summary: true,
-      document_system_type: true,
-      accounts: { select: { account: { select: { name: true } } }, take: 1 },
-    },
-  });
+  const kwResults = (await supabaseAdmin.from("documents").select("id, document_name, summary, document_system_type, accounts(account(name))").eq("parent_document_id", null).eq("AND", [
+          {
+            OR: [
+              { document_name: { contains: query, mode: "insensitive" } },
+              { summary: { contains: query, mode: "insensitive" } },
+            ],
+          },
+        ]).limit(5)).data;
 
   // Semantic search via raw pgvector. Apply post-filter for authz.
   let semResults: { id: string; similarity: number }[] = [];
@@ -62,7 +49,7 @@ export async function searchDocuments(
     const embedding = await generateEmbedding(query.trim());
     const vec = toVectorLiteral(embedding);
 
-    const rawResults = await prismadb.$queryRaw<
+    const rawResults = await supabaseAdmin.rpc("query_raw", {}) /* TODO */<
       { id: string; similarity: number }[]
     >`
       SELECT d.id, 1 - (e.embedding <=> ${vec}::vector) AS similarity
@@ -90,16 +77,7 @@ export async function searchDocuments(
 
   let extraDocs: typeof kwResults = [];
   if (semOnlyIds.length > 0) {
-    extraDocs = await prismadb.documents.findMany({
-      where: { id: { in: semOnlyIds }, parent_document_id: null },
-      select: {
-        id: true,
-        document_name: true,
-        summary: true,
-        document_system_type: true,
-        accounts: { select: { account: { select: { name: true } } }, take: 1 },
-      },
-    });
+    extraDocs = (await supabaseAdmin.from("documents").select("id, document_name, summary, document_system_type").in("id", semOnlyIds).eq("parent_document_id", null)).data;
   }
 
   return [...kwResults, ...extraDocs].map((r) => ({

@@ -31,7 +31,7 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { crm_Accounts } from "@prisma/client";
+import { crm_Accounts } from "@/lib/prisma-types";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 

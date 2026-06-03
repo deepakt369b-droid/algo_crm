@@ -1,9 +1,10 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   boardReadScopeWhere,
   AuthenticationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getTasks = async () => {
   let user;
@@ -14,32 +15,13 @@ export const getTasks = async () => {
     throw e;
   }
 
-  const data = await prismadb.tasks.findMany({
-    where: {
-      assigned_section: {
-        board_relation: boardReadScopeWhere(user),
-      },
-    },
-    include: {
-      assigned_user: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const data = (await supabaseAdmin.from("tasks").select("*").order("createdAt", { ascending: false })).data;
   return data;
 };
 
 //get tasks by month for chart
 export const getTasksByMonth = async () => {
-  const tasks = await prismadb.tasks.findMany({
-    select: {
-      createdAt: true,
-    },
-  });
+  const tasks = (await supabaseAdmin.from("tasks").select("createdAt")).data;
 
   if (!tasks) {
     return {};

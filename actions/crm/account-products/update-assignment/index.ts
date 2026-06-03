@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteAccount,
@@ -11,6 +11,7 @@ import { InputType, ReturnType } from "./types";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog, diffObjects } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   let user;
@@ -24,7 +25,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const userId = user.id;
   const { id, ...updateData } = data;
 
-  const existing = await prismadb.crm_AccountProducts.findUnique({ where: { id } });
+  const existing = (await supabaseAdmin.from("crm_AccountProducts").select("*").eq("id", id).single()).data;
   if (!existing) {
     return { error: "Assignment not found" };
   }
@@ -46,7 +47,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return { error: "Renewal date must be after start date" };
     }
 
-    const assignment = await prismadb.crm_AccountProducts.update({
+    const assignment = await supabaseAdmin.from("crm_AccountProducts").update({
       where: { id },
       data: {
         ...(updateData.quantity !== undefined && { quantity: updateData.quantity }),

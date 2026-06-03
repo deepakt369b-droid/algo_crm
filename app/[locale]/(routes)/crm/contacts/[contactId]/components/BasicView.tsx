@@ -18,13 +18,14 @@ import {
   Youtube,
 } from "lucide-react";
 import moment from "moment";
-import { prismadb } from "@/lib/prisma";
+
 import Link from "next/link";
 import { EnvelopeClosedIcon } from "@radix-ui/react-icons";
 import { Badge } from "@/components/ui/badge";
 import { EnrichButton } from "./EnrichButton";
 import { ContactDetailActions } from "./ContactDetailActions";
 import { getAllCrmData } from "@/actions/crm/get-crm-data";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface OppsViewProps {
   data: any;
@@ -32,7 +33,7 @@ interface OppsViewProps {
 
 export async function BasicView({ data }: OppsViewProps) {
   //console.log(data, "data");
-  const users = await prismadb.users.findMany();
+  const users = (await supabaseAdmin.from("users").select("*")).data;
   const crmData = await getAllCrmData();
   const contactTypes = crmData.contactTypes;
   if (!data) return <div>Opportunity not found</div>;

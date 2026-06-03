@@ -1,8 +1,9 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { getSession } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function deleteWarehouse(id: string): Promise<{ error?: string }> {
   const session = await getSession();
@@ -12,12 +13,12 @@ export async function deleteWarehouse(id: string): Promise<{ error?: string }> {
 
   try {
     // Check if warehouse has stock
-    const stockCount = await prismadb.inventoryStock.count({ where: { warehouseId: id, quantity: { gt: 0 } } });
+    const stockCount = (await supabaseAdmin.from("inventoryStock").select("*", { count: 'exact', head: true }).eq("warehouseId", id).gt("quantity", 0)).count;
     if (stockCount > 0) {
       return { error: "Cannot delete warehouse with existing stock. Transfer stock first." };
     }
 
-    await prismadb.inventoryWarehouse.delete({ where: { id } });
+    (await supabaseAdmin.from("inventoryWarehouse").delete().eq("id", id).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");
     return {};
   } catch (error) {
@@ -27,25 +28,13 @@ export async function deleteWarehouse(id: string): Promise<{ error?: string }> {
 }
 
 export async function getWarehouses() {
-  const warehouses = await prismadb.inventoryWarehouse.findMany({
-    orderBy: { name: "asc" },
-  });
+  const warehouses = (await supabaseAdmin.from("inventoryWarehouse").select("*").order("name", { ascending: true })).data;
   return warehouses.map((w) => ({
     ...w,
   }));
 }
 
 export async function getWarehouseById(id: string) {
-  const warehouse = await prismadb.inventoryWarehouse.findUnique({
-    where: { id },
-    include: {
-      stock: {
-        include: {
-          product: { select: { id: true, name: true, sku: true, unit_price: true, currency: true } },
-        },
-      },
-      thresholds: true,
-    },
-  });
+  const warehouse = (await supabaseAdmin.from("inventoryWarehouse").select("*, stock(*, product(id, name, sku, unit_price, currency)), thresholds").eq("id", id).single()).data;
   return warehouse;
 }

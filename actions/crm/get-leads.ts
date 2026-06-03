@@ -1,10 +1,11 @@
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   leadReadScopeWhere,
   AuthenticationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getLeads = cache(async () => {
   let user;
@@ -15,32 +16,6 @@ export const getLeads = cache(async () => {
     throw e;
   }
 
-  const data = await prismadb.crm_Leads.findMany({
-    where: { ...leadReadScopeWhere(user) },
-    include: {
-      // Include assigned user (uses "LeadAssignedTo" relation)
-      assigned_to_user: {
-        select: {
-          name: true,
-        },
-      },
-      // Include assigned accounts
-      assigned_accounts: true,
-      // Include documents through DocumentsToLeads junction table
-      documents: {
-        include: {
-          document: {
-            select: {
-              id: true,
-              document_name: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Leads").select("*, assigned_to_user(name), assigned_accounts, documents(*, document(id, document_name))").order("createdAt", { ascending: false })).data;
   return data;
 });

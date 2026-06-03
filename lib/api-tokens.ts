@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const TOKEN_PREFIX = "nxtc__";
 const TOKEN_BYTES = 24; // 48 hex chars
@@ -14,13 +14,7 @@ export async function generateApiToken(
   name: string,
   expiresAt?: Date
 ): Promise<{ rawToken: string; tokenId: string }> {
-  const activeCount = await prismadb.apiToken.count({
-    where: {
-      userId,
-      revokedAt: null,
-      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-    },
-  });
+  const activeCount = (await supabaseAdmin.from("apiToken").select("*", { count: 'exact', head: true }).eq("userId", userId).eq("revokedAt", null).eq("OR", [{ expiresAt: null }, { expiresAt: { gt: new Date() } }])).count;
 
   if (activeCount >= MAX_TOKENS_PER_USER) {
     throw new Error("Maximum 10 active tokens allowed per user");
@@ -31,15 +25,13 @@ export async function generateApiToken(
   const tokenHash = hashToken(rawToken);
   const tokenPrefix = rawSuffix.slice(0, 8);
 
-  const created = await prismadb.apiToken.create({
-    data: {
-      name,
-      tokenHash,
-      tokenPrefix,
-      userId,
-      expiresAt: expiresAt ?? null,
-    },
-  });
+  const created = (await supabaseAdmin.from("apiToken").insert({
+        name,
+        tokenHash,
+        tokenPrefix,
+        userId,
+        expiresAt: expiresAt ?? null,
+      }).select("*").single()).data;
 
   return { rawToken, tokenId: created.id };
 }
@@ -48,9 +40,7 @@ export async function validateApiToken(rawToken: string): Promise<string> {
   if (!rawToken.startsWith("nxtc__")) throw new Error("Invalid token");
   const tokenHash = hashToken(rawToken);
 
-  const token = await prismadb.apiToken.findUnique({
-    where: { tokenHash },
-  });
+  const token = (await supabaseAdmin.from("apiToken").select("*").eq("tokenHash", tokenHash).single()).data;
 
   if (!token) throw new Error("Invalid token");
   if (token.revokedAt) throw new Error("Invalid token");
@@ -58,7 +48,7 @@ export async function validateApiToken(rawToken: string): Promise<string> {
 
   // Fire-and-forget lastUsedAt update — failures are intentionally silenced
   void Promise.resolve(
-    prismadb.apiToken.update({ where: { id: token.id }, data: { lastUsedAt: new Date() } })
+    (await supabaseAdmin.from("apiToken").update({ lastUsedAt: new Date() }).eq("id", token.id).select("*").single()).data
   ).catch(() => {});
 
   return token.userId;
@@ -68,27 +58,12 @@ export async function revokeApiToken(
   tokenId: string,
   userId: string
 ): Promise<void> {
-  const token = await prismadb.apiToken.findUnique({ where: { id: tokenId } });
+  const token = (await supabaseAdmin.from("apiToken").select("*").eq("id", tokenId).single()).data;
   if (!token || token.userId !== userId) throw new Error("Not found");
 
-  await prismadb.apiToken.update({
-    where: { id: tokenId },
-    data: { revokedAt: new Date() },
-  });
+  (await supabaseAdmin.from("apiToken").update({ revokedAt: new Date() }).eq("id", tokenId).select("*").single()).data;
 }
 
 export async function listApiTokens(userId: string) {
-  return prismadb.apiToken.findMany({
-    where: { userId },
-    select: {
-      id: true,
-      name: true,
-      tokenPrefix: true,
-      expiresAt: true,
-      revokedAt: true,
-      createdAt: true,
-      lastUsedAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  return (await supabaseAdmin.from("apiToken").select("id, name, tokenPrefix, expiresAt, revokedAt, createdAt, lastUsedAt").eq("userId", userId).order("createdAt", { ascending: false })).data;
 }

@@ -1,11 +1,12 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteCampaign,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const deleteCampaign = async (id: string) => {
   let user;
@@ -23,5 +24,5 @@ export const deleteCampaign = async (id: string) => {
     throw e;
   }
 
-  return prismadb.crm_campaigns.update({ where: { id }, data: { status: "deleted" } });
+  return (await supabaseAdmin.from("crm_campaigns").update({ status: "deleted" }).eq("id", id).select("*").single()).data;
 };

@@ -4,7 +4,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 async function ensureAdmin(): Promise<NextResponse | null> {
   try {
@@ -23,9 +23,7 @@ export async function GET() {
   const denied = await ensureAdmin();
   if (denied) return denied;
 
-  const taxRates = await prismadb.invoice_TaxRates.findMany({
-    orderBy: { name: "asc" },
-  });
+  const taxRates = (await supabaseAdmin.from("invoice_TaxRates").select("*").order("name", { ascending: true })).data;
 
   return NextResponse.json({ data: taxRates });
 }
@@ -41,14 +39,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "name and rate are required" }, { status: 400 });
   }
 
-  const taxRate = await prismadb.invoice_TaxRates.create({
-    data: {
-      name,
-      rate,
-      isDefault: isDefault ?? false,
-      active: active ?? true,
-    },
-  });
+  const taxRate = (await supabaseAdmin.from("invoice_TaxRates").insert({
+        name,
+        rate,
+        isDefault: isDefault ?? false,
+        active: active ?? true,
+      }).select("*").single()).data;
 
   return NextResponse.json({ data: taxRate }, { status: 201 });
 }

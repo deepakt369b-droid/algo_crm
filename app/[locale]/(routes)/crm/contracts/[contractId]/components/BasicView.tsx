@@ -18,9 +18,10 @@ import {
 } from "lucide-react";
 import moment from "moment";
 import Link from "next/link";
-import { prismadb } from "@/lib/prisma";
+
 import { formatCurrency as formatCurrencyUtil } from "@/lib/currency";
-import { Decimal } from "@prisma/client/runtime/client";
+import Decimal from "decimal.js";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface BasicViewProps {
   data: any;
@@ -39,7 +40,7 @@ const statusLabel: Record<string, string> = {
 };
 
 export async function BasicView({ data }: BasicViewProps) {
-  const users = await prismadb.users.findMany();
+  const users = (await supabaseAdmin.from("users").select("*")).data;
 
   if (!data) return <div>Contract not found</div>;
 

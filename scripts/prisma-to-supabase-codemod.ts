@@ -25,7 +25,7 @@ sourceFiles.forEach((sourceFile) => {
   callExpressions.forEach((callExpr: CallExpression) => {
     const expression = callExpr.getExpression();
     
-    // Check if the expression is a property access (e.g., prismadb.user.findMany)
+    // Check if the expression is a property access (e.g., supabaseAdmin.from("user").findMany)
     if (expression.getKind() === SyntaxKind.PropertyAccessExpression) {
       const propAccess = expression as PropertyAccessExpression;
       const expressionText = propAccess.getExpression().getText();

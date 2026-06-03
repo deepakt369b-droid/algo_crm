@@ -1,6 +1,6 @@
 "use server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 const ENTITY_SLUGS: Record<string, string> = {
@@ -26,7 +26,7 @@ export const createActivity = async (data: {
     const session = await getSession();
     if (!session) return { error: "Unauthorized" };
 
-    const activity = await prismadb.$transaction(async (tx) => {
+    const activity = await Promise.all(async (tx) => {
       const created = await (tx as any).crm_Activities.create({
         data: {
           type: data.type,

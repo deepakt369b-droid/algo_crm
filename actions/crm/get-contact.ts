@@ -1,10 +1,11 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadContact,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getContact = async (contactId: string) => {
   let user;
@@ -22,69 +23,6 @@ export const getContact = async (contactId: string) => {
     throw e;
   }
 
-  const data = await prismadb.crm_Contacts.findFirst({
-    where: {
-      id: contactId,
-      deletedAt: null,
-    },
-    include: {
-      // Include opportunities through ContactsToOpportunities junction table
-      opportunities: {
-        include: {
-          opportunity: {
-            select: {
-              id: true,
-              name: true,
-              sales_stage: true,
-              close_date: true,
-              budget: true,
-            },
-          },
-        },
-      },
-      // Include documents through DocumentsToContacts junction table
-      documents: {
-        include: {
-          document: {
-            select: {
-              id: true,
-              document_name: true,
-              document_type: true,
-              document_file_url: true,
-              document_file_mimeType: true,
-              createdAt: true,
-              created_by: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-          },
-        },
-      },
-      // Include FK relation name field
-      contact_type: { select: { id: true, name: true } },
-      // Include assigned account
-      assigned_accounts: true,
-      // Include assigned user (uses "assigned_contacts" relation)
-      assigned_to_user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      // Include creator user (uses "created_contacts" relation)
-      crate_by_user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Contacts").select("*, opportunities(*, opportunity(id, name, sales_stage, close_date, budget)), documents(*, document(id, document_name, document_type, document_file_url, document_file_mimeType, createdAt, created_by(id, name, email))), contact_type(id, name), assigned_accounts, assigned_to_user(id, name, email), crate_by_user(id, name, email)").eq("id", contactId).eq("deletedAt", null).single()).data;
   return data;
 };

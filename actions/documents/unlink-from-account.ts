@@ -6,8 +6,9 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function unlinkFromAccount(documentId: string, accountId: string) {
   let user;
@@ -32,11 +33,7 @@ export async function unlinkFromAccount(documentId: string, accountId: string) {
     throw e;
   }
 
-  await prismadb.documentsToAccounts.delete({
-    where: {
-      document_id_account_id: { document_id: documentId, account_id: accountId },
-    },
-  });
+  (await supabaseAdmin.from("documentsToAccounts").delete().select("*").single()).data;
 
   revalidatePath("/[locale]/(routes)/documents");
   revalidatePath(`/[locale]/(routes)/crm/accounts/${accountId}`);

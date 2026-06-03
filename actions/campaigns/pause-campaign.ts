@@ -1,11 +1,12 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteCampaign,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const pauseCampaign = async (id: string) => {
   let user;
@@ -23,10 +24,7 @@ export const pauseCampaign = async (id: string) => {
     throw e;
   }
 
-  return prismadb.crm_campaigns.update({
-    where: { id },
-    data: { status: "paused" },
-  });
+  return (await supabaseAdmin.from("crm_campaigns").update({ status: "paused" }).eq("id", id).select("*").single()).data;
   // Note: in-flight Inngest jobs check campaign.status at execution start
   // and exit early when status is "paused" — no Inngest API cancellation needed.
 };

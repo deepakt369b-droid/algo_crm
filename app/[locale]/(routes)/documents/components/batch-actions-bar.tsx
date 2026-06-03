@@ -14,7 +14,7 @@ import AlertModal from "@/components/modals/alert-modal";
 import { bulkDeleteDocuments } from "@/actions/documents/bulk-delete-documents";
 import { bulkChangeType } from "@/actions/documents/bulk-change-type";
 import { bulkLinkToAccount } from "@/actions/documents/bulk-link-to-account";
-import { DocumentSystemType } from "@prisma/client";
+import { DocumentSystemType } from "@/lib/prisma-types";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { DocumentRow } from "../data/schema";

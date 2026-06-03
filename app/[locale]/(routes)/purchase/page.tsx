@@ -3,10 +3,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, ShoppingCart, ClipboardList, CheckCircle2, Clock, XCircle } from "lucide-react";
-import { prismadb } from "@/lib/prisma";
+
 import { PurchaseOrdersList } from "./_components/PurchaseOrdersList";
 import { getPurchaseOrders } from "@/actions/purchase-orders/get-purchase-orders";
 import CrmTableSkeleton from "@/components/skeletons/crm-table-skeleton";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface Props {
   params: Promise<{ locale: string }>;
@@ -17,10 +18,10 @@ export default async function AdminPurchasePage(props: Props) {
   const { locale } = params;
 
   const [totalOrders, draftCount, pendingApprovalCount, approvedCount, orders] = await Promise.all([
-    prismadb.purchaseOrders.count({ where: { deletedAt: null } }),
-    prismadb.purchaseOrders.count({ where: { deletedAt: null, status: "DRAFT" } }),
-    prismadb.purchaseOrders.count({ where: { deletedAt: null, status: "PENDING_APPROVAL" } }),
-    prismadb.purchaseOrders.count({ where: { deletedAt: null, status: "APPROVED" } }),
+    (await supabaseAdmin.from("purchaseOrders").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("purchaseOrders").select("*", { count: 'exact', head: true }).eq("deletedAt", null).eq("status", "DRAFT")).count,
+    (await supabaseAdmin.from("purchaseOrders").select("*", { count: 'exact', head: true }).eq("deletedAt", null).eq("status", "PENDING_APPROVAL")).count,
+    (await supabaseAdmin.from("purchaseOrders").select("*", { count: 'exact', head: true }).eq("deletedAt", null).eq("status", "APPROVED")).count,
     getPurchaseOrders(),
   ]);
 

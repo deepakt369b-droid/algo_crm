@@ -24,9 +24,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Calendar, Shield, User } from "lucide-react";
-import { prismadb } from "@/lib/prisma";
+
 import { getBoards } from "@/actions/projects/get-boards";
 import { getSession } from "@/lib/auth-server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 type TaskPageProps = {
   params: Promise<{
@@ -48,10 +49,7 @@ const TaskPage = async (props: TaskPageProps) => {
     getBoards(user?.id!),
   ]);
   const creatorUser = task?.createdBy
-    ? await prismadb.users.findFirst({
-        where: { id: task.createdBy },
-        select: { name: true },
-      })
+    ? (await supabaseAdmin.from("users").select("name").eq("id", task.createdBy).single()).data
     : null;
 
   //console.log(taskDocuments, "taskDocuments");

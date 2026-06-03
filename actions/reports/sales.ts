@@ -1,10 +1,10 @@
-import { prismadb } from "@/lib/prisma";
 import type { ReportFilters, ChartDataPoint } from "./types";
 import { groupedToChartData } from "./types";
 import { getExchangeRates, convertAmount } from "@/lib/currency";
-import { Decimal } from "@prisma/client/runtime/client";
+import Decimal from "decimal.js";
 import type { ReportScope } from "@/lib/authz/scopes/report-scope";
 import { getReportScope } from "@/lib/authz/scopes/report-scope";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const DEFAULT_SCOPE: ReportScope = getReportScope({ id: "", role: "manager" });
 
@@ -20,10 +20,7 @@ export async function getRevenue(
   displayCurrency: string,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<number> {
-  const opps = await prismadb.crm_Opportunities.findMany({
-    where: { ...dateRangeWhere(filters), status: "CLOSED", ...scope.opportunity },
-    select: { budget: true, currency: true },
-  });
+  const opps = (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("status", "CLOSED")).data;
   const rates = await getExchangeRates();
   let total = new Decimal(0);
   for (const opp of opps) {
@@ -40,10 +37,7 @@ export async function getPipelineValue(
   displayCurrency: string,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<number> {
-  const opps = await prismadb.crm_Opportunities.findMany({
-    where: { ...dateRangeWhere(filters), status: "ACTIVE", ...scope.opportunity },
-    select: { budget: true, currency: true },
-  });
+  const opps = (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("status", "ACTIVE")).data;
   const rates = await getExchangeRates();
   let total = new Decimal(0);
   for (const opp of opps) {
@@ -59,10 +53,7 @@ export async function getOppsByStage(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<ChartDataPoint[]> {
-  const opps = await prismadb.crm_Opportunities.findMany({
-    where: { ...dateRangeWhere(filters), ...scope.opportunity },
-    select: { assigned_sales_stage: { select: { name: true } } },
-  });
+  const opps = (await supabaseAdmin.from("crm_Opportunities").select("*")).data;
   const grouped: Record<string, number> = {};
   for (const opp of opps) {
     const stage = opp.assigned_sales_stage?.name ?? "Unassigned";
@@ -75,10 +66,7 @@ export async function getOppsByMonth(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<ChartDataPoint[]> {
-  const opps = await prismadb.crm_Opportunities.findMany({
-    where: { ...dateRangeWhere(filters), ...scope.opportunity },
-    select: { created_on: true },
-  });
+  const opps = (await supabaseAdmin.from("crm_Opportunities").select("created_on")).data;
   const grouped: Record<string, number> = {};
   for (const opp of opps) {
     if (!opp.created_on) continue;
@@ -93,12 +81,8 @@ export async function getWinLossRate(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<{ won: number; total: number; rate: number }> {
-  const won = await prismadb.crm_Opportunities.count({
-    where: { ...dateRangeWhere(filters), status: "CLOSED", ...scope.opportunity },
-  });
-  const total = await prismadb.crm_Opportunities.count({
-    where: { ...dateRangeWhere(filters), status: { in: ["CLOSED", "INACTIVE"] }, ...scope.opportunity },
-  });
+  const won = (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true }).eq("status", "CLOSED")).count;
+  const total = (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true }).in("status", ["CLOSED", "INACTIVE"])).count;
   return { won, total, rate: total > 0 ? Math.round((won / total) * 100) : 0 };
 }
 
@@ -107,10 +91,7 @@ export async function getAvgDealSize(
   displayCurrency: string,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<number> {
-  const opps = await prismadb.crm_Opportunities.findMany({
-    where: { ...dateRangeWhere(filters), status: "CLOSED", ...scope.opportunity },
-    select: { budget: true, currency: true },
-  });
+  const opps = (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("status", "CLOSED")).data;
   if (opps.length === 0) return 0;
   const rates = await getExchangeRates();
   let total = new Decimal(0);
@@ -127,10 +108,7 @@ export async function getSalesCycleLength(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<number> {
-  const opps = await prismadb.crm_Opportunities.findMany({
-    where: { ...dateRangeWhere(filters), status: "CLOSED", close_date: { not: null }, ...scope.opportunity },
-    select: { created_on: true, close_date: true },
-  });
+  const opps = (await supabaseAdmin.from("crm_Opportunities").select("created_on, close_date").eq("status", "CLOSED")).data;
   if (opps.length === 0) return 0;
   let totalDays = 0;
   for (const opp of opps) {

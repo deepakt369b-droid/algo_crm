@@ -1,6 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import UpdatedTaskFromProject from "@/emails/UpdatedTaskFromProject";
 import resendHelper from "@/lib/resend";
@@ -10,6 +10,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const updateTask = async (data: {
   taskId: string;
@@ -40,12 +41,7 @@ export const updateTask = async (data: {
     return { error: "Missing one of the task data" };
   }
 
-  const existing = await prismadb.tasks.findUnique({
-    where: { id: taskId },
-    select: {
-      assigned_section: { select: { board_relation: { select: { id: true } } } },
-    },
-  });
+  const existing = (await supabaseAdmin.from("tasks").select("assigned_section(board_relation(id))").eq("id", taskId).single()).data;
   const parentBoardId = existing?.assigned_section?.board_relation?.id;
   if (!parentBoardId) return { error: "Not found" };
 
@@ -57,23 +53,17 @@ export const updateTask = async (data: {
   }
 
   try {
-    const task = await prismadb.tasks.update({
-      where: { id: taskId },
-      data: {
-        priority,
-        title,
-        content,
-        updatedBy: user,
-        dueDateAt,
-        user,
-      },
-    });
+    const task = (await supabaseAdmin.from("tasks").update({
+            priority,
+            title,
+            content,
+            updatedBy: user,
+            dueDateAt,
+            user,
+          }).eq("id", taskId).select("*").single()).data;
 
     if (resolvedBoardId) {
-      await prismadb.boards.update({
-        where: { id: resolvedBoardId },
-        data: { updatedAt: new Date() },
-      });
+      (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).eq("id", resolvedBoardId).select("*").single()).data;
     }
 
     // Send email notification if assigning to a different user
@@ -87,13 +77,9 @@ export const updateTask = async (data: {
         }
 
         if (resend) {
-          const notifyRecipient = await prismadb.users.findUnique({
-            where: { id: user },
-          });
+          const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", user).single()).data;
 
-          const boardData = await prismadb.boards.findUnique({
-            where: { id: resolvedBoardId },
-          });
+          const boardData = (await supabaseAdmin.from("boards").select("*").eq("id", resolvedBoardId).single()).data;
 
           if (notifyRecipient?.email) {
             await resend.emails.send({

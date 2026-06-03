@@ -1,7 +1,8 @@
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { AppRole, mapLegacyRole } from "./roles";
 import { AuthenticationError, AuthorizationError } from "./errors";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export interface AuthzUser {
   id: string;
@@ -13,10 +14,7 @@ export async function requireAuthenticated(): Promise<AuthzUser> {
   const userId = session?.user?.id;
   if (!userId) throw new AuthenticationError();
 
-  const dbUser = await prismadb.users.findUnique({
-    where: { id: userId },
-    select: { id: true, role: true },
-  });
+  const dbUser = (await supabaseAdmin.from("users").select("id, role").eq("id", userId).single()).data;
   if (!dbUser) throw new AuthenticationError();
 
   return { id: dbUser.id, role: mapLegacyRole(dbUser.role) };

@@ -1,7 +1,8 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function convertTarget(
   targetId: string
@@ -9,7 +10,7 @@ export async function convertTarget(
   const session = await getSession();
   if (!session) return { error: "Unauthorized" };
 
-  const target = await prismadb.crm_Targets.findFirst({ where: { id: targetId, deletedAt: null } });
+  const target = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", targetId).eq("deletedAt", null).single()).data;
   if (!target) return { error: "Target not found" };
 
   // Guard: need at least a name for the Account and Contact
@@ -26,7 +27,7 @@ export async function convertTarget(
   }
 
   try {
-    const [account, contact] = await prismadb.$transaction(async (tx) => {
+    const [account, contact] = await Promise.all(async (tx) => {
       const acct = await tx.crm_Accounts.create({
         data: {
           v: 0,

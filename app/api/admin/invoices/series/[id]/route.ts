@@ -4,7 +4,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 async function ensureAdmin(): Promise<NextResponse | null> {
   try {
@@ -28,16 +28,13 @@ export async function PATCH(
   if (denied) return denied;
 
   const body = await request.json();
-  const series = await prismadb.invoice_Series.update({
-    where: { id },
-    data: {
-      ...(body.name !== undefined && { name: body.name }),
-      ...(body.prefixTemplate !== undefined && { prefixTemplate: body.prefixTemplate }),
-      ...(body.resetPolicy !== undefined && { resetPolicy: body.resetPolicy }),
-      ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
-      ...(body.active !== undefined && { active: body.active }),
-    },
-  });
+  const series = (await supabaseAdmin.from("invoice_Series").update({
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.prefixTemplate !== undefined && { prefixTemplate: body.prefixTemplate }),
+        ...(body.resetPolicy !== undefined && { resetPolicy: body.resetPolicy }),
+        ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
+        ...(body.active !== undefined && { active: body.active }),
+      }).eq("id", id).select("*").single()).data;
 
   return NextResponse.json({ data: series });
 }
@@ -50,6 +47,6 @@ export async function DELETE(
   const denied = await ensureAdmin();
   if (denied) return denied;
 
-  await prismadb.invoice_Series.delete({ where: { id } });
+  (await supabaseAdmin.from("invoice_Series").delete().eq("id", id).select("*").single()).data;
   return NextResponse.json({ success: true });
 }

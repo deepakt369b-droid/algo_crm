@@ -1,10 +1,11 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   campaignTemplateReadScopeWhere,
   AuthenticationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getTemplates = async () => {
   let user;
@@ -15,9 +16,5 @@ export const getTemplates = async () => {
     throw e;
   }
 
-  return prismadb.crm_campaign_templates.findMany({
-    where: campaignTemplateReadScopeWhere(user),
-    orderBy: { created_on: "desc" },
-    include: { created_by_user: { select: { name: true } } },
-  });
+  return (await supabaseAdmin.from("crm_campaign_templates").select("*, created_by_user(name)").order("created_on", { ascending: false })).data;
 };

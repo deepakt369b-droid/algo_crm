@@ -1,10 +1,11 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadTask,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 /**
  * Fetch comments for a Projects task (`Tasks` model).
@@ -29,21 +30,6 @@ export const getTaskComments = async (taskId: string) => {
     throw e;
   }
 
-  const data = await prismadb.tasksComments.findMany({
-    where: {
-      task: taskId,
-    },
-    include: {
-      assigned_user: {
-        select: {
-          name: true,
-          avatar: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("tasksComments").select("*, assigned_user(name, avatar)").eq("task", taskId).order("createdAt", { ascending: false })).data;
   return data;
 };

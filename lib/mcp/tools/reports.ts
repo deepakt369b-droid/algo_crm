@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import { paginationSchema, paginationArgs, listResponse, itemResponse } from "../helpers";
 import type { ReportFilters } from "@/actions/reports/types";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const reportTools = [
   {
@@ -21,12 +22,8 @@ export const reportTools = [
         ...(args.category && { category: args.category }),
       };
       const [data, total] = await Promise.all([
-        prismadb.crm_Report_Config.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { createdAt: "desc" },
-        }),
-        prismadb.crm_Report_Config.count({ where }),
+        (await supabaseAdmin.from("crm_Report_Config").select("*").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Report_Config").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },

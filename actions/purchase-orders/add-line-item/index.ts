@@ -1,10 +1,11 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { AddPurchaseOrderLineItem } from "./schema";
 import { InputType, ReturnType } from "./types";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await getSession();
@@ -15,7 +16,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const { purchaseOrderId, productId, description, quantity, unitPrice, taxRate, sortOrder } = data;
 
   try {
-    const po = await prismadb.purchaseOrders.findUnique({ where: { id: purchaseOrderId } });
+    const po = (await supabaseAdmin.from("purchaseOrders").select("*").eq("id", purchaseOrderId).single()).data;
     if (!po || po.deletedAt) {
       return { error: "Purchase order not found" };
     }
@@ -25,23 +26,19 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
     const lineTotal = Number((quantity * unitPrice).toFixed(2));
 
-    const lineItem = await prismadb.purchaseOrderLineItems.create({
-      data: {
-        purchaseOrderId,
-        productId: productId || undefined,
-        description,
-        quantity,
-        unitPrice,
-        taxRate: taxRate || undefined,
-        lineTotal,
-        sortOrder,
-      },
-    });
+    const lineItem = (await supabaseAdmin.from("purchaseOrderLineItems").insert({
+            purchaseOrderId,
+            productId: productId || undefined,
+            description,
+            quantity,
+            unitPrice,
+            taxRate: taxRate || undefined,
+            lineTotal,
+            sortOrder,
+          }).select("*").single()).data;
 
     // Recalculate totals
-    const allItems = await prismadb.purchaseOrderLineItems.findMany({
-      where: { purchaseOrderId },
-    });
+    const allItems = (await supabaseAdmin.from("purchaseOrderLineItems").select("*").eq("purchaseOrderId", purchaseOrderId)).data;
     const subtotal = allItems.reduce((sum, li) => sum + Number(li.lineTotal), 0);
     const taxTotal = allItems.reduce((sum, li) => {
       if (li.taxRate) {
@@ -51,15 +48,12 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     }, 0);
     const grandTotal = subtotal + taxTotal;
 
-    await prismadb.purchaseOrders.update({
-      where: { id: purchaseOrderId },
-      data: {
-        subtotal: subtotal,
-        taxTotal: taxTotal,
-        grandTotal: grandTotal,
-        updatedBy: session.user.id,
-      },
-    });
+    (await supabaseAdmin.from("purchaseOrders").update({
+              subtotal: subtotal,
+              taxTotal: taxTotal,
+              grandTotal: grandTotal,
+              updatedBy: session.user.id,
+            }).eq("id", purchaseOrderId).select("*").single()).data;
 
     revalidatePath(`/[locale]/(routes)/admin/purchase/${purchaseOrderId}`, "page");
     revalidatePath("/[locale]/(routes)/admin/purchase", "page");

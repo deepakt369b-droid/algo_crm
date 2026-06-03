@@ -1,4 +1,4 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadAccount,
@@ -6,6 +6,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getOpportunitiesFullByAccountId = async (accountId: string) => {
   let user;
@@ -27,32 +28,7 @@ export const getOpportunitiesFullByAccountId = async (accountId: string) => {
 
   // Defense in depth: scope the opportunity list by ownership rules even
   // when the caller has access to the parent account.
-  const data = await prismadb.crm_Opportunities.findMany({
-    where: {
-      account: accountId,
-      ...opportunityReadScopeWhere(user),
-    },
-    include: {
-      assigned_account: {
-        select: {
-          name: true,
-        },
-      },
-      assigned_sales_stage: {
-        select: {
-          name: true,
-        },
-      },
-      assigned_to_user: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: {
-      created_on: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Opportunities").select("*, assigned_account(name), assigned_sales_stage(name), assigned_to_user(name)").eq("account", accountId).order("created_on", { ascending: false })).data;
 
   return data;
 };

@@ -18,26 +18,51 @@
 # next.js
 /.next/
 /out/
+/.worker-next/
+/.open-next/
 
 # production
 /build
 
+# backup files
+*.bak
+*.bak2
+
 # misc
 .DS_Store
 *.pem
+
+# log files
+*.log
+
+# build / dev output files (root level)
+build_err*
+dev-error*
+dev-output*
+output.txt
+tsc-output.txt
+opennext-build.log
+server*.log
+
+# migration / scaffolding artifacts
+prisma_files.txt
+recovered_changes.txt
+skipped*.txt
+
+# test / debug files (root level)
+test-prisma.ts
+proxy.ts.disabled
+*.bak
+*.bak2
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
-.env.demo
-.env.xmation
-.env.dev
-.env
-.env.test.coolify
+# local env files (all .env* patterns)
+.env*
+!.env.example
 
 # vercel
 .vercel

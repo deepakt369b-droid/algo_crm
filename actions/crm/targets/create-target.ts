@@ -1,7 +1,8 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const createTarget = async (data: {
   last_name?: string;
@@ -26,9 +27,7 @@ export const createTarget = async (data: {
   if (!last_name && !data.company) return { error: "last_name or company is required" };
 
   try {
-    const target = await prismadb.crm_Targets.create({
-      data: { last_name: last_name ?? "", email, mobile_phone, ...rest, created_by: (session.user as any).id },
-    });
+    const target = (await supabaseAdmin.from("crm_Targets").insert({ last_name: last_name ?? "", email, mobile_phone, ...rest, created_by: (session.user as any).id }).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/crm/targets", "page");
     return { data: target };
   } catch (error) {

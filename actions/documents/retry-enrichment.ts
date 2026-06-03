@@ -5,9 +5,10 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+
 import { inngest } from "@/inngest/client";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function retryEnrichment(documentId: string) {
   let user;
@@ -25,10 +26,7 @@ export async function retryEnrichment(documentId: string) {
     throw e;
   }
 
-  await prismadb.documents.update({
-    where: { id: documentId },
-    data: { processing_status: "PENDING", processing_error: null },
-  });
+  (await supabaseAdmin.from("documents").update({ processing_status: "PENDING", processing_error: null }).eq("id", documentId).select("*").single()).data;
 
   await inngest.send({
     name: "document/uploaded",

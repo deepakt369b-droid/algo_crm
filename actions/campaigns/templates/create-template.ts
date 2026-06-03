@@ -1,6 +1,7 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { requireAuthenticated, AuthenticationError } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const createTemplate = async (data: {
   name: string;
@@ -17,7 +18,5 @@ export const createTemplate = async (data: {
     throw e;
   }
 
-  return prismadb.crm_campaign_templates.create({
-    data: { ...data, created_by: user.id },
-  });
+  return (await supabaseAdmin.from("crm_campaign_templates").insert({ ...data, created_by: user.id }).select("*").single()).data;
 };

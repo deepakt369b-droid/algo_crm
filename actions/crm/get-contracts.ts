@@ -1,7 +1,7 @@
 "use server";
 
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   contractReadScopeWhere,
@@ -10,6 +10,7 @@ import {
   AuthorizationError,
 } from "@/lib/authz";
 import { serializeDecimalsList } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getContractsWithIncludes = cache(async () => {
   let user;
@@ -20,24 +21,7 @@ export const getContractsWithIncludes = cache(async () => {
     throw e;
   }
 
-  const data = await prismadb.crm_Contracts.findMany({
-    where: { ...contractReadScopeWhere(user) },
-    include: {
-      assigned_to_user: {
-        select: {
-          name: true,
-        },
-      },
-      assigned_account: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Contracts").select("*, assigned_to_user(name), assigned_account(name)").order("createdAt", { ascending: false })).data;
   return serializeDecimalsList(data);
 });
 
@@ -57,23 +41,6 @@ export const getContractsByAccountId = async (accountId: string) => {
     throw e;
   }
 
-  const data = await prismadb.crm_Contracts.findMany({
-    where: {
-      account: accountId,
-      ...contractReadScopeWhere(user),
-    },
-    include: {
-      assigned_to_user: {
-        select: {
-          name: true,
-        },
-      },
-      assigned_account: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Contracts").select("*, assigned_to_user(name), assigned_account(name)").eq("account", accountId)).data;
   return serializeDecimalsList(data);
 };

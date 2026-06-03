@@ -1,10 +1,11 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import sendEmail from "@/lib/sendmail";
 import { inngest } from "@/inngest/client";
 import { writeAuditLog } from "@/lib/audit-log";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const createContact = async (data: {
   assigned_to?: string;
@@ -45,7 +46,7 @@ export const createContact = async (data: {
   } = data;
 
   try {
-    const contact = await prismadb.crm_Contacts.create({
+    const contact = await supabaseAdmin.from("crm_Contacts").insert({
       data: {
         v: 0,
         createdBy: userId,
@@ -62,9 +63,7 @@ export const createContact = async (data: {
     });
 
     if (assigned_to && assigned_to !== userId) {
-      const notifyRecipient = await prismadb.users.findFirst({
-        where: { id: assigned_to },
-      });
+      const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", assigned_to).single()).data;
 
       if (notifyRecipient) {
         await sendEmail({

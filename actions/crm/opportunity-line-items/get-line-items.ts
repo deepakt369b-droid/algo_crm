@@ -1,14 +1,6 @@
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getOpportunityLineItems = cache(async (opportunityId: string) => {
-  return prismadb.crm_OpportunityLineItems.findMany({
-    where: { opportunityId },
-    include: {
-      product: {
-        select: { id: true, name: true, status: true },
-      },
-    },
-    orderBy: { sort_order: "asc" },
-  });
+  return (await supabaseAdmin.from("crm_OpportunityLineItems").select("*, product(id, name, status)").eq("opportunityId", opportunityId).order("sort_order", { ascending: true })).data;
 });

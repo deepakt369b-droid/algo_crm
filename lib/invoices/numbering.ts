@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@/lib/prisma-types";
 
 export function formatNumber(template: string, year: number, counter: number): string {
   return template

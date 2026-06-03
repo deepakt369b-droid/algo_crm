@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import {
   paginationSchema,
   paginationArgs,
@@ -9,6 +9,7 @@ import {
   notFound,
   softDeleteData,
 } from "../helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const crmLeadTools = [
   {
@@ -18,12 +19,8 @@ export const crmLeadTools = [
     async handler(args: { limit: number; offset: number }, userId: string) {
       const where = { assigned_to: userId, deletedAt: null };
       const [data, total] = await Promise.all([
-        prismadb.crm_Leads.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { createdAt: "desc" },
-        }),
-        prismadb.crm_Leads.count({ where }),
+        (await supabaseAdmin.from("crm_Leads").select("*").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Leads").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -33,9 +30,7 @@ export const crmLeadTools = [
     description: "Get a single CRM lead by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const lead = await prismadb.crm_Leads.findFirst({
-        where: { id: args.id, assigned_to: userId, deletedAt: null },
-      });
+      const lead = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
       if (!lead) notFound("Lead");
       return itemResponse(lead);
     },
@@ -59,12 +54,8 @@ export const crmLeadTools = [
         ],
       };
       const [data, total] = await Promise.all([
-        prismadb.crm_Leads.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { createdAt: "desc" },
-        }),
-        prismadb.crm_Leads.count({ where }),
+        (await supabaseAdmin.from("crm_Leads").select("*").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Leads").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -92,9 +83,7 @@ export const crmLeadTools = [
       userId: string
     ) {
       const { lastName, ...rest } = args;
-      const lead = await prismadb.crm_Leads.create({
-        data: { v: 0, lastName, ...rest, assigned_to: userId, createdBy: userId },
-      });
+      const lead = (await supabaseAdmin.from("crm_Leads").insert({ v: 0, lastName, ...rest, assigned_to: userId, createdBy: userId }).select("*").single()).data;
       return itemResponse(lead);
     },
   },
@@ -122,15 +111,10 @@ export const crmLeadTools = [
       },
       userId: string
     ) {
-      const existing = await prismadb.crm_Leads.findFirst({
-        where: { id: args.id, assigned_to: userId, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Lead");
       const { id, ...updateData } = args;
-      const lead = await prismadb.crm_Leads.update({
-        where: { id },
-        data: { ...updateData, updatedBy: userId },
-      });
+      const lead = (await supabaseAdmin.from("crm_Leads").update({ ...updateData, updatedBy: userId }).eq("id", id).select("*").single()).data;
       return itemResponse(lead);
     },
   },
@@ -139,11 +123,9 @@ export const crmLeadTools = [
     description: "Soft-delete a CRM lead by ID (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = await prismadb.crm_Leads.findFirst({
-        where: { id: args.id, assigned_to: userId, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Lead");
-      const lead = await prismadb.crm_Leads.update({
+      const lead = await supabaseAdmin.from("crm_Leads").update({
         where: { id: args.id },
         data: softDeleteData(userId),
       });

@@ -29,7 +29,7 @@ import { OpportunitiesKanban } from "../opportunities/components/OpportunitiesKa
 
 import type { getAllCrmData } from "@/actions/crm/get-crm-data";
 import { useCurrency } from "@/context/currency-context";
-import { Decimal } from "@prisma/client/runtime/client";
+import Decimal from "decimal.js";
 
 type CrmData = Awaited<ReturnType<typeof getAllCrmData>>;
 

@@ -1,10 +1,7 @@
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getProductCategories = cache(async () => {
-  const categories = await prismadb.crm_ProductCategories.findMany({
-    where: { isActive: true },
-    orderBy: { order: "asc" },
-  });
+  const categories = (await supabaseAdmin.from("crm_ProductCategories").select("*").eq("isActive", true).order("order", { ascending: true })).data;
   return categories;
 });

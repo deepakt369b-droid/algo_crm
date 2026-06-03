@@ -1,9 +1,10 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { inngest } from "@/inngest/client";
 import { writeAuditLog } from "@/lib/audit-log";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const createAccount = async (data: {
   name: string;
@@ -37,15 +38,13 @@ export const createAccount = async (data: {
   if (!name) return { error: "name is required" };
 
   try {
-    const account = await prismadb.crm_Accounts.create({
-      data: {
-        v: 0,
-        createdBy: session.user.id,
-        updatedBy: session.user.id,
-        ...data,
-        status: "Active",
-      },
-    });
+    const account = (await supabaseAdmin.from("crm_Accounts").insert({
+            v: 0,
+            createdBy: session.user.id,
+            updatedBy: session.user.id,
+            ...data,
+            status: "Active",
+          }).select("*").single()).data;
     await writeAuditLog({
       entityType: "account",
       entityId: account.id,

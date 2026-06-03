@@ -1,6 +1,6 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getEmployees = async () => {
-  const data = await prismadb.employees.findMany({});
+  const data = (await supabaseAdmin.from("employees").select("*")).data;
   return data;
 };

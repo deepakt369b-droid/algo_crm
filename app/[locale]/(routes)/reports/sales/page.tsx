@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import { getDefaultCurrency, formatCurrency as formatCurrencyUtil } from "@/lib/currency";
-import { Decimal } from "@prisma/client/runtime/client";
+import Decimal from "decimal.js";
 import { Card, CardContent } from "@/components/ui/card";
 import { ReportPageLayout } from "@/components/reports/ReportPageLayout";
 import { ReportChart } from "@/components/reports/ReportChart";

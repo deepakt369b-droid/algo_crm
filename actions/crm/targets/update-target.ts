@@ -1,7 +1,8 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const updateTarget = async (data: {
   id: string;
@@ -35,10 +36,7 @@ export const updateTarget = async (data: {
   if (!id) return { error: "id is required" };
 
   try {
-    const target = await prismadb.crm_Targets.update({
-      where: { id },
-      data: { ...rest, updatedBy: (session.user as any).id },
-    });
+    const target = (await supabaseAdmin.from("crm_Targets").update({ ...rest, updatedBy: (session.user as any).id }).eq("id", id).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/crm/targets", "page");
     return { data: target };
   } catch (error) {

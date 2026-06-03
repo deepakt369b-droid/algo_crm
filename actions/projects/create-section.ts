@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import {
   requireAuthenticated,
@@ -7,6 +7,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const createSection = async (data: {
   boardId: string;
@@ -32,18 +33,14 @@ export const createSection = async (data: {
   }
 
   try {
-    const sectionPosition = await prismadb.sections.count({
-      where: { board: boardId },
-    });
+    const sectionPosition = (await supabaseAdmin.from("sections").select("*", { count: 'exact', head: true }).eq("board", boardId)).count;
 
-    const newSection = await prismadb.sections.create({
-      data: {
-        v: 0,
-        board: boardId,
-        title,
-        position: sectionPosition > 0 ? sectionPosition : 0,
-      },
-    });
+    const newSection = (await supabaseAdmin.from("sections").insert({
+            v: 0,
+            board: boardId,
+            title,
+            position: sectionPosition > 0 ? sectionPosition : 0,
+          }).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { data: newSection };

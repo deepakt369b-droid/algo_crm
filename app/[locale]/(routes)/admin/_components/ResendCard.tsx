@@ -1,3 +1,4 @@
+    "use server";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,15 +10,15 @@ import {
 
 import { z } from "zod";
 
-import { prismadb } from "@/lib/prisma";
+
 
 import { revalidatePath } from "next/cache";
 import { Input } from "@/components/ui/input";
 import CopyKeyComponent from "./copy-key";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const ResendCard = async () => {
   const setSMTP = async (formData: FormData) => {
-    "use server";
     const schema = z.object({
       id: z.string(),
       serviceKey: z.string(),
@@ -31,32 +32,21 @@ const ResendCard = async () => {
     //console.log(parsed.serviceKey, "serviceKey");
 
     if (!parsed.id) {
-      await prismadb.systemServices.create({
-        data: {
-          v: 0,
-          name: "resend_smtp",
-          serviceKey: parsed.serviceKey,
-        },
-      });
+      (await supabaseAdmin.from("systemServices").insert({
+                  v: 0,
+                  name: "resend_smtp",
+                  serviceKey: parsed.serviceKey,
+                }).select("*").single()).data;
       revalidatePath("/admin");
     } else {
-      await prismadb.systemServices.update({
-        where: {
-          id: parsed.id,
-        },
-        data: {
-          serviceKey: parsed.serviceKey,
-        },
-      });
+      (await supabaseAdmin.from("systemServices").update({
+                  serviceKey: parsed.serviceKey,
+                }).eq("id", parsed.id).select("*").single()).data;
       revalidatePath("/admin");
     }
   };
 
-  const resend_key = await prismadb.systemServices.findFirst({
-    where: {
-      name: "resend_smtp",
-    },
-  });
+  const resend_key = (await supabaseAdmin.from("systemServices").select("*").eq("name", "resend_smtp").single()).data;
 
   return (
     <Card className="min-w-[350px] max-w-[450px]">

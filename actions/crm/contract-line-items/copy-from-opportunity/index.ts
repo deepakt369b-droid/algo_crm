@@ -1,9 +1,10 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import { sumLineTotals } from "@/lib/line-items";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const copyLineItemsFromOpportunity = async (
   contractId: string,
@@ -18,8 +19,8 @@ export const copyLineItemsFromOpportunity = async (
 
   try {
     const [contract, opportunity] = await Promise.all([
-      prismadb.crm_Contracts.findUnique({ where: { id: contractId } }),
-      prismadb.crm_Opportunities.findUnique({ where: { id: opportunityId } }),
+      (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", contractId).single()).data,
+      (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", opportunityId).single()).data,
     ]);
 
     if (!contract || contract.deletedAt) return { error: "Contract not found" };
@@ -33,23 +34,16 @@ export const copyLineItemsFromOpportunity = async (
       };
     }
 
-    const sourceItems = await prismadb.crm_OpportunityLineItems.findMany({
-      where: { opportunityId },
-      orderBy: { sort_order: "asc" },
-    });
+    const sourceItems = (await supabaseAdmin.from("crm_OpportunityLineItems").select("*").eq("opportunityId", opportunityId).order("sort_order", { ascending: true })).data;
 
     if (sourceItems.length === 0) {
       return { error: "No line items found on the source opportunity" };
     }
 
-    const existingItems = await prismadb.crm_ContractLineItems.findMany({
-      where: { contractId },
-      orderBy: { sort_order: "desc" },
-      take: 1,
-    });
+    const existingItems = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("contractId", contractId).order("sort_order", { ascending: false }).limit(1)).data;
     const startOrder = existingItems.length > 0 ? existingItems[0].sort_order + 1 : 0;
 
-    await prismadb.crm_ContractLineItems.createMany({
+    await supabaseAdmin.from("crm_ContractLineItems").insertMany({
       data: sourceItems.map((item, index) => ({
         contractId,
         productId: item.productId,
@@ -68,14 +62,9 @@ export const copyLineItemsFromOpportunity = async (
       })),
     });
 
-    const allContractItems = await prismadb.crm_ContractLineItems.findMany({
-      where: { contractId },
-    });
+    const allContractItems = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("contractId", contractId)).data;
     const newTotal = sumLineTotals(allContractItems);
-    await prismadb.crm_Contracts.update({
-      where: { id: contractId },
-      data: { value: newTotal },
-    });
+    (await supabaseAdmin.from("crm_Contracts").update({ value: newTotal }).eq("id", contractId).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "contract_line_item",

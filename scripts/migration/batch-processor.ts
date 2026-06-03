@@ -3,7 +3,7 @@
  * Handles batch insertion with transaction safety
  */
 
-import { PrismaClient as PrismaClientPG } from '@prisma/client';
+import { PrismaClient as PrismaClientPG } from "@/lib/prisma-types";
 import { ErrorLogger } from './error-logger';
 import { TransformerFunction } from './transformers';
 import { UuidMapper } from './uuid-mapper';

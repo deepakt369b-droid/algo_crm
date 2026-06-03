@@ -1,11 +1,12 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteTemplate,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const deleteTemplate = async (id: string) => {
   let user;
@@ -23,8 +24,5 @@ export const deleteTemplate = async (id: string) => {
     throw e;
   }
 
-  return prismadb.crm_campaign_templates.update({
-    where: { id },
-    data: { deletedAt: new Date(), deletedBy: user.id },
-  });
+  return (await supabaseAdmin.from("crm_campaign_templates").update({ deletedAt: new Date(), deletedBy: user.id }).eq("id", id).select("*").single()).data;
 };

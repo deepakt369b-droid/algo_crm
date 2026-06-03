@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { getUser } from "@/actions/get-user";
 import { canCancelInvoice, type InvoiceStatus } from "@/lib/invoices/permissions";
 import { mapLegacyRole } from "@/lib/authz";
@@ -9,7 +9,7 @@ import { serializeDecimals } from "@/lib/serialize-decimals";
 export async function cancelInvoice(invoiceId: string) {
   const user = await getUser();
 
-  const invoice = await prismadb.invoices.findUniqueOrThrow({
+  const invoice = await supabaseAdmin.from("invoices").findUniqueOrThrow({
     where: { id: invoiceId },
     select: { status: true, createdBy: true },
   });
@@ -23,7 +23,7 @@ export async function cancelInvoice(invoiceId: string) {
     throw new Error("Cannot cancel this invoice");
   }
 
-  const updated = await prismadb.invoices.update({
+  const updated = await supabaseAdmin.from("invoices").update({
     where: { id: invoiceId },
     data: {
       status: "CANCELLED",

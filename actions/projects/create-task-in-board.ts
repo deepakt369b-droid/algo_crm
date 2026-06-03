@@ -1,6 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import NewTaskFromProject from "@/emails/NewTaskFromProject";
 import resendHelper from "@/lib/resend";
@@ -10,6 +10,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const createTaskInBoard = async (data: {
   boardId: string;
@@ -45,29 +46,22 @@ export const createTaskInBoard = async (data: {
   // Quick-add path: no title/user/priority/content - create a blank task
   if (!title || !user || !priority || !content) {
     try {
-      const tasksCount = await prismadb.tasks.count({
-        where: { section },
-      });
+      const tasksCount = (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("section", section)).count;
 
-      await prismadb.tasks.create({
-        data: {
-          v: 0,
-          priority: "normal",
-          title: "New task",
-          content: "",
-          section,
-          createdBy: session.user.id,
-          updatedBy: session.user.id,
-          position: tasksCount > 0 ? tasksCount : 0,
-          user: session.user.id,
-          taskStatus: "ACTIVE",
-        },
-      });
+      (await supabaseAdmin.from("tasks").insert({
+                  v: 0,
+                  priority: "normal",
+                  title: "New task",
+                  content: "",
+                  section,
+                  createdBy: session.user.id,
+                  updatedBy: session.user.id,
+                  position: tasksCount > 0 ? tasksCount : 0,
+                  user: session.user.id,
+                  taskStatus: "ACTIVE",
+                }).select("*").single()).data;
 
-      await prismadb.boards.update({
-        where: { id: boardId },
-        data: { updatedAt: new Date() },
-      });
+      (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).eq("id", boardId).select("*").single()).data;
 
       revalidatePath("/[locale]/(routes)/projects", "page");
       return { success: true };
@@ -79,30 +73,23 @@ export const createTaskInBoard = async (data: {
 
   // Full-detail path
   try {
-    const tasksCount = await prismadb.tasks.count({
-      where: { section },
-    });
+    const tasksCount = (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("section", section)).count;
 
-    const task = await prismadb.tasks.create({
-      data: {
-        v: 0,
-        priority,
-        title,
-        content,
-        dueDateAt,
-        section,
-        createdBy: user,
-        updatedBy: user,
-        position: tasksCount > 0 ? tasksCount : 0,
-        user,
-        taskStatus: "ACTIVE",
-      },
-    });
+    const task = (await supabaseAdmin.from("tasks").insert({
+            v: 0,
+            priority,
+            title,
+            content,
+            dueDateAt,
+            section,
+            createdBy: user,
+            updatedBy: user,
+            position: tasksCount > 0 ? tasksCount : 0,
+            user,
+            taskStatus: "ACTIVE",
+          }).select("*").single()).data;
 
-    await prismadb.boards.update({
-      where: { id: boardId },
-      data: { updatedAt: new Date() },
-    });
+    (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).eq("id", boardId).select("*").single()).data;
 
     // Send email notification if assigning to a different user
     if (user !== session.user.id) {
@@ -116,13 +103,9 @@ export const createTaskInBoard = async (data: {
         }
 
         if (resend) {
-          const notifyRecipient = await prismadb.users.findUnique({
-            where: { id: user },
-          });
+          const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", user).single()).data;
 
-          const boardData = await prismadb.boards.findUnique({
-            where: { id: boardId },
-          });
+          const boardData = (await supabaseAdmin.from("boards").select("*").eq("id", boardId).single()).data;
 
           if (notifyRecipient?.email) {
             await resend.emails.send({

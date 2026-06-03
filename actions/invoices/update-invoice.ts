@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { getUser } from "@/actions/get-user";
 import { Decimal } from "decimal.js";
 import { computeInvoiceTotals, computeLineTotal } from "@/lib/invoices/totals";
@@ -12,12 +12,13 @@ import {
   AuthorizationError,
 } from "@/lib/authz";
 import { serializeDecimals } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function updateInvoice(invoiceId: string, raw: unknown) {
   const user = await getUser();
   const input = updateInvoiceSchema.parse(raw);
 
-  const existing = await prismadb.invoices.findUniqueOrThrow({
+  const existing = await supabaseAdmin.from("invoices").findUniqueOrThrow({
     where: { id: invoiceId },
     select: { status: true, createdBy: true, paidTotal: true },
   });
@@ -45,15 +46,9 @@ export async function updateInvoice(invoiceId: string, raw: unknown) {
 
   // If lineItems provided, recompute totals
   if (input.lineItems) {
-    const taxRates = await prismadb.invoice_TaxRates.findMany({
-      where: {
-        id: {
-          in: input.lineItems
-            .map((l) => l.taxRateId)
-            .filter(Boolean) as string[],
-        },
-      },
-    });
+    const taxRates = (await supabaseAdmin.from("invoice_TaxRates").select("*").in("id", input.lineItems
+                .map((l) => l.taxRateId)
+                .filter(Boolean) as string[])).data;
     const rateMap = new Map(
       taxRates.map((t) => [t.id, new Decimal(t.rate.toString())])
     );
@@ -68,7 +63,7 @@ export async function updateInvoice(invoiceId: string, raw: unknown) {
     }));
     const totals = computeInvoiceTotals(lineInputs);
 
-    return prismadb.$transaction(async (tx) => {
+    return Promise.all(async (tx) => {
       // Delete existing line items
       await tx.invoice_LineItems.deleteMany({ where: { invoiceId } });
 
@@ -112,7 +107,7 @@ export async function updateInvoice(invoiceId: string, raw: unknown) {
   }
 
   // No line items change — simple field update
-  const updated = await prismadb.invoices.update({
+  const updated = await supabaseAdmin.from("invoices").update({
     where: { id: invoiceId },
     data: {
       ...buildUpdateData(input),

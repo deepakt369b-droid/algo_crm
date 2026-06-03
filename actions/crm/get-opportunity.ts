@@ -1,4 +1,4 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadOpportunity,
@@ -6,6 +6,7 @@ import {
   AuthorizationError,
 } from "@/lib/authz";
 import { serializeDecimals } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getOpportunity = async (opportunityId: string) => {
   let user;
@@ -23,91 +24,6 @@ export const getOpportunity = async (opportunityId: string) => {
     throw e;
   }
 
-  const data = await prismadb.crm_Opportunities.findFirst({
-    where: {
-      id: opportunityId,
-      deletedAt: null,
-    },
-    include: {
-      // Include assigned account
-      assigned_account: {
-        select: {
-          name: true,
-        },
-      },
-      // Include sales stage
-      assigned_sales_stage: {
-        select: {
-          name: true,
-        },
-      },
-      // Include opportunity type
-      assigned_type: {
-        select: {
-          name: true,
-        },
-      },
-      // Include contacts through ContactsToOpportunities junction table
-      contacts: {
-        include: {
-          contact: {
-            select: {
-              id: true,
-              first_name: true,
-              last_name: true,
-              office_phone: true,
-              mobile_phone: true,
-              email: true,
-            },
-          },
-        },
-      },
-      // Include assigned user (uses "assigned_to_user_relation")
-      assigned_to_user: {
-        select: {
-          name: true,
-          email: true,
-        },
-      },
-      // Include created by user (uses "created_by_user_relation")
-      created_by_user: {
-        select: {
-          name: true,
-          email: true,
-        },
-      },
-      // Include line items
-      lineItems: {
-        include: {
-          product: {
-            select: { id: true, name: true, status: true },
-          },
-        },
-        orderBy: { sort_order: "asc" },
-      },
-      // Include documents through DocumentsToOpportunities junction table
-      documents: {
-        include: {
-          document: {
-            select: {
-              id: true,
-              document_name: true,
-              document_type: true,
-              document_file_url: true,
-              document_file_mimeType: true,
-              createdAt: true,
-              created_by: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Opportunities").select("*, assigned_account(name), assigned_sales_stage(name), assigned_type(name), contacts(*, contact(id, first_name, last_name, office_phone, mobile_phone, email)), assigned_to_user(name, email), created_by_user(name, email), lineItems(*, product(id, name, status)), documents(*, document(id, document_name, document_type, document_file_url, document_file_mimeType, createdAt, created_by(id, name, email)))").eq("id", opportunityId).eq("deletedAt", null).single()).data;
   return serializeDecimals(data);
 };

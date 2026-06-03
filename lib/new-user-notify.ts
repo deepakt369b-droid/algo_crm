@@ -1,14 +1,10 @@
-import { Users } from "@prisma/client";
+import { Users } from "@/lib/prisma-types";
 
-import { prismadb } from "./prisma";
 import sendEmail from "./sendmail";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function newUserNotify(newUser: Users) {
-  const admins = await prismadb.users.findMany({
-    where: {
-      role: "admin",
-    },
-  });
+  const admins = (await supabaseAdmin.from("users").select("*").eq("role", "admin")).data || [];
 
   admins.forEach(async (admin) => {
     await sendEmail({

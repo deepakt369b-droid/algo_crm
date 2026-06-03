@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 dotenv.config({ path: path.resolve(__dirname, "../.env.local"), override: true });
 
@@ -7,14 +9,11 @@ async function main() {
   // Dynamically import prismadb so it loads AFTER dotenv has run
   const { prismadb } = await import("../lib/prisma");
 
-  const result = await prismadb.users.update({
-    where: { email: "deepakt369b@gmail.com" },
-    data: {
-      userStatus: "ACTIVE",
-      role: "admin",
-      isSuperAdmin: true,
-    },
-  });
+  const result = (await supabaseAdmin.from("users").update({
+        userStatus: "ACTIVE",
+        role: "admin",
+        isSuperAdmin: true,
+      }).eq("email", "deepakt369b@gmail.com").select("*").single()).data;
   console.log("Success! Updated user to Admin:", result.email);
 }
 

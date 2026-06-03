@@ -1,9 +1,10 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   AuthenticationError,
 } from "@/lib/authz";
 import { serializeDecimalsList } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getUserOpportunities = async (userId: string) => {
   let user;
@@ -20,21 +21,6 @@ export const getUserOpportunities = async (userId: string) => {
     return [];
   }
 
-  const data = await prismadb.crm_Opportunities.findMany({
-    where: {
-      assigned_to: userId,
-      deletedAt: null,
-    },
-    include: {
-      assigned_sales_stage: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Opportunities").select("*, assigned_sales_stage(name)").eq("assigned_to", userId).eq("deletedAt", null).order("createdAt", { ascending: false })).data;
   return serializeDecimalsList(data);
 };

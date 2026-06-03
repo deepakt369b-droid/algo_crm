@@ -6,7 +6,7 @@ import { ElementRef, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import { crm_Accounts } from "@prisma/client";
+import { crm_Accounts } from "@/lib/prisma-types";
 import { UserSearchCombobox } from "@/components/ui/user-search-combobox";
 
 import { useAction } from "@/hooks/use-action";

@@ -1,10 +1,11 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadAccount,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function getInvoicesByAccountId(accountId: string) {
   let user;
@@ -21,12 +22,5 @@ export async function getInvoicesByAccountId(accountId: string) {
     throw e;
   }
 
-  return prismadb.invoices.findMany({
-    where: { accountId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      account: { select: { id: true, name: true } },
-      series: { select: { id: true, name: true } },
-    },
-  });
+  return (await supabaseAdmin.from("invoices").select("*, account(id, name), series(id, name)").eq("accountId", accountId).order("createdAt", { ascending: false })).data;
 }

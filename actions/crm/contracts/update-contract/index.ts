@@ -1,13 +1,14 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { UpdateContract } from "./schema";
 import { InputType, ReturnType } from "./types";
 
 import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog, diffObjects } from "@/lib/audit-log";
 import { getSnapshotRate, getDefaultCurrency } from "@/lib/currency";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await getSession();
@@ -18,11 +19,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     };
   }
 
-  const user = await prismadb.users.findUnique({
-    where: {
-      email: session?.user?.email,
-    },
-  });
+  const user = (await supabaseAdmin.from("users").select("*").eq("email", session?.user?.email).single()).data;
 
   if (!user) {
     return {
@@ -59,35 +56,30 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     };
   }
 
-  const before = await prismadb.crm_Contracts.findUnique({ where: { id, deletedAt: null } });
+  const before = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", id).eq("deletedAt", null).single()).data;
 
   try {
     const defaultCurrency = await getDefaultCurrency();
     const snapshotRate = currency
       ? await getSnapshotRate(currency, defaultCurrency)
       : null;
-    const result = await prismadb.crm_Contracts.update({
-      where: {
-        id: data.id,
-      },
-      data: {
-        v: data.v + 1,
-        title,
-        value: parseFloat(value),
-        startDate,
-        endDate,
-        renewalReminderDate,
-        customerSignedDate,
-        companySignedDate,
-        description,
-        status,
-        account: account || undefined,
-        assigned_to: assigned_to || undefined,
-        createdBy: user.id,
-        currency: currency || undefined,
-        snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
-      },
-    });
+    const result = (await supabaseAdmin.from("crm_Contracts").update({
+            v: data.v + 1,
+            title,
+            value: parseFloat(value),
+            startDate,
+            endDate,
+            renewalReminderDate,
+            customerSignedDate,
+            companySignedDate,
+            description,
+            status,
+            account: account || undefined,
+            assigned_to: assigned_to || undefined,
+            createdBy: user.id,
+            currency: currency || undefined,
+            snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
+          }).eq("id", data.id).select("*").single()).data;
 
     const changes = before ? diffObjects(before as Record<string, unknown>, result as Record<string, unknown>) : null;
     await writeAuditLog({

@@ -4,7 +4,7 @@
  */
 
 import { MongoClient, Db, Collection } from 'mongodb';
-import { PrismaClient as PrismaClientPG } from '@prisma/client';
+import { PrismaClient as PrismaClientPG } from "@/lib/prisma-types";
 import { CheckpointManager } from './checkpoint-manager';
 import { ProgressTracker } from './progress-tracker';
 import { ErrorLogger } from './error-logger';

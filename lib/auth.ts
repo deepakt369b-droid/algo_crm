@@ -1,16 +1,17 @@
 import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
+import { Pool } from "pg";
 import { emailOTP, testUtils } from "better-auth/plugins";
 import { admin as adminPlugin } from "better-auth/plugins";
-import { prismadb } from "@/lib/prisma";
+
 import { ac, admin, manager, user, superadmin } from "@/lib/auth-permissions";
 import { newUserNotify } from "@/lib/new-user-notify";
 import resendHelper from "@/lib/resend";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const isDemo = process.env.NEXT_PUBLIC_APP_URL === "https://demo.flowlinepro.io";
 
 export const auth = betterAuth({
-  database: prismaAdapter(prismadb, { provider: "postgresql" }),
+  database: new Pool({ connectionString: process.env.DATABASE_URL || "postgresql://dummy:dummy@localhost:5432/dummy" }),
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
   advanced: {
@@ -128,15 +129,12 @@ export const auth = betterAuth({
   callbacks: {
     async onUserCreated(user: { id: string }) {
       // Check if this is the first user — make them admin
-      const count = await prismadb.users.count();
+      const count = (await supabaseAdmin.from("users").select("*", { count: 'exact', head: true })).count;
       if (count === 1) {
-        await prismadb.users.update({
-          where: { id: user.id },
-          data: { role: "superadmin", isSuperAdmin: true, userStatus: "ACTIVE" },
-        });
+        (await supabaseAdmin.from("users").update({ role: "superadmin", isSuperAdmin: true, userStatus: "ACTIVE" }).eq("id", user.id).select("*").single()).data;
       } else if (!isDemo) {
         // Notify admins about new pending user
-        const dbUser = await prismadb.users.findUnique({ where: { id: user.id } });
+        const dbUser = (await supabaseAdmin.from("users").select("*").eq("id", user.id).single()).data;
         if (dbUser) {
           await newUserNotify(dbUser);
         }

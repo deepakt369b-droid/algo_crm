@@ -5,7 +5,7 @@
  * This function converts Decimal fields to numbers and Date fields to ISO strings
  * while preserving the original object structure and references.
  */
-import { Decimal } from "@prisma/client/runtime/client";
+import Decimal from "decimal.js";
 
 /**
  * Known Decimal field names in the CRM schemas.

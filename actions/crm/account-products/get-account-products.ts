@@ -1,11 +1,12 @@
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadAccount,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getAccountProducts = cache(async (accountId: string) => {
   let user;
@@ -22,14 +23,6 @@ export const getAccountProducts = cache(async (accountId: string) => {
     throw e;
   }
 
-  const assignments = await prismadb.crm_AccountProducts.findMany({
-    where: { accountId },
-    include: {
-      product: {
-        select: { id: true, name: true, sku: true, type: true, status: true, unit_price: true, unit: true, is_recurring: true, billing_period: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const assignments = (await supabaseAdmin.from("crm_AccountProducts").select("*, product(id, name, sku, type, status, unit_price, unit, is_recurring, billing_period)").eq("accountId", accountId).order("createdAt", { ascending: false })).data;
   return assignments;
 });

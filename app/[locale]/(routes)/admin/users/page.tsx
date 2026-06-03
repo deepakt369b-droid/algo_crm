@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { getSession } from "@/lib/auth-server";
 import { AdminUserDataTable } from "./table-components/data-table";
 import { columns } from "./table-components/columns";
-import { Users } from "@prisma/client";
+import { Users } from "@/lib/prisma-types";
 import { Button } from "@/components/ui/button";
 import SendMailToAll from "./components/send-mail-to-all";
 import { getTranslations } from "next-intl/server";

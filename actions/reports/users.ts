@@ -1,7 +1,8 @@
-import { prismadb } from "@/lib/prisma";
+
 import { requireRole, AuthorizationError } from "@/lib/authz";
 import type { ReportFilters, ChartDataPoint } from "./types";
 import { groupedToChartData } from "./types";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 async function ensureManagerOrAdmin() {
   try {
@@ -14,10 +15,7 @@ async function ensureManagerOrAdmin() {
 
 export async function getActiveUsersByYear(): Promise<ChartDataPoint[]> {
   await ensureManagerOrAdmin();
-  const users = await prismadb.users.findMany({
-    where: { userStatus: "ACTIVE" },
-    select: { created_on: true },
-  });
+  const users = (await supabaseAdmin.from("users").select("created_on").eq("userStatus", "ACTIVE")).data;
   const grouped: Record<string, number> = {};
   for (const u of users) {
     const year = String(new Date(u.created_on).getFullYear());
@@ -28,15 +26,12 @@ export async function getActiveUsersByYear(): Promise<ChartDataPoint[]> {
 
 export async function getActiveUsersLifetime(): Promise<number> {
   await ensureManagerOrAdmin();
-  return prismadb.users.count({ where: { userStatus: "ACTIVE" } });
+  return (await supabaseAdmin.from("users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE")).count;
 }
 
 export async function getUserGrowth(filters: ReportFilters): Promise<ChartDataPoint[]> {
   await ensureManagerOrAdmin();
-  const users = await prismadb.users.findMany({
-    where: { created_on: { gte: filters.dateFrom, lte: filters.dateTo } },
-    select: { created_on: true },
-  });
+  const users = (await supabaseAdmin.from("users").select("created_on")).data;
   const grouped: Record<string, number> = {};
   for (const u of users) {
     const d = new Date(u.created_on);
@@ -48,10 +43,7 @@ export async function getUserGrowth(filters: ReportFilters): Promise<ChartDataPo
 
 export async function getUsersByRole(filters: ReportFilters): Promise<ChartDataPoint[]> {
   await ensureManagerOrAdmin();
-  const users = await prismadb.users.findMany({
-    where: { created_on: { gte: filters.dateFrom, lte: filters.dateTo } },
-    select: { role: true },
-  });
+  const users = (await supabaseAdmin.from("users").select("role")).data;
   const roleCounts: Record<string, number> = {};
   for (const u of users) {
     const role = u.role ?? "user";

@@ -10,9 +10,8 @@
  */
 
 import { MongoClient } from 'mongodb';
-import { PrismaClient as PrismaClientPG } from '@prisma/client';
+import { PrismaClient as PrismaClientPG } from "@/lib/prisma-types";
 import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
 import { CheckpointManager } from './migration/checkpoint-manager';
 import { ProgressTracker } from './migration/progress-tracker';
 import { ErrorLogger } from './migration/error-logger';

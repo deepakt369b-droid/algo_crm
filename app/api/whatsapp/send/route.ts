@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WhatsAppClient } from "@/lib/whatsapp/client";
-import { db } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch instance settings from Postgres
-    const instance = await db.crm_Whatsapp_Instances.findUnique({
+    const instance = await supabaseAdmin.from("crm_Whatsapp_Instances").findUnique({
       where: { id: instanceId },
     });
     

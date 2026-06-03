@@ -1,17 +1,16 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { getAllCrmData } from "@/actions/crm/get-crm-data";
 import { requireAuthenticated } from "@/lib/authz";
 import { OpenAI } from "openai";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getOrganizationInsights = async () => {
   const user = await requireAuthenticated();
 
   // Verify AI upsell check (e.g. check if AI is enabled for this account or globally)
   // Since we don't have a specific table, we will check if an OpenAI key is configured globally
-  const openaiService = await prismadb.systemServices.findFirst({
-    where: { name: "OpenAI" },
-  });
+  const openaiService = (await supabaseAdmin.from("systemServices").select("*").eq("name", "OpenAI").single()).data;
 
   if (!openaiService || !openaiService.serviceKey) {
     return { error: "AI features are not configured. Please contact the administrator." };

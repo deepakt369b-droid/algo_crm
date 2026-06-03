@@ -1,10 +1,11 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import sendEmail from "@/lib/sendmail";
 import { inngest } from "@/inngest/client";
 import { writeAuditLog, diffObjects } from "@/lib/audit-log";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const updateLead = async (data: {
   id: string;
@@ -48,33 +49,28 @@ export const updateLead = async (data: {
   if (!id) return { error: "id is required" };
 
   try {
-    const before = await prismadb.crm_Leads.findUnique({ where: { id, deletedAt: null } });
-    const lead = await prismadb.crm_Leads.update({
-      where: { id },
-      data: {
-        v: 1,
-        updatedBy: userId,
-        firstName,
-        lastName,
-        company,
-        jobTitle,
-        email,
-        phone,
-        description,
-        lead_source_id: lead_source_id || undefined,
-        lead_status_id: lead_status_id || undefined,
-        lead_type_id: lead_type_id || undefined,
-        refered_by,
-        campaign,
-        assigned_to: assigned_to || userId,
-        accountsIDs: accountIDs,
-      },
-    });
+    const before = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", id).eq("deletedAt", null).single()).data;
+    const lead = (await supabaseAdmin.from("crm_Leads").update({
+            v: 1,
+            updatedBy: userId,
+            firstName,
+            lastName,
+            company,
+            jobTitle,
+            email,
+            phone,
+            description,
+            lead_source_id: lead_source_id || undefined,
+            lead_status_id: lead_status_id || undefined,
+            lead_type_id: lead_type_id || undefined,
+            refered_by,
+            campaign,
+            assigned_to: assigned_to || userId,
+            accountsIDs: accountIDs,
+          }).eq("id", id).select("*").single()).data;
 
     if (assigned_to && assigned_to !== userId) {
-      const notifyRecipient = await prismadb.users.findFirst({
-        where: { id: assigned_to },
-      });
+      const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", assigned_to).single()).data;
 
       if (notifyRecipient) {
         await sendEmail({

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
@@ -8,19 +8,14 @@ export async function GET(req: NextRequest) {
     return new NextResponse("Invalid unsubscribe link.", { status: 400 });
   }
 
-  const send = await prismadb.crm_campaign_sends.findUnique({
-    where: { unsubscribe_token: token },
-  });
+  const send = (await supabaseAdmin.from("crm_campaign_sends").select("*").eq("unsubscribe_token", token).single()).data;
 
   if (!send) {
     return new NextResponse("Unsubscribe link not found.", { status: 404 });
   }
 
   if (!send.unsubscribed_at) {
-    await prismadb.crm_campaign_sends.update({
-      where: { unsubscribe_token: token },
-      data: { unsubscribed_at: new Date() },
-    });
+    (await supabaseAdmin.from("crm_campaign_sends").update({ unsubscribed_at: new Date() }).eq("unsubscribe_token", token).select("*").single()).data;
   }
 
   return new NextResponse(

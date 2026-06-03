@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { inngest } from "@/inngest/client";
 import {
   requireRole,
@@ -7,6 +7,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const sendCampaignNow = async (id: string) => {
   let user;
@@ -26,10 +27,7 @@ export const sendCampaignNow = async (id: string) => {
   }
 
   const now = new Date();
-  await prismadb.crm_campaigns.update({
-    where: { id },
-    data: { status: "sending", scheduled_at: now },
-  });
+  (await supabaseAdmin.from("crm_campaigns").update({ status: "sending", scheduled_at: now }).eq("id", id).select("*").single()).data;
 
   await inngest.send({
     name: "campaigns/send-now",

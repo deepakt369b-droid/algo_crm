@@ -1,19 +1,16 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   accountReadScopeWhere,
   AuthenticationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getAccounts = async () => {
   try {
     const user = await requireAuthenticated();
-    const accounts = await prismadb.crm_Accounts.findMany({
-      where: accountReadScopeWhere(user),
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    });
+    const accounts = (await supabaseAdmin.from("crm_Accounts").select("id, name").order("name", { ascending: true })).data;
     return { data: accounts };
   } catch (error) {
     if (error instanceof AuthenticationError) {

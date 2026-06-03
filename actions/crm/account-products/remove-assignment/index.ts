@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteAccount,
@@ -8,6 +8,7 @@ import {
 } from "@/lib/authz";
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const removeAssignment = async (id: string) => {
   let user;
@@ -18,10 +19,7 @@ export const removeAssignment = async (id: string) => {
     throw e;
   }
 
-  const existing = await prismadb.crm_AccountProducts.findUnique({
-    where: { id },
-    select: { accountId: true },
-  });
+  const existing = (await supabaseAdmin.from("crm_AccountProducts").select("accountId").eq("id", id).single()).data;
   if (!existing) {
     return { error: "Not found" };
   }
@@ -34,7 +32,7 @@ export const removeAssignment = async (id: string) => {
   }
 
   try {
-    const assignment = await prismadb.crm_AccountProducts.update({
+    const assignment = await supabaseAdmin.from("crm_AccountProducts").update({
       where: { id },
       data: {
         status: "CANCELLED",

@@ -5,9 +5,10 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { inngest } from "@/inngest/client";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface CreateVersionInput {
   parentDocumentId: string;
@@ -34,41 +35,33 @@ export async function createDocumentVersion(input: CreateVersionInput) {
     throw e;
   }
 
-  const parent = await prismadb.documents.findUnique({
-    where: { id: input.parentDocumentId },
-    select: { id: true, document_name: true, version: true, accounts: { select: { account_id: true } } },
-  });
+  const parent = (await supabaseAdmin.from("documents").select("id, document_name, version, accounts(account_id)").eq("id", input.parentDocumentId).single()).data;
   if (!parent) throw new Error("Parent document not found");
 
   const newVersion = parent.version + 1;
 
-  const [newDoc] = await prismadb.$transaction([
-    prismadb.documents.create({
-      data: {
-        v: 0,
-        document_name: parent.document_name,
-        description: `Version ${newVersion}`,
-        document_file_url: input.url,
-        key: input.key,
-        size: input.size,
-        document_file_mimeType: input.mimeType,
-        content_hash: input.contentHash ?? null,
-        processing_status: "PENDING",
-        version: newVersion,
-        parent_document_id: input.parentDocumentId,
-        createdBy: user.id,
-        assigned_user: user.id,
-      },
-    }),
-    prismadb.documents.update({
-      where: { id: input.parentDocumentId },
-      data: {
-        document_file_url: input.url,
-        key: input.key,
-        size: input.size,
-        version: newVersion,
-      },
-    }),
+  const [newDoc] = await Promise.all([
+    (await supabaseAdmin.from("documents").insert({
+              v: 0,
+              document_name: parent.document_name,
+              description: `Version ${newVersion}`,
+              document_file_url: input.url,
+              key: input.key,
+              size: input.size,
+              document_file_mimeType: input.mimeType,
+              content_hash: input.contentHash ?? null,
+              processing_status: "PENDING",
+              version: newVersion,
+              parent_document_id: input.parentDocumentId,
+              createdBy: user.id,
+              assigned_user: user.id,
+            }).select("*").single()).data,
+    (await supabaseAdmin.from("documents").update({
+              document_file_url: input.url,
+              key: input.key,
+              size: input.size,
+              version: newVersion,
+            }).eq("id", input.parentDocumentId).select("*").single()).data,
   ]);
 
   await inngest.send({

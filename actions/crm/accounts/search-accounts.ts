@@ -1,11 +1,12 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   accountReadScopeWhere,
   AuthenticationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const PAGE_SIZE_MAX = 100;
 
@@ -31,15 +32,9 @@ export async function searchAccounts({
         : {}),
     };
 
-    const [accounts, total] = await prismadb.$transaction([
-      prismadb.crm_Accounts.findMany({
-        where,
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-        skip: safeSkip,
-        take: safeTake,
-      }),
-      prismadb.crm_Accounts.count({ where }),
+    const [accounts, total] = await Promise.all([
+      (await supabaseAdmin.from("crm_Accounts").select("id, name").order("name", { ascending: true }).limit(safeTake).range(safeSkip, safeSkip + (safeTake - 1))).data,
+      (await supabaseAdmin.from("crm_Accounts").select("*", { count: 'exact', head: true })).count,
     ]);
 
     return { accounts, total, hasMore: safeSkip + safeTake < total };

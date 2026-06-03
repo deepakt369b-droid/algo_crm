@@ -1,8 +1,9 @@
-import { prismadb } from "@/lib/prisma";
+
 import type { ReportFilters, ChartDataPoint } from "./types";
 import { groupedToChartData } from "./types";
 import type { ReportScope } from "@/lib/authz/scopes/report-scope";
 import { getReportScope } from "@/lib/authz/scopes/report-scope";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const DEFAULT_SCOPE: ReportScope = getReportScope({ id: "", role: "manager" });
 
@@ -10,10 +11,7 @@ export async function getTasksCreatedCompleted(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<{ name: string; created: number; completed: number }[]> {
-  const tasks = await prismadb.tasks.findMany({
-    where: { createdAt: { gte: filters.dateFrom, lte: filters.dateTo }, ...scope.task },
-    select: { createdAt: true, taskStatus: true },
-  });
+  const tasks = (await supabaseAdmin.from("tasks").select("createdAt, taskStatus")).data;
   const grouped: Record<string, { created: number; completed: number }> = {};
   for (const task of tasks) {
     if (!task.createdAt) continue;
@@ -34,19 +32,14 @@ export async function getOverdueTasks(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<number> {
-  return prismadb.tasks.count({
-    where: { dueDateAt: { lt: new Date(), gte: filters.dateFrom }, taskStatus: "ACTIVE", ...scope.task },
-  });
+  return (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("taskStatus", "ACTIVE")).count;
 }
 
 export async function getTasksByAssignee(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<ChartDataPoint[]> {
-  const tasks = await prismadb.tasks.findMany({
-    where: { createdAt: { gte: filters.dateFrom, lte: filters.dateTo }, ...scope.task },
-    select: { assigned_user: { select: { name: true } } },
-  });
+  const tasks = (await supabaseAdmin.from("tasks").select("*")).data;
   const grouped: Record<string, number> = {};
   for (const t of tasks) {
     const name = t.assigned_user?.name ?? "Unassigned";
@@ -63,10 +56,7 @@ export async function getActivitiesByType(
   // (activities are typically created alongside tasks by the same user).
   // Manager/admin scope is empty, so this is a no-op for them.
   void scope;
-  const activities = await prismadb.crm_Activities.findMany({
-    where: { createdAt: { gte: filters.dateFrom, lte: filters.dateTo } },
-    select: { type: true },
-  });
+  const activities = (await supabaseAdmin.from("crm_Activities").select("type")).data;
   const grouped: Record<string, number> = {};
   for (const a of activities) {
     grouped[a.type] = (grouped[a.type] || 0) + 1;

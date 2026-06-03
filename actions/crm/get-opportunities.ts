@@ -1,10 +1,11 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   opportunityReadScopeWhere,
   AuthenticationError,
 } from "@/lib/authz";
 import { serializeDecimalsList } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getOpportunities = async () => {
   let user;
@@ -15,58 +16,13 @@ export const getOpportunities = async () => {
     throw e;
   }
 
-  const data = await prismadb.crm_Opportunities.findMany({
-    where: { ...opportunityReadScopeWhere(user) },
-    include: {
-      // Include assigned user (uses "assigned_to_user_relation")
-      assigned_to_user: {
-        select: {
-          avatar: true,
-          name: true,
-        },
-      },
-      // Include created by user (uses "created_by_user_relation")
-      created_by_user: {
-        select: {
-          name: true,
-        },
-      },
-      // Include contacts through ContactsToOpportunities junction table
-      contacts: {
-        include: {
-          contact: {
-            select: {
-              id: true,
-              first_name: true,
-              last_name: true,
-            },
-          },
-        },
-      },
-      // Include documents through DocumentsToOpportunities junction table
-      documents: {
-        include: {
-          document: {
-            select: {
-              id: true,
-              document_name: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Opportunities").select("*, assigned_to_user(avatar, name), created_by_user(name), contacts(*, contact(id, first_name, last_name)), documents(*, document(id, document_name))")).data;
   return serializeDecimalsList(data);
 };
 
 //Get opportunities by month for chart
 export const getOpportunitiesByMonth = async () => {
-  const opportunities = await prismadb.crm_Opportunities.findMany({
-    where: { deletedAt: null },
-    select: {
-      created_on: true,
-    },
-  });
+  const opportunities = (await supabaseAdmin.from("crm_Opportunities").select("created_on").eq("deletedAt", null)).data;
 
   if (!opportunities) {
     return {};
@@ -95,16 +51,7 @@ export const getOpportunitiesByMonth = async () => {
 
 //Get opportunities by sales_stage name for chart
 export const getOpportunitiesByStage = async () => {
-  const opportunities = await prismadb.crm_Opportunities.findMany({
-    where: { deletedAt: null },
-    select: {
-      assigned_sales_stage: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
+  const opportunities = (await supabaseAdmin.from("crm_Opportunities").select("assigned_sales_stage(name)").eq("deletedAt", null)).data;
 
   console.log(opportunities, "opportunities");
   if (!opportunities) {

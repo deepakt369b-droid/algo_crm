@@ -1,6 +1,5 @@
 // lib/audit-log.ts
-import { prismadb } from "@/lib/prisma";
-
+import { supabaseAdmin } from "@/lib/supabase-admin";
 export type AuditEntityType =
   | "account"
   | "contact"
@@ -65,15 +64,12 @@ interface WriteAuditLogParams {
 
 export async function writeAuditLog(params: WriteAuditLogParams): Promise<void> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prismadb as any).crm_AuditLog.create({
-      data: {
+    await supabaseAdmin.from("crm_AuditLog").insert({
         entityType: params.entityType,
         entityId: params.entityId,
         action: params.action,
-        changes: params.changes ?? undefined,
-        userId: params.userId ?? undefined,
-      },
+        changes: params.changes ?? null,
+        userId: params.userId ?? null,
     });
   } catch (err) {
     console.error("[AUDIT_LOG_WRITE_FAILED]", err);

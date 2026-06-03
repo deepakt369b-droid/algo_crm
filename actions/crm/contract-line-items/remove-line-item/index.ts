@@ -1,9 +1,10 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import { sumLineTotals } from "@/lib/line-items";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const removeContractLineItem = async (id: string) => {
   const session = await getSession();
@@ -12,22 +13,17 @@ export const removeContractLineItem = async (id: string) => {
   }
 
   try {
-    const lineItem = await prismadb.crm_ContractLineItems.findUnique({ where: { id } });
+    const lineItem = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("id", id).single()).data;
     if (!lineItem) {
       return { error: "Line item not found" };
     }
 
-    await prismadb.crm_ContractLineItems.delete({ where: { id } });
+    (await supabaseAdmin.from("crm_ContractLineItems").delete().eq("id", id).select("*").single()).data;
 
-    const remaining = await prismadb.crm_ContractLineItems.findMany({
-      where: { contractId: lineItem.contractId },
-    });
+    const remaining = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("contractId", lineItem.contractId)).data;
     if (remaining.length > 0) {
       const newTotal = sumLineTotals(remaining);
-      await prismadb.crm_Contracts.update({
-        where: { id: lineItem.contractId },
-        data: { value: newTotal },
-      });
+      (await supabaseAdmin.from("crm_Contracts").update({ value: newTotal }).eq("id", lineItem.contractId).select("*").single()).data;
     }
 
     await writeAuditLog({

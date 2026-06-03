@@ -8,7 +8,7 @@
  * and run this script against a schema that still has both tables.
  * For new installations this is a no-op.
  */
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/lib/prisma-types";
 
 const prisma = new PrismaClient();
 

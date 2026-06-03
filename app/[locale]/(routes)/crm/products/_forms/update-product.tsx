@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { crm_ProductCategories } from "@prisma/client";
+import { crm_ProductCategories } from "@/lib/prisma-types";
 
 import { useAction } from "@/hooks/use-action";
 import { updateProduct } from "@/actions/crm/products/update-product";

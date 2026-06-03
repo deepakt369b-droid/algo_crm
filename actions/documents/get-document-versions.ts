@@ -5,7 +5,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function getDocumentVersions(documentId: string) {
   let user;
@@ -24,23 +24,10 @@ export async function getDocumentVersions(documentId: string) {
     throw e;
   }
 
-  const versions = await prismadb.documents.findMany({
-    where: {
-      OR: [
-        { id: documentId },
-        { parent_document_id: documentId },
-      ],
-    },
-    orderBy: { version: "desc" },
-    select: {
-      id: true,
-      version: true,
-      document_file_url: true,
-      createdAt: true,
-      size: true,
-      created_by: { select: { name: true } },
-    },
-  });
+  const versions = (await supabaseAdmin.from("documents").select("id, version, document_file_url, createdAt, size, created_by(name)").eq("OR", [
+          { id: documentId },
+          { parent_document_id: documentId },
+        ]).order("version", { ascending: false })).data;
 
   return versions;
 }

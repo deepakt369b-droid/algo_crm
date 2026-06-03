@@ -1,10 +1,11 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { inngest } from "@/inngest/client";
 import { writeAuditLog, diffObjects } from "@/lib/audit-log";
 import { getSnapshotRate, getDefaultCurrency } from "@/lib/currency";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const updateOpportunity = async (data: {
   id: string;
@@ -50,28 +51,25 @@ export const updateOpportunity = async (data: {
     const snapshotRate = currency
       ? await getSnapshotRate(currency, defaultCurrency)
       : null;
-    const before = await prismadb.crm_Opportunities.findUnique({ where: { id, deletedAt: null } });
-    const opportunity = await prismadb.crm_Opportunities.update({
-      where: { id },
-      data: {
-        account: account || undefined,
-        assigned_to: assigned_to || undefined,
-        budget: budget ? parseFloat(budget) : undefined,
-        campaign: campaign || undefined,
-        close_date,
-        contact: contact || undefined,
-        updatedBy: userId,
-        currency,
-        description,
-        expected_revenue: expected_revenue ? parseFloat(expected_revenue) : undefined,
-        snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
-        name,
-        next_step,
-        sales_stage: sales_stage || undefined,
-        status: "ACTIVE",
-        type: type || undefined,
-      },
-    });
+    const before = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", id).eq("deletedAt", null).single()).data;
+    const opportunity = (await supabaseAdmin.from("crm_Opportunities").update({
+            account: account || undefined,
+            assigned_to: assigned_to || undefined,
+            budget: budget ? parseFloat(budget) : undefined,
+            campaign: campaign || undefined,
+            close_date,
+            contact: contact || undefined,
+            updatedBy: userId,
+            currency,
+            description,
+            expected_revenue: expected_revenue ? parseFloat(expected_revenue) : undefined,
+            snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
+            name,
+            next_step,
+            sales_stage: sales_stage || undefined,
+            status: "ACTIVE",
+            type: type || undefined,
+          }).eq("id", id).select("*").single()).data;
     const serialize = (obj: any) => JSON.parse(JSON.stringify(obj, (_, v) => typeof v === "bigint" ? v.toString() : v));
     const changes = before ? diffObjects(serialize(before), serialize(opportunity)) : null;
     await writeAuditLog({

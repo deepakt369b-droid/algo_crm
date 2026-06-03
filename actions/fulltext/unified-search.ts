@@ -1,11 +1,12 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   generateEmbedding,
   toVectorLiteral,
 } from "@/inngest/lib/embedding-utils";
 import { requireAuthenticated, AuthenticationError } from "@/lib/authz";
 import { getReportScope } from "@/lib/authz/scopes/report-scope";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export interface SearchResult {
   id: string;
@@ -87,132 +88,73 @@ export async function unifiedSearch(
       semDocuments,
       semDocChunks,
     ] = await Promise.all([
-      prismadb.crm_Accounts.findMany({
-        where: {
-          deletedAt: null,
-          AND: [
-            scope.account,
-            {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { description: { contains: query, mode: "insensitive" } },
-                { email: { contains: query, mode: "insensitive" } },
-              ],
-            },
-          ],
-        },
-        take: 10,
-        select: { id: true, name: true, email: true },
-      }),
-      prismadb.crm_Contacts.findMany({
-        where: {
-          deletedAt: null,
-          AND: [
-            scope.contact,
-            {
-              OR: [
-                { first_name: { contains: query, mode: "insensitive" } },
-                { last_name: { contains: query, mode: "insensitive" } },
-                { email: { contains: query, mode: "insensitive" } },
-              ],
-            },
-          ],
-        },
-        take: 10,
-        select: { id: true, first_name: true, last_name: true, email: true },
-      }),
-      prismadb.crm_Leads.findMany({
-        where: {
-          deletedAt: null,
-          AND: [
-            scope.lead,
-            {
-              OR: [
-                { firstName: { contains: query, mode: "insensitive" } },
-                { lastName: { contains: query, mode: "insensitive" } },
-                { company: { contains: query, mode: "insensitive" } },
-                { email: { contains: query, mode: "insensitive" } },
-              ],
-            },
-          ],
-        },
-        take: 10,
-        select: { id: true, firstName: true, lastName: true, company: true, email: true },
-      }),
-      prismadb.crm_Opportunities.findMany({
-        where: {
-          deletedAt: null,
-          AND: [
-            scope.opportunity,
-            {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { description: { contains: query, mode: "insensitive" } },
-              ],
-            },
-          ],
-        },
-        take: 10,
-        select: { id: true, name: true, status: true },
-      }),
-      prismadb.boards.findMany({
-        where: {
-          OR: [
-            { title: { contains: query, mode: "insensitive" } },
-            { description: { contains: query, mode: "insensitive" } },
-          ],
-        },
-        take: 10,
-        select: { id: true, title: true, description: true },
-      }),
-      prismadb.tasks.findMany({
-        where: {
-          AND: [
-            scope.task,
-            {
-              OR: [
-                { title: { contains: query, mode: "insensitive" } },
-                { content: { contains: query, mode: "insensitive" } },
-              ],
-            },
-          ],
-        },
-        take: 10,
-        select: { id: true, title: true, taskStatus: true },
-      }),
+      (await supabaseAdmin.from("crm_Accounts").select("id, name, email").eq("deletedAt", null).eq("AND", [
+                    scope.account,
+                    {
+                      OR: [
+                        { name: { contains: query, mode: "insensitive" } },
+                        { description: { contains: query, mode: "insensitive" } },
+                        { email: { contains: query, mode: "insensitive" } },
+                      ],
+                    },
+                  ]).limit(10)).data,
+      (await supabaseAdmin.from("crm_Contacts").select("id, first_name, last_name, email").eq("deletedAt", null).eq("AND", [
+                    scope.contact,
+                    {
+                      OR: [
+                        { first_name: { contains: query, mode: "insensitive" } },
+                        { last_name: { contains: query, mode: "insensitive" } },
+                        { email: { contains: query, mode: "insensitive" } },
+                      ],
+                    },
+                  ]).limit(10)).data,
+      (await supabaseAdmin.from("crm_Leads").select("id, firstName, lastName, company, email").eq("deletedAt", null).eq("AND", [
+                  scope.lead,
+                  {
+                    OR: [
+                      { firstName: { contains: query, mode: "insensitive" } },
+                      { lastName: { contains: query, mode: "insensitive" } },
+                      { company: { contains: query, mode: "insensitive" } },
+                      { email: { contains: query, mode: "insensitive" } },
+                    ],
+                  },
+                ]).limit(10)).data,
+      (await supabaseAdmin.from("crm_Opportunities").select("id, name, status").eq("deletedAt", null).eq("AND", [
+                  scope.opportunity,
+                  {
+                    OR: [
+                      { name: { contains: query, mode: "insensitive" } },
+                      { description: { contains: query, mode: "insensitive" } },
+                    ],
+                  },
+                ]).limit(10)).data,
+      (await supabaseAdmin.from("boards").select("id, title, description").eq("OR", [
+                  { title: { contains: query, mode: "insensitive" } },
+                  { description: { contains: query, mode: "insensitive" } },
+                ]).limit(10)).data,
+      (await supabaseAdmin.from("tasks").select("id, title, taskStatus").eq("AND", [
+                  scope.task,
+                  {
+                    OR: [
+                      { title: { contains: query, mode: "insensitive" } },
+                      { content: { contains: query, mode: "insensitive" } },
+                    ],
+                  },
+                ]).limit(10)).data,
       scope.allowUserDirectory
-        ? prismadb.users.findMany({
-            where: {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { email: { contains: query, mode: "insensitive" } },
-                { username: { contains: query, mode: "insensitive" } },
-              ],
-            },
-            take: 10,
-            select: { id: true, name: true, email: true },
-          })
+        ? (await supabaseAdmin.from("users").select("id, name, email").eq("OR", [
+                          { name: { contains: query, mode: "insensitive" } },
+                          { email: { contains: query, mode: "insensitive" } },
+                          { username: { contains: query, mode: "insensitive" } },
+                        ]).limit(10)).data
         : Promise.resolve([] as { id: string; name: string | null; email: string | null }[]),
-      prismadb.documents.findMany({
-        where: {
-          parent_document_id: null,
-          OR: [
-            { document_name: { contains: query, mode: "insensitive" } },
-            { summary: { contains: query, mode: "insensitive" } },
-            { description: { contains: query, mode: "insensitive" } },
-          ],
-        },
-        take: 10,
-        select: {
-          id: true,
-          document_name: true,
-          summary: true,
-          document_system_type: true,
-          accounts: { select: { account: { select: { name: true } } }, take: 1 },
-        },
-      }),
+      (await supabaseAdmin.from("documents").select("id, document_name, summary, document_system_type, accounts(account(name))").eq("parent_document_id", null).eq("OR", [
+                  { document_name: { contains: query, mode: "insensitive" } },
+                  { summary: { contains: query, mode: "insensitive" } },
+                  { description: { contains: query, mode: "insensitive" } },
+                ]).limit(10)).data,
       queryVec
-        ? prismadb.$queryRaw<{ id: string; similarity: number }[]>`
+        ? supabaseAdmin.rpc("query_raw", {}) /* TODO */<{ id: string; similarity: number }[]>`
             SELECT a.id, 1 - (e.embedding <=> ${queryVec}::vector) AS similarity
             FROM "crm_Accounts" a
             LEFT JOIN "crm_Embeddings_Accounts" e ON e.account_id = a.id
@@ -221,7 +163,7 @@ export async function unifiedSearch(
             LIMIT 10`
         : noSemantic,
       queryVec
-        ? prismadb.$queryRaw<{ id: string; similarity: number }[]>`
+        ? supabaseAdmin.rpc("query_raw", {}) /* TODO */<{ id: string; similarity: number }[]>`
             SELECT c.id, 1 - (e.embedding <=> ${queryVec}::vector) AS similarity
             FROM "crm_Contacts" c
             LEFT JOIN "crm_Embeddings_Contacts" e ON e.contact_id = c.id
@@ -230,7 +172,7 @@ export async function unifiedSearch(
             LIMIT 10`
         : noSemantic,
       queryVec
-        ? prismadb.$queryRaw<{ id: string; similarity: number }[]>`
+        ? supabaseAdmin.rpc("query_raw", {}) /* TODO */<{ id: string; similarity: number }[]>`
             SELECT l.id, 1 - (e.embedding <=> ${queryVec}::vector) AS similarity
             FROM "crm_Leads" l
             LEFT JOIN "crm_Embeddings_Leads" e ON e.lead_id = l.id
@@ -239,7 +181,7 @@ export async function unifiedSearch(
             LIMIT 10`
         : noSemantic,
       queryVec
-        ? prismadb.$queryRaw<{ id: string; similarity: number }[]>`
+        ? supabaseAdmin.rpc("query_raw", {}) /* TODO */<{ id: string; similarity: number }[]>`
             SELECT o.id, 1 - (e.embedding <=> ${queryVec}::vector) AS similarity
             FROM "crm_Opportunities" o
             LEFT JOIN "crm_Embeddings_Opportunities" e ON e.opportunity_id = o.id
@@ -248,7 +190,7 @@ export async function unifiedSearch(
             LIMIT 10`
         : noSemantic,
       queryVec
-        ? prismadb.$queryRaw<{ id: string; similarity: number }[]>`
+        ? supabaseAdmin.rpc("query_raw", {}) /* TODO */<{ id: string; similarity: number }[]>`
             SELECT d.id, 1 - (e.embedding <=> ${queryVec}::vector) AS similarity
             FROM "Documents" d
             LEFT JOIN "crm_Embeddings_Documents" e ON e.document_id = d.id
@@ -257,7 +199,7 @@ export async function unifiedSearch(
             LIMIT 10`
         : noSemantic,
       queryVec
-        ? prismadb.$queryRaw<{ id: string; similarity: number }[]>`
+        ? supabaseAdmin.rpc("query_raw", {}) /* TODO */<{ id: string; similarity: number }[]>`
             SELECT DISTINCT c."document_id" AS id,
                    MAX(1 - (c.embedding <=> ${queryVec}::vector)) AS similarity
             FROM "crm_Document_Chunks" c
@@ -279,38 +221,10 @@ export async function unifiedSearch(
 
     const [extraAccounts, extraContacts, extraLeads, extraOpportunities] =
       await Promise.all([
-        prismadb.crm_Accounts.findMany({
-          where: {
-            deletedAt: null,
-            id: { in: semAccounts.map((r) => r.id).filter((id) => !kwAccountIds.has(id)) },
-            AND: [scope.account],
-          },
-          select: { id: true, name: true, email: true },
-        }),
-        prismadb.crm_Contacts.findMany({
-          where: {
-            deletedAt: null,
-            id: { in: semContacts.map((r) => r.id).filter((id) => !kwContactIds.has(id)) },
-            AND: [scope.contact],
-          },
-          select: { id: true, first_name: true, last_name: true, email: true },
-        }),
-        prismadb.crm_Leads.findMany({
-          where: {
-            deletedAt: null,
-            id: { in: semLeads.map((r) => r.id).filter((id) => !kwLeadIds.has(id)) },
-            AND: [scope.lead],
-          },
-          select: { id: true, firstName: true, lastName: true, company: true, email: true },
-        }),
-        prismadb.crm_Opportunities.findMany({
-          where: {
-            deletedAt: null,
-            id: { in: semOpportunities.map((r) => r.id).filter((id) => !kwOpportunityIds.has(id)) },
-            AND: [scope.opportunity],
-          },
-          select: { id: true, name: true, status: true },
-        }),
+        (await supabaseAdmin.from("crm_Accounts").select("id, name, email").eq("deletedAt", null).in("id", semAccounts.map((r) => r.id).filter((id) => !kwAccountIds.has(id))).eq("AND", [scope.account])).data,
+        (await supabaseAdmin.from("crm_Contacts").select("id, first_name, last_name, email").eq("deletedAt", null).in("id", semContacts.map((r) => r.id).filter((id) => !kwContactIds.has(id))).eq("AND", [scope.contact])).data,
+        (await supabaseAdmin.from("crm_Leads").select("id, firstName, lastName, company, email").eq("deletedAt", null).in("id", semLeads.map((r) => r.id).filter((id) => !kwLeadIds.has(id))).eq("AND", [scope.lead])).data,
+        (await supabaseAdmin.from("crm_Opportunities").select("id, name, status").eq("deletedAt", null).in("id", semOpportunities.map((r) => r.id).filter((id) => !kwOpportunityIds.has(id))).eq("AND", [scope.opportunity])).data,
       ]);
 
     const accounts = mergeResults(
@@ -401,19 +315,7 @@ export async function unifiedSearch(
     const kwDocumentIds = new Set(kwDocuments.map((r) => r.id));
 
     const extraDocuments = queryVec
-      ? await prismadb.documents.findMany({
-          where: {
-            parent_document_id: null,
-            id: { in: allSemDocs.map((r) => r.id).filter((id) => !kwDocumentIds.has(id)) },
-          },
-          select: {
-            id: true,
-            document_name: true,
-            summary: true,
-            document_system_type: true,
-            accounts: { select: { account: { select: { name: true } } }, take: 1 },
-          },
-        })
+      ? (await supabaseAdmin.from("documents").select("id, document_name, summary, document_system_type").eq("parent_document_id", null).in("id", allSemDocs.map((r) => r.id).filter((id) => !kwDocumentIds.has(id)))).data
       : [];
 
     const documents = mergeResults(

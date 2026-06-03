@@ -6,9 +6,10 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+
 import { inngest } from "@/inngest/client";
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(
   _request: NextRequest,
@@ -31,10 +32,7 @@ export async function POST(
     throw e;
   }
 
-  const link = await prismadb.crm_Target_Contact.findFirst({
-    where: { id: contactId, targetId },
-    select: { id: true },
-  });
+  const link = (await supabaseAdmin.from("crm_Target_Contact").select("id").eq("id", contactId).eq("targetId", targetId).single()).data;
   if (!link) return notFoundOrForbiddenResponse();
 
   await inngest.send({

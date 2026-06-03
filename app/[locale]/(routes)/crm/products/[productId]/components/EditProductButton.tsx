@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import UpdateProductForm from "@/app/[locale]/(routes)/crm/products/_forms/update-product";
-import type { crm_ProductCategories } from "@prisma/client";
+import type { crm_ProductCategories } from "@/lib/prisma-types";
 
 interface EditProductButtonProps {
   product: {

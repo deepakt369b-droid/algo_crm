@@ -1,10 +1,11 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadBoard,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getBoardSections = async (boadId: string) => {
   let user;
@@ -22,11 +23,7 @@ export const getBoardSections = async (boadId: string) => {
     throw e;
   }
 
-  const data = await prismadb.sections.findMany({
-    where: {
-      board: boadId,
-    },
-  });
+  const data = (await supabaseAdmin.from("sections").select("*").eq("board", boadId)).data;
 
   return data;
 };

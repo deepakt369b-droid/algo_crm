@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { getUser } from "@/actions/get-user";
 import { mapLegacyRole } from "@/lib/authz";
 import { canReadInvoice, type InvoiceStatus } from "@/lib/invoices/permissions";
@@ -19,7 +19,7 @@ interface SendInvoiceEmailInput {
 export async function sendInvoiceEmail(input: SendInvoiceEmailInput) {
   const user = await getUser();
 
-  const invoice = await prismadb.invoices.findUniqueOrThrow({
+  const invoice = await supabaseAdmin.from("invoices").findUniqueOrThrow({
     where: { id: input.invoiceId },
     select: {
       id: true,
@@ -88,7 +88,7 @@ export async function sendInvoiceEmail(input: SendInvoiceEmailInput) {
 
   // Update status to SENT only if currently ISSUED
   if (invoice.status === "ISSUED") {
-    await prismadb.invoices.update({
+    await supabaseAdmin.from("invoices").update({
       where: { id: invoice.id },
       data: {
         status: "SENT",
@@ -103,7 +103,7 @@ export async function sendInvoiceEmail(input: SendInvoiceEmailInput) {
     });
   } else {
     // Log activity even if we don't change status
-    await prismadb.invoice_Activity.create({
+    await supabaseAdmin.from("invoice_Activity").insert({
       data: {
         invoiceId: invoice.id,
         actorId: user.id,

@@ -1,40 +1,10 @@
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+
 import { requireAuthenticated, accountReadScopeWhere } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getAccounts = cache(async () => {
   const user = await requireAuthenticated();
-  const data = await prismadb.crm_Accounts.findMany({
-    where: accountReadScopeWhere(user),
-    include: {
-      assigned_to_user: {
-        select: {
-          name: true,
-        },
-      },
-      contacts: {
-        select: {
-          first_name: true,
-          last_name: true,
-        },
-      },
-      // Watchers relationship through AccountWatchers junction table
-      watchers: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Accounts").select("*, assigned_to_user(name), contacts(first_name, last_name), watchers(*, user(id, name, email, avatar))").order("createdAt", { ascending: false })).data;
   return data;
 });

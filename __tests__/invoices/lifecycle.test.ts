@@ -68,6 +68,7 @@ import { cancelInvoice } from "@/actions/invoices/cancel-invoice";
 import { duplicateInvoice } from "@/actions/invoices/duplicate-invoice";
 import { addPayment } from "@/actions/invoices/add-payment";
 import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 /* ------------------------------------------------------------------
  * Helpers
@@ -111,7 +112,7 @@ function draftPayload(
 
 beforeAll(async () => {
   // Try to find a real user for the mock (avoids potential FK issues)
-  const existingUser = await prismadb.users.findFirst();
+  const existingUser = (await supabaseAdmin.from("users").select("*").single()).data;
   if (existingUser) {
     mockGetUser.mockResolvedValue({
       id: existingUser.id,
@@ -123,53 +124,41 @@ beforeAll(async () => {
   }
 
   // Ensure a test account exists
-  let account = await prismadb.crm_Accounts.findFirst();
+  let account = (await supabaseAdmin.from("crm_Accounts").select("*").single()).data;
   if (!account) {
-    account = await prismadb.crm_Accounts.create({
-      data: { v: 0, name: "Lifecycle Test Account", status: "Active" },
-    });
+    account = (await supabaseAdmin.from("crm_Accounts").insert({ v: 0, name: "Lifecycle Test Account", status: "Active" }).select("*").single()).data;
   }
   testAccountId = account.id;
 
   // Find an active tax rate (may not exist in test DB)
-  const taxRate = await prismadb.invoice_TaxRates.findFirst({
-    where: { active: true },
-  });
+  const taxRate = (await supabaseAdmin.from("invoice_TaxRates").select("*").eq("active", true).single()).data;
   testTaxRateId = taxRate?.id;
 
   // Find or create a series + settings (required for issuing)
-  let series = await prismadb.invoice_Series.findFirst();
+  let series = (await supabaseAdmin.from("invoice_Series").select("*").single()).data;
   if (!series) {
-    series = await prismadb.invoice_Series.create({
-      data: {
-        name: "Test Series",
-        prefixTemplate: "INV-{YYYY}-",
-        resetPolicy: "YEARLY",
-        counter: 0,
-        active: true,
-      },
-    });
+    series = (await supabaseAdmin.from("invoice_Series").insert({
+            name: "Test Series",
+            prefixTemplate: "INV-{YYYY}-",
+            resetPolicy: "YEARLY",
+            counter: 0,
+            active: true,
+          }).select("*").single()).data;
   }
   testSeriesId = series.id;
 
-  let settings = await prismadb.invoice_Settings.findFirst();
+  let settings = (await supabaseAdmin.from("invoice_Settings").select("*").single()).data;
   if (!settings) {
     // Find a base currency
-    let currency = await prismadb.currency.findFirst({
-      where: { isEnabled: true },
-    });
+    let currency = (await supabaseAdmin.from("currency").select("*").eq("isEnabled", true).single()).data;
     if (!currency) {
-      currency = await prismadb.currency.create({
-        data: { code: "USD", name: "US Dollar", symbol: "$", isEnabled: true },
-      });
+      currency = (await supabaseAdmin.from("currency").insert({ code: "USD", name: "US Dollar", symbol: "$", isEnabled: true }).select("*").single()).data;
     }
-    await prismadb.invoice_Settings.create({
-      data: {
-        baseCurrency: currency.code,
-        defaultSeriesId: series.id,
-        defaultDueDays: 14,
-      },
-    });
+    (await supabaseAdmin.from("invoice_Settings").insert({
+              baseCurrency: currency.code,
+              defaultSeriesId: series.id,
+              defaultDueDays: 14,
+            }).select("*").single()).data;
   }
 });
 
@@ -177,21 +166,13 @@ afterAll(async () => {
   // Clean up test invoices (payments + line items cascade in schema)
   if (createdInvoiceIds.length > 0) {
     // Delete payments first
-    await prismadb.invoice_Payments.deleteMany({
-      where: { invoiceId: { in: createdInvoiceIds } },
-    });
+    (await supabaseAdmin.from("invoice_Payments").delete().in("invoiceId", createdInvoiceIds)).data;
     // Delete activity
-    await prismadb.invoice_Activity.deleteMany({
-      where: { invoiceId: { in: createdInvoiceIds } },
-    });
+    (await supabaseAdmin.from("invoice_Activity").delete().in("invoiceId", createdInvoiceIds)).data;
     // Delete line items
-    await prismadb.invoice_LineItems.deleteMany({
-      where: { invoiceId: { in: createdInvoiceIds } },
-    });
+    (await supabaseAdmin.from("invoice_LineItems").delete().in("invoiceId", createdInvoiceIds)).data;
     // Delete invoices
-    await prismadb.invoices.deleteMany({
-      where: { id: { in: createdInvoiceIds } },
-    });
+    (await supabaseAdmin.from("invoices").delete().in("id", createdInvoiceIds)).data;
   }
   await prismadb.$disconnect();
 });

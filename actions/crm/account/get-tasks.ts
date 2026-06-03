@@ -1,18 +1,6 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getAccountsTasks = async (accountId: string) => {
-  const data = await prismadb.crm_Accounts_Tasks.findMany({
-    where: {
-      account: accountId,
-    },
-    include: {
-      assigned_user: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Accounts_Tasks").select("*, assigned_user(id, name)").eq("account", accountId)).data;
   return data;
 };

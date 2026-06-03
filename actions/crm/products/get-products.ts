@@ -1,6 +1,7 @@
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+
 import { requireAuthenticated, AuthenticationError } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getProductsFull = cache(async () => {
   try {
@@ -9,14 +10,6 @@ export const getProductsFull = cache(async () => {
     if (e instanceof AuthenticationError) return [];
     throw e;
   }
-  const products = await prismadb.crm_Products.findMany({
-    where: { deletedAt: null },
-    include: {
-      category: true,
-      created_by_user: { select: { id: true, name: true } },
-      _count: { select: { accountProducts: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const products = (await supabaseAdmin.from("crm_Products").select("*, category, created_by_user(id, name), _count(accountProducts)").eq("deletedAt", null).order("createdAt", { ascending: false })).data;
   return products;
 });

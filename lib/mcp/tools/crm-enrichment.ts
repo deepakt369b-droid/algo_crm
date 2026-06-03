@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import { inngest } from "@/inngest/client";
 import { getApiKey } from "@/lib/api-keys";
 import { itemResponse, notFound, externalError } from "../helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const crmEnrichmentTools = [
   {
@@ -32,23 +33,18 @@ export const crmEnrichmentTools = [
         );
       }
 
-      const contact = await prismadb.crm_Contacts.findUnique({
-        where: { id: args.contactId },
-        select: { id: true, email: true },
-      });
+      const contact = (await supabaseAdmin.from("crm_Contacts").select("id, email").eq("id", args.contactId).single()).data;
       if (!contact) notFound("Contact");
       if (!contact!.email) {
         externalError("Contact has no email. Add an email to enable enrichment.");
       }
 
-      const enrichment = await prismadb.crm_Contact_Enrichment.create({
-        data: {
-          contactId: args.contactId,
-          status: "RUNNING",
-          fields: args.fields.map((f) => f.name),
-          triggeredBy: userId,
-        },
-      });
+      const enrichment = (await supabaseAdmin.from("crm_Contact_Enrichment").insert({
+                contactId: args.contactId,
+                status: "RUNNING",
+                fields: args.fields.map((f) => f.name),
+                triggeredBy: userId,
+              }).select("*").single()).data;
 
       await inngest.send({
         name: "enrich/contact.run",
@@ -120,23 +116,18 @@ export const crmEnrichmentTools = [
         externalError("Missing required API keys (FIRECRAWL and/or OPENAI).");
       }
 
-      const target = await prismadb.crm_Targets.findUnique({
-        where: { id: args.targetId },
-        select: { id: true, email: true },
-      });
+      const target = (await supabaseAdmin.from("crm_Targets").select("id, email").eq("id", args.targetId).single()).data;
       if (!target) notFound("Target");
       if (!target!.email) {
         externalError("Target has no email. Add an email to enable enrichment.");
       }
 
-      const enrichment = await prismadb.crm_Target_Enrichment.create({
-        data: {
-          targetId: args.targetId,
-          status: "RUNNING",
-          fields: args.fields.map((f) => f.name),
-          triggeredBy: userId,
-        },
-      });
+      const enrichment = (await supabaseAdmin.from("crm_Target_Enrichment").insert({
+                targetId: args.targetId,
+                status: "RUNNING",
+                fields: args.fields.map((f) => f.name),
+                triggeredBy: userId,
+              }).select("*").single()).data;
 
       await inngest.send({
         name: "enrich/target.run",

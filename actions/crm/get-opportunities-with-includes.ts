@@ -1,12 +1,13 @@
 "use server";
 
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   opportunityReadScopeWhere,
   AuthenticationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getOpportunitiesFull = cache(async () => {
   let user;
@@ -17,29 +18,7 @@ export const getOpportunitiesFull = cache(async () => {
     throw e;
   }
 
-  const data = await prismadb.crm_Opportunities.findMany({
-    where: { ...opportunityReadScopeWhere(user) },
-    include: {
-      assigned_account: {
-        select: {
-          name: true,
-        },
-      },
-      assigned_sales_stage: {
-        select: {
-          name: true,
-        },
-      },
-      assigned_to_user: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: {
-      created_on: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Opportunities").select("*, assigned_account(name), assigned_sales_stage(name), assigned_to_user(name)").order("created_on", { ascending: false })).data;
 
   return data;
 });

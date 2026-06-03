@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadContract,
@@ -7,6 +7,7 @@ import {
   AuthorizationError,
 } from "@/lib/authz";
 import { serializeDecimals } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getContract = async (contractId: string) => {
   let user;
@@ -24,21 +25,7 @@ export const getContract = async (contractId: string) => {
     throw e;
   }
 
-  const data = await prismadb.crm_Contracts.findUnique({
-    where: { id: contractId, deletedAt: null },
-    include: {
-      assigned_account: { select: { id: true, name: true } },
-      assigned_to_user: { select: { id: true, name: true } },
-      lineItems: {
-        include: {
-          product: {
-            select: { id: true, name: true, status: true },
-          },
-        },
-        orderBy: { sort_order: "asc" },
-      },
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Contracts").select("*, assigned_account(id, name), assigned_to_user(id, name), lineItems(*, product(id, name, status))").eq("id", contractId).eq("deletedAt", null).single()).data;
   if (!data) return null;
   return serializeDecimals(data);
 };

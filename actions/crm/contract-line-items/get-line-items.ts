@@ -1,14 +1,6 @@
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getContractLineItems = cache(async (contractId: string) => {
-  return prismadb.crm_ContractLineItems.findMany({
-    where: { contractId },
-    include: {
-      product: {
-        select: { id: true, name: true, status: true },
-      },
-    },
-    orderBy: { sort_order: "asc" },
-  });
+  return (await supabaseAdmin.from("crm_ContractLineItems").select("*, product(id, name, status)").eq("contractId", contractId).order("sort_order", { ascending: true })).data;
 });

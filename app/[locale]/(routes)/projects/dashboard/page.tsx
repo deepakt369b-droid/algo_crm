@@ -5,7 +5,7 @@ import { getTasksPastDue } from "@/actions/projects/get-tasks-past-due";
 import { getBoards } from "@/actions/projects/get-boards";
 import { getSession } from "@/lib/auth-server";
 import { getSections } from "@/actions/projects/get-sections";
-import { Sections } from "@prisma/client";
+import { Sections } from "@/lib/prisma-types";
 import { getTranslations } from "next-intl/server";
 
 const ProjectDashboard = async () => {

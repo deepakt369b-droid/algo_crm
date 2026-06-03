@@ -1,4 +1,4 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadAccount,
@@ -6,6 +6,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getLeadsByAccountId = async (accountId: string) => {
   let user;
@@ -27,21 +28,6 @@ export const getLeadsByAccountId = async (accountId: string) => {
 
   // Defense in depth: even with parent-account access, scope the lead list
   // by the lead's own ownership rules.
-  const data = await prismadb.crm_Leads.findMany({
-    where: {
-      accountsIDs: accountId,
-      ...leadReadScopeWhere(user),
-    },
-    include: {
-      assigned_to_user: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Leads").select("*, assigned_to_user(name)").eq("accountsIDs", accountId).order("createdAt", { ascending: false })).data;
   return data;
 };

@@ -1,11 +1,12 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadTarget,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -28,25 +29,6 @@ export const getTarget = async (targetId: string) => {
     throw e;
   }
 
-  const target = await prismadb.crm_Targets.findUnique({
-    where: { id: targetId },
-    include: {
-      crate_by_user: { select: { name: true } },
-      target_lists: { include: { target_list: true } },
-      target_contacts: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          title: true,
-          phone: true,
-          linkedinUrl: true,
-          source: true,
-          enrichStatus: true,
-        },
-        orderBy: { createdAt: "asc" },
-      },
-    },
-  });
+  const target = (await supabaseAdmin.from("crm_Targets").select("*, crate_by_user(name), target_lists(*, target_list), target_contacts(id, name, email, title, phone, linkedinUrl, source, enrichStatus)").eq("id", targetId).single()).data;
   return target;
 };

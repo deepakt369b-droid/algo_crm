@@ -1,9 +1,10 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import Papa from "papaparse";
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import { requireRole, AuthenticationError, AuthorizationError } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const REQUIRED_FIELDS = ["name", "type", "unit_price", "currency"];
 const MAX_ROWS = 500;
@@ -35,12 +36,9 @@ export async function importProducts(
   }
 
   const [categories, currencies, existingSkus] = await Promise.all([
-    prismadb.crm_ProductCategories.findMany({ where: { isActive: true } }),
-    prismadb.currency.findMany({ where: { isEnabled: true } }),
-    prismadb.crm_Products.findMany({
-      where: { sku: { not: null } },
-      select: { sku: true },
-    }),
+    (await supabaseAdmin.from("crm_ProductCategories").select("*").eq("isActive", true)).data,
+    (await supabaseAdmin.from("currency").select("*").eq("isEnabled", true)).data,
+    (await supabaseAdmin.from("crm_Products").select("sku")).data,
   ]);
 
   const categoryMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]));
@@ -149,7 +147,7 @@ export async function importProducts(
   });
 
   if (valid.length > 0) {
-    await prismadb.crm_Products.createMany({
+    await supabaseAdmin.from("crm_Products").insertMany({
       data: valid,
       skipDuplicates: true,
     });

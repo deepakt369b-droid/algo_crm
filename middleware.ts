@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { betterFetch } from "@better-fetch/fetch";
-import type { Session } from "@/lib/auth";
+import { updateSession } from "@/lib/supabase/middleware";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
 
@@ -45,37 +44,30 @@ export async function middleware(request: NextRequest) {
     return intlMiddleware(request);
   }
 
-  // 4. Get authentication session safely
-  let session: Session | null = null;
-  try {
-    const { data } = await betterFetch<Session>(
-      "/api/auth/get-session",
-      {
-        baseURL: request.nextUrl.origin,
-        headers: {
-          cookie: request.headers.get("cookie") || "",
-        },
-      },
-    );
-    session = data;
-  } catch (error) {
-    console.error("Middleware session fetch failed:", error);
-  }
+  // 4. Supabase Auth Check
+  const { supabase, response: res } = await updateSession(request);
+  const { data: { user } } = await supabase.auth.getUser();
 
   // 5. If no session, redirect to sign-in with correct locale
-  if (!session) {
+  if (!user) {
     return NextResponse.redirect(new URL(`/${locale}/sign-in`, request.url));
   }
 
-  // 6. Check superadmin routes
+  // 6. Check superadmin routes (fetch user role from database if needed)
   if (cleanPathname.startsWith("/superadmin")) {
-    if (!session.user.isSuperAdmin && session.user.role !== "superadmin") {
+    const { data: dbUser } = await supabase.from('User').select('isSuperAdmin, role').eq('id', user.id).single();
+    if (!dbUser?.isSuperAdmin && dbUser?.role !== "superadmin") {
       return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
     }
   }
 
-  // 7. If everything is fine, pass to intlMiddleware to handle dynamic locale negotiation
-  return intlMiddleware(request);
+  // 7. Pass to intlMiddleware and append any headers from updateSession
+  const intlResponse = intlMiddleware(request);
+  res.headers.forEach((value, key) => {
+     intlResponse.headers.set(key, value);
+  });
+  
+  return intlResponse;
 }
 
 export const config = {

@@ -1,12 +1,13 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { UpdateContractLineItem } from "./schema";
 import { InputType, ReturnType } from "./types";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import { calculateLineTotal, sumLineTotals } from "@/lib/line-items";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await getSession();
@@ -18,7 +19,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const { id, ...updateData } = data;
 
   try {
-    const existing = await prismadb.crm_ContractLineItems.findUnique({ where: { id } });
+    const existing = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("id", id).single()).data;
     if (!existing) {
       return { error: "Line item not found" };
     }
@@ -34,7 +35,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
     const lineTotal = calculateLineTotal(qty, price, discType, discVal);
 
-    const lineItem = await prismadb.crm_ContractLineItems.update({
+    const lineItem = await supabaseAdmin.from("crm_ContractLineItems").update({
       where: { id },
       data: {
         ...(updateData.name !== undefined && { name: updateData.name }),
@@ -50,14 +51,9 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       },
     });
 
-    const allLineItems = await prismadb.crm_ContractLineItems.findMany({
-      where: { contractId: existing.contractId },
-    });
+    const allLineItems = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("contractId", existing.contractId)).data;
     const newTotal = sumLineTotals(allLineItems);
-    await prismadb.crm_Contracts.update({
-      where: { id: existing.contractId },
-      data: { value: newTotal },
-    });
+    (await supabaseAdmin.from("crm_Contracts").update({ value: newTotal }).eq("id", existing.contractId).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "contract_line_item",

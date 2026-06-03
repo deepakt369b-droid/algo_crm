@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadTemplate,
@@ -7,6 +7,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 type StepInput = {
   order: number;
@@ -45,13 +46,7 @@ export const createCampaign = async (data: {
   }
 
   if (data.target_list_ids?.length) {
-    const accessible = await prismadb.crm_TargetLists.findMany({
-      where: {
-        id: { in: data.target_list_ids },
-        ...targetListReadScopeWhere(user),
-      },
-      select: { id: true },
-    });
+    const accessible = (await supabaseAdmin.from("crm_TargetLists").select("id").in("id", data.target_list_ids)).data;
     if (accessible.length !== data.target_list_ids.length) {
       return { error: "Forbidden" };
     }
@@ -59,7 +54,7 @@ export const createCampaign = async (data: {
 
   const { target_list_ids, steps, ...campaignData } = data;
 
-  return prismadb.crm_campaigns.create({
+  return supabaseAdmin.from("crm_campaigns").insert({
     data: {
       ...campaignData,
       v: 0,

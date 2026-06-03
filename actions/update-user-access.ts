@@ -1,8 +1,9 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { getSession } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function updateUserAccess(userId: string, accessibleTabs: string[]) {
   const session = await getSession();
@@ -11,14 +12,9 @@ export async function updateUserAccess(userId: string, accessibleTabs: string[])
     throw new Error("Unauthorized");
   }
 
-  await prismadb.users.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      accessibleTabs,
-    },
-  });
+  (await supabaseAdmin.from("users").update({
+          accessibleTabs,
+        }).eq("id", userId).select("*").single()).data;
 
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${userId}/access`);

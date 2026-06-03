@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { getUser } from "@/actions/get-user";
 import { Decimal } from "decimal.js";
 import { computeInvoiceTotals } from "@/lib/invoices/totals";
@@ -13,13 +13,14 @@ import { renderInvoicePdf } from "@/lib/invoices/pdf/render";
 import { uploadInvoicePdf } from "@/lib/invoices/storage";
 import type { InvoicePdfData, PdfParty } from "@/lib/invoices/pdf/templates/default-invoice";
 import { serializeDecimals } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function issueInvoice(raw: unknown) {
   const user = await getUser();
   const input = issueInvoiceSchema.parse(raw);
 
   // Read invoice and settings outside the transaction to avoid holding locks during network calls
-  const invoice = await prismadb.invoices.findUniqueOrThrow({
+  const invoice = await supabaseAdmin.from("invoices").findUniqueOrThrow({
     where: { id: input.invoiceId },
     include: {
       lineItems: { include: { taxRate: true } },
@@ -40,7 +41,7 @@ export async function issueInvoice(raw: unknown) {
     throw new Error("Invoice must have at least one line item");
   }
 
-  const settings = await prismadb.invoice_Settings.findFirst();
+  const settings = (await supabaseAdmin.from("invoice_Settings").select("*").single()).data;
   if (!settings) {
     throw new Error("Invoice settings not configured. Please configure in Admin > Invoices.");
   }
@@ -53,7 +54,7 @@ export async function issueInvoice(raw: unknown) {
   // Fetch FX rate outside the transaction (network call)
   const fxRate = await fetchFxRate(invoice.currency, settings.baseCurrency);
 
-  const result = await prismadb.$transaction(
+  const result = await Promise.all(
     async (tx) => {
       const { number } = await consumeNextNumber(tx, seriesId);
 
@@ -141,7 +142,7 @@ export async function issueInvoice(raw: unknown) {
     };
 
     // Supplier info — use company details from Invoice_Settings (fallback to app name)
-    const settings = await prismadb.invoice_Settings.findFirst();
+    const settings = (await supabaseAdmin.from("invoice_Settings").select("*").single()).data;
     const supplier: PdfParty = {
       name:
         settings?.companyName ??
@@ -197,10 +198,7 @@ export async function issueInvoice(raw: unknown) {
     const pdfBuffer = await renderInvoicePdf(pdfData);
     const storageKey = await uploadInvoicePdf(result.id, pdfBuffer);
 
-    await prismadb.invoices.update({
-      where: { id: result.id },
-      data: { pdfStorageKey: storageKey, pdfGeneratedAt: new Date() },
-    });
+    (await supabaseAdmin.from("invoices").update({ pdfStorageKey: storageKey, pdfGeneratedAt: new Date() }).eq("id", result.id).select("*").single()).data;
   } catch (err) {
     console.error("[ISSUE_INVOICE] PDF generation failed:", err);
     // Do NOT fail — invoice is legally issued

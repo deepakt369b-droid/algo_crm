@@ -1,12 +1,13 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { UpdateOpportunityLineItem } from "./schema";
 import { InputType, ReturnType } from "./types";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import { calculateLineTotal, sumLineTotals } from "@/lib/line-items";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await getSession();
@@ -18,7 +19,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const { id, ...updateData } = data;
 
   try {
-    const existing = await prismadb.crm_OpportunityLineItems.findUnique({ where: { id } });
+    const existing = (await supabaseAdmin.from("crm_OpportunityLineItems").select("*").eq("id", id).single()).data;
     if (!existing) {
       return { error: "Line item not found" };
     }
@@ -34,7 +35,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
     const lineTotal = calculateLineTotal(qty, price, discType, discVal);
 
-    const lineItem = await prismadb.crm_OpportunityLineItems.update({
+    const lineItem = await supabaseAdmin.from("crm_OpportunityLineItems").update({
       where: { id },
       data: {
         ...(updateData.name !== undefined && { name: updateData.name }),
@@ -50,14 +51,9 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       },
     });
 
-    const allLineItems = await prismadb.crm_OpportunityLineItems.findMany({
-      where: { opportunityId: existing.opportunityId },
-    });
+    const allLineItems = (await supabaseAdmin.from("crm_OpportunityLineItems").select("*").eq("opportunityId", existing.opportunityId)).data;
     const newTotal = sumLineTotals(allLineItems);
-    await prismadb.crm_Opportunities.update({
-      where: { id: existing.opportunityId },
-      data: { expected_revenue: newTotal },
-    });
+    (await supabaseAdmin.from("crm_Opportunities").update({ expected_revenue: newTotal }).eq("id", existing.opportunityId).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "opportunity_line_item",

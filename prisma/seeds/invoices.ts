@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/lib/prisma-types";
 
 // Stable deterministic UUIDs for idempotent re-runs
 const SERIES_ID = "00000000-0000-4000-a000-000000000001";

@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import sendEmail from "@/lib/sendmail";
 import { revalidatePath } from "next/cache";
 import {
@@ -7,6 +7,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const activateUser = async (userId: string) => {
   try {
@@ -20,10 +21,7 @@ export const activateUser = async (userId: string) => {
   if (!userId) return { error: "userId is required" };
 
   try {
-    const user = await prismadb.users.update({
-      where: { id: userId },
-      data: { userStatus: "ACTIVE" },
-    });
+    const user = (await supabaseAdmin.from("users").update({ userStatus: "ACTIVE" }).eq("id", userId).select("*").single()).data;
 
     let message;
     switch (user.userLanguage) {

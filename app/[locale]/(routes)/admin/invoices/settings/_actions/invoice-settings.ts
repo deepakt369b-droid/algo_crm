@@ -2,12 +2,13 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireRole,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const requiredStr = (label: string, max: number) =>
   z.string().trim().min(1, `${label} is required`).max(max, `${label} must be ≤ ${max} chars`);
@@ -91,13 +92,13 @@ export async function saveInvoiceSettings(
   const data = parsed.data;
 
   try {
-    const existing = await prismadb.invoice_Settings.findFirst();
+    const existing = (await supabaseAdmin.from("invoice_Settings").select("*").single()).data;
     const settings = existing
-      ? await prismadb.invoice_Settings.update({
+      ? await supabaseAdmin.from("invoice_Settings").update({
           where: { id: existing.id },
           data,
         })
-      : await prismadb.invoice_Settings.create({ data });
+      : await supabaseAdmin.from("invoice_Settings").insert({ data });
 
     revalidatePath("/admin/invoices/settings");
     return { ok: true, data: settings };

@@ -1,7 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
 
-import { prismadb } from "@/lib/prisma";
 import Papa from "papaparse";
 
 export async function importTargets(
@@ -74,7 +73,7 @@ export async function importTargets(
   });
 
   if (valid.length > 0) {
-    await prismadb.crm_Targets.createMany({ data: valid, skipDuplicates: true });
+    await supabaseAdmin.from("crm_Targets").insertMany({ data: valid, skipDuplicates: true });
   }
 
   return { imported: valid.length, skipped: errors.length, errors };

@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteAccount,
@@ -11,6 +11,7 @@ import { Decimal } from "decimal.js";
 import { computeInvoiceTotals, computeLineTotal } from "@/lib/invoices/totals";
 import { createInvoiceSchema } from "@/types/invoice";
 import { serializeDecimals } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function createInvoice(raw: unknown) {
   let user;
@@ -29,15 +30,9 @@ export async function createInvoice(raw: unknown) {
     throw e;
   }
 
-  const taxRates = await prismadb.invoice_TaxRates.findMany({
-    where: {
-      id: {
-        in: input.lineItems
-          .map((l) => l.taxRateId)
-          .filter(Boolean) as string[],
-      },
-    },
-  });
+  const taxRates = (await supabaseAdmin.from("invoice_TaxRates").select("*").in("id", input.lineItems
+            .map((l) => l.taxRateId)
+            .filter(Boolean) as string[])).data;
   const rateMap = new Map(
     taxRates.map((t) => [t.id, new Decimal(t.rate.toString())])
   );
@@ -52,7 +47,7 @@ export async function createInvoice(raw: unknown) {
   }));
   const totals = computeInvoiceTotals(lineInputs);
 
-  const invoice = await prismadb.invoices.create({
+  const invoice = await supabaseAdmin.from("invoices").insert({
     data: {
       type: input.type,
       status: "DRAFT",

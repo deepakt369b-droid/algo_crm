@@ -1,6 +1,6 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getSalesType = async () => {
-  const data = await prismadb.crm_Opportunities_Type.findMany({});
+  const data = (await supabaseAdmin.from("crm_Opportunities_Type").select("*")).data;
   return data;
 };

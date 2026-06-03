@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import {
   requireAuthenticated,
@@ -7,6 +7,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const deleteSection = async (sectionId: string) => {
   let user;
@@ -19,10 +20,7 @@ export const deleteSection = async (sectionId: string) => {
 
   if (!sectionId) return { error: "Missing section ID" };
 
-  const existing = await prismadb.sections.findUnique({
-    where: { id: sectionId },
-    select: { board: true },
-  });
+  const existing = (await supabaseAdmin.from("sections").select("board").eq("id", sectionId).single()).data;
   if (!existing) return { error: "Not found" };
 
   try {
@@ -33,13 +31,9 @@ export const deleteSection = async (sectionId: string) => {
   }
 
   try {
-    await prismadb.tasks.deleteMany({
-      where: { section: sectionId },
-    });
+    (await supabaseAdmin.from("tasks").delete().eq("section", sectionId)).data;
 
-    await prismadb.sections.delete({
-      where: { id: sectionId },
-    });
+    (await supabaseAdmin.from("sections").delete().eq("id", sectionId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

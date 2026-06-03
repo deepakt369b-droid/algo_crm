@@ -1,4 +1,4 @@
-import { prismadb } from "@/lib/prisma";
+
 import { getSession } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, RefreshCw } from "lucide-react";
 import moment from "moment";
 import { RetryEnrichmentButton } from "./RetryEnrichmentButton";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -38,18 +39,7 @@ export default async function TargetEnrichmentJobsPage() {
   const session = await getSession();
   if (!session) redirect("/sign-in");
 
-  const records = await prismadb.crm_Target_Enrichment.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    include: {
-      target: {
-        select: { id: true, first_name: true, last_name: true, email: true },
-      },
-      triggered_by_user: {
-        select: { name: true },
-      },
-    },
-  });
+  const records = (await supabaseAdmin.from("crm_Target_Enrichment").select("*, target(id, first_name, last_name, email), triggered_by_user(name)").order("createdAt", { ascending: false }).limit(200)).data;
 
   return (
     <div className="p-6 space-y-4">

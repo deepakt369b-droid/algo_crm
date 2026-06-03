@@ -1,7 +1,8 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const removeTargetFromList = async (targetListId: string, targetId: string) => {
   const session = await getSession();
@@ -10,14 +11,7 @@ export const removeTargetFromList = async (targetListId: string, targetId: strin
   if (!targetId) return { error: "targetId is required" };
 
   try {
-    await prismadb.targetsToTargetLists.delete({
-      where: {
-        target_id_target_list_id: {
-          target_id: targetId,
-          target_list_id: targetListId,
-        },
-      },
-    });
+    (await supabaseAdmin.from("targetsToTargetLists").delete().select("*").single()).data;
     revalidatePath("/[locale]/(routes)/crm/target-lists", "page");
     return { success: true };
   } catch (error) {

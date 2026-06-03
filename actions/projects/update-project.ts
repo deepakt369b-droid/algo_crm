@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import {
   requireAuthenticated,
@@ -7,6 +7,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const updateProject = async (data: {
   id: string;
@@ -34,16 +35,13 @@ export const updateProject = async (data: {
   }
 
   try {
-    await prismadb.boards.update({
-      where: { id },
-      data: {
-        title,
-        description,
-        visibility,
-        updatedBy: user.id,
-        updatedAt: new Date(),
-      },
-    });
+    (await supabaseAdmin.from("boards").update({
+              title,
+              description,
+              visibility,
+              updatedBy: user.id,
+              updatedAt: new Date(),
+            }).eq("id", id).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

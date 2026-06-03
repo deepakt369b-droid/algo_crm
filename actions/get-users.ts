@@ -1,40 +1,20 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 //Get all users  for admin module
 export const getUsers = async () => {
-  const data = await prismadb.users.findMany({
-    orderBy: {
-      created_on: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("users").select("*").order("created_on", { ascending: false })).data;
   return data;
 };
 
 //Get active users for Selects in app etc
 export const getActiveUsers = async () => {
-  const data = await prismadb.users.findMany({
-    orderBy: {
-      name: "asc",
-    },
-    where: {
-      userStatus: "ACTIVE",
-    },
-    select: {
-      id: true,
-      name: true,
-      avatar: true,
-    },
-  });
+  const data = (await supabaseAdmin.from("users").select("id, name, avatar").eq("userStatus", "ACTIVE").order("name", { ascending: true })).data;
   return data;
 };
 
 //Get new users by month for chart
 export const getUsersByMonthAndYear = async (year: number) => {
-  const users = await prismadb.users.findMany({
-    select: {
-      created_on: true,
-    },
-  });
+  const users = (await supabaseAdmin.from("users").select("created_on")).data;
 
   if (!users) {
     return {};
@@ -65,11 +45,7 @@ export const getUsersByMonthAndYear = async (year: number) => {
 
 //Get new users by month for chart
 export const getUsersByMonth = async () => {
-  const users = await prismadb.users.findMany({
-    select: {
-      created_on: true,
-    },
-  });
+  const users = (await supabaseAdmin.from("users").select("created_on")).data;
 
   if (!users) {
     return {};
@@ -96,11 +72,7 @@ export const getUsersByMonth = async () => {
 };
 
 export const getUsersCountOverall = async () => {
-  const users = await prismadb.users.findMany({
-    select: {
-      created_on: true,
-    },
-  });
+  const users = (await supabaseAdmin.from("users").select("created_on")).data;
 
   if (!users) {
     return {};

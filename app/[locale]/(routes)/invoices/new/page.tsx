@@ -1,31 +1,19 @@
 import Container from "@/app/[locale]/(routes)/components/ui/Container";
 import { getTranslations } from "next-intl/server";
-import { prismadb } from "@/lib/prisma";
+
 import { InvoiceForm } from "../components/invoice-form";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export default async function NewInvoicePage() {
   const t = await getTranslations("InvoicesPage");
 
   const [products, taxRates, series, currencies, settings] =
     await Promise.all([
-      prismadb.crm_Products.findMany({
-        select: { id: true, name: true },
-        where: { status: "ACTIVE" },
-        orderBy: { name: "asc" },
-      }),
-      prismadb.invoice_TaxRates.findMany({
-        where: { active: true },
-        orderBy: { rate: "desc" },
-      }),
-      prismadb.invoice_Series.findMany({
-        where: { active: true },
-        orderBy: { name: "asc" },
-      }),
-      prismadb.currency.findMany({
-        where: { isEnabled: true },
-        orderBy: { code: "asc" },
-      }),
-      prismadb.invoice_Settings.findFirst(),
+      (await supabaseAdmin.from("crm_Products").select("id, name").eq("status", "ACTIVE").order("name", { ascending: true })).data,
+      (await supabaseAdmin.from("invoice_TaxRates").select("*").eq("active", true).order("rate", { ascending: false })).data,
+      (await supabaseAdmin.from("invoice_Series").select("*").eq("active", true).order("name", { ascending: true })).data,
+      (await supabaseAdmin.from("currency").select("*").eq("isEnabled", true).order("code", { ascending: true })).data,
+      (await supabaseAdmin.from("invoice_Settings").select("*").single()).data,
     ]);
 
   const formLabels = {

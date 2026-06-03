@@ -1,18 +1,10 @@
-import { prismadb } from "@/lib/prisma";
+
 import { getExchangeRates, convertAmount } from "@/lib/currency";
-import { Decimal } from "@prisma/client/runtime/client";
+import Decimal from "decimal.js";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getExpectedRevenue = async (displayCurrency: string) => {
-  const activeOpportunities = await prismadb.crm_Opportunities.findMany({
-    where: {
-      status: "ACTIVE",
-      deletedAt: null,
-    },
-    select: {
-      budget: true,
-      currency: true,
-    },
-  });
+  const activeOpportunities = (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("status", "ACTIVE").eq("deletedAt", null)).data;
 
   const rates = await getExchangeRates();
 

@@ -1,10 +1,11 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadLead,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getLead = async (leadId: string) => {
   let user;
@@ -22,48 +23,6 @@ export const getLead = async (leadId: string) => {
     throw e;
   }
 
-  const data = await prismadb.crm_Leads.findFirst({
-    where: {
-      id: leadId,
-      deletedAt: null,
-    },
-    include: {
-      // Include FK relation name fields
-      lead_source: { select: { id: true, name: true } },
-      lead_status: { select: { id: true, name: true } },
-      lead_type:   { select: { id: true, name: true } },
-      // Include assigned user (uses "LeadAssignedTo" relation)
-      assigned_to_user: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      // Include assigned accounts
-      assigned_accounts: true,
-      // Include documents through DocumentsToLeads junction table
-      documents: {
-        include: {
-          document: {
-            select: {
-              id: true,
-              document_name: true,
-              document_type: true,
-              document_file_url: true,
-              document_file_mimeType: true,
-              createdAt: true,
-              created_by: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Leads").select("*, lead_source(id, name), lead_status(id, name), lead_type(id, name), assigned_to_user(id, name), assigned_accounts, documents(*, document(id, document_name, document_type, document_file_url, document_file_mimeType, createdAt, created_by(id, name, email)))").eq("id", leadId).eq("deletedAt", null).single()).data;
   return data;
 };

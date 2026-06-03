@@ -1,17 +1,16 @@
 "use server";
 
-import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function getTemplates() {
-  const templates = await db.crm_Industry_Templates.findMany({
+  const templates = await supabaseAdmin.from("crm_Industry_Templates").findMany({
     orderBy: { createdAt: "desc" },
   });
   return templates;
 }
 
 export async function createTemplate(data: any) {
-  const template = await db.crm_Industry_Templates.create({
+  const template = await supabaseAdmin.from("crm_Industry_Templates").insert({
     data: {
       name: data.name,
       slug: data.slug,
@@ -30,7 +29,7 @@ export async function createTemplate(data: any) {
 
 export async function updateTemplate(data: any) {
   const { id, ...updateData } = data;
-  const template = await db.crm_Industry_Templates.update({
+  const template = await supabaseAdmin.from("crm_Industry_Templates").update({
     where: { id },
     data: updateData,
   });
@@ -39,7 +38,7 @@ export async function updateTemplate(data: any) {
 }
 
 export async function updateTemplateStatus(data: { id: string; isActive: boolean }) {
-  const template = await db.crm_Industry_Templates.update({
+  const template = await supabaseAdmin.from("crm_Industry_Templates").update({
     where: { id: data.id },
     data: { isActive: data.isActive },
   });
@@ -48,7 +47,7 @@ export async function updateTemplateStatus(data: { id: string; isActive: boolean
 }
 
 export async function deleteTemplate(data: { id: string }) {
-  await db.crm_Industry_Templates.delete({
+  await supabaseAdmin.from("crm_Industry_Templates").delete({
     where: { id: data.id },
   });
   revalidatePath("/superadmin/templates");
@@ -56,11 +55,11 @@ export async function deleteTemplate(data: { id: string }) {
 }
 
 export async function seedTemplates(data: { templates: any[] }) {
-  const count = await db.crm_Industry_Templates.count();
+  const count = await supabaseAdmin.from("crm_Industry_Templates").count();
   if (count > 0) return { success: true };
 
   for (const t of data.templates) {
-    await db.crm_Industry_Templates.upsert({
+    await supabaseAdmin.from("crm_Industry_Templates").upsert({
       where: { slug: t.slug },
       update: {},
       create: {

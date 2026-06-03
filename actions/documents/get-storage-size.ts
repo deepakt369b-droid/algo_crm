@@ -1,7 +1,7 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getStorageSize = async () => {
-  const data = await prismadb.documents.findMany({});
+  const data = (await supabaseAdmin.from("documents").select("*")).data;
 
   //TODO: fix this any
   const storageSize = data.reduce((acc: number, doc: any) => {

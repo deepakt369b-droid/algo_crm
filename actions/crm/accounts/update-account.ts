@@ -1,9 +1,10 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { inngest } from "@/inngest/client";
 import { writeAuditLog, diffObjects } from "@/lib/audit-log";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const updateAccount = async (data: {
   id: string;
@@ -38,15 +39,12 @@ export const updateAccount = async (data: {
   if (!id) return { error: "id is required" };
 
   try {
-    const before = await prismadb.crm_Accounts.findUnique({ where: { id, deletedAt: null } });
-    const account = await prismadb.crm_Accounts.update({
-      where: { id },
-      data: {
-        v: 0,
-        updatedBy: session.user.id,
-        ...rest,
-      },
-    });
+    const before = (await supabaseAdmin.from("crm_Accounts").select("*").eq("id", id).eq("deletedAt", null).single()).data;
+    const account = (await supabaseAdmin.from("crm_Accounts").update({
+            v: 0,
+            updatedBy: session.user.id,
+            ...rest,
+          }).eq("id", id).select("*").single()).data;
     const changes = before ? diffObjects(
       before as Record<string, unknown>,
       account as Record<string, unknown>

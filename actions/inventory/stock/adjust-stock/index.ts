@@ -1,10 +1,10 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
 import { AdjustStock } from "./schema";
 import { InputType, ReturnType } from "./types";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await getSession();
@@ -15,44 +15,38 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const { productId, warehouseId, newQuantity, note } = data;
 
   try {
-    const product = await prismadb.crm_Products.findUnique({ where: { id: productId } });
+    const product = (await supabaseAdmin.from("crm_Products").select("*").eq("id", productId).single()).data;
     if (!product || product.deletedAt) {
       return { error: "Product not found" };
     }
 
-    const warehouse = await prismadb.inventoryWarehouse.findUnique({ where: { id: warehouseId } });
+    const warehouse = (await supabaseAdmin.from("inventoryWarehouse").select("*").eq("id", warehouseId).single()).data;
     if (!warehouse) {
       return { error: "Warehouse not found" };
     }
 
     // Get current stock
-    const existingStock = await prismadb.inventoryStock.findUnique({
-      where: { productId_warehouseId: { productId, warehouseId } },
-    });
+    const existingStock = (await supabaseAdmin.from("inventoryStock").select("*").eq("productId", productId).eq("warehouseId", warehouseId).single()).data;
 
     const currentQuantity = existingStock ? Number(existingStock.quantity) : 0;
     const quantityDiff = newQuantity - currentQuantity;
 
     // Upsert stock record
-    await prismadb.inventoryStock.upsert({
-      where: { productId_warehouseId: { productId, warehouseId } },
-      update: { quantity: newQuantity },
-      create: { productId, warehouseId, quantity: newQuantity },
-    });
+    await supabaseAdmin.from("inventoryStock").upsert({
+      productId, warehouseId, quantity: newQuantity
+    }, { onConflict: "productId,warehouseId" });
 
     // Record movement if quantity changed
     if (quantityDiff !== 0) {
-      await prismadb.inventoryMovement.create({
-        data: {
-          productId,
-          warehouseId,
-          type: "ADJUSTMENT",
-          quantity: Math.abs(quantityDiff),
-          reference: note || "Manual adjustment",
-          note: note || undefined,
-          createdBy: session.user.id,
-        },
-      });
+      (await supabaseAdmin.from("inventoryMovement").insert({
+                  productId,
+                  warehouseId,
+                  type: "ADJUSTMENT",
+                  quantity: Math.abs(quantityDiff),
+                  reference: note || "Manual adjustment",
+                  note: note || undefined,
+                  createdBy: session.user.id,
+                }).select("*").single()).data;
     }
 
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");

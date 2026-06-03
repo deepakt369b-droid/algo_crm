@@ -1,13 +1,10 @@
-import { prismadb } from "@/lib/prisma";
+
 import { getSession } from "@/lib/auth-server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getUser = async () => {
   const session = await getSession();
-  const data = await prismadb.users.findUnique({
-    where: {
-      id: session?.user?.id,
-    },
-  });
+  const data = (await supabaseAdmin.from("users").select("*").eq("id", session?.user?.id).single()).data;
   if (!data) throw new Error("User not found");
   return data;
 };

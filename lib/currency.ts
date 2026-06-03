@@ -1,12 +1,12 @@
-import { Decimal } from "@prisma/client/runtime/client";
-import { prismadb } from "@/lib/prisma";
+import Decimal from "decimal.js";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 // Re-export pure functions so existing server-side imports still work
 export { findRate, convertAmount, formatCurrency } from "@/lib/currency-format";
 export type { Rate } from "@/lib/currency-format";
 
 export async function getExchangeRates() {
-  const rates = await prismadb.exchangeRate.findMany();
+  const rates = (await supabaseAdmin.from("exchangeRate").select("*")).data;
   return rates.map((r: { fromCurrency: string; toCurrency: string; rate: Decimal }) => ({
     fromCurrency: r.fromCurrency,
     toCurrency: r.toCurrency,
@@ -19,24 +19,15 @@ export async function getSnapshotRate(
   to: string
 ): Promise<Decimal | null> {
   if (from === to) return new Decimal("1");
-  const rate = await prismadb.exchangeRate.findUnique({
-    where: {
-      fromCurrency_toCurrency: { fromCurrency: from, toCurrency: to },
-    },
-  });
+  const rate = (await supabaseAdmin.from("exchangeRate").select("*").single()).data;
   return rate ? rate.rate : null;
 }
 
 export async function getDefaultCurrency(): Promise<string> {
-  const setting = await prismadb.crm_SystemSettings.findUnique({
-    where: { key: "default_currency" },
-  });
+  const setting = (await supabaseAdmin.from("crm_SystemSettings").select("*").eq("key", "default_currency").single()).data;
   return setting?.value || "EUR";
 }
 
 export async function getEnabledCurrencies() {
-  return prismadb.currency.findMany({
-    where: { isEnabled: true },
-    orderBy: { code: "asc" },
-  });
+  return (await supabaseAdmin.from("currency").select("*").eq("isEnabled", true).order("code", { ascending: true })).data;
 }

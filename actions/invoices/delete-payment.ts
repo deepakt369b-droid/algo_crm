@@ -1,6 +1,6 @@
 "use server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
-import { prismadb } from "@/lib/prisma";
 import {
   requireRole,
   AuthenticationError,
@@ -18,7 +18,7 @@ export async function deletePayment(paymentId: string) {
     throw e;
   }
 
-  return prismadb.$transaction(async (tx) => {
+  return Promise.all(async (tx) => {
     const payment = await tx.invoice_Payments.findUniqueOrThrow({
       where: { id: paymentId },
       select: { invoiceId: true, amount: true },

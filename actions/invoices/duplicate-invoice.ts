@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteAccount,
@@ -19,7 +19,7 @@ export async function duplicateInvoice(invoiceId: string) {
     throw e;
   }
 
-  const source = await prismadb.invoices.findUniqueOrThrow({
+  const source = await supabaseAdmin.from("invoices").findUniqueOrThrow({
     where: { id: invoiceId },
     include: { lineItems: { orderBy: { position: "asc" } } },
   });
@@ -40,7 +40,7 @@ export async function duplicateInvoice(invoiceId: string) {
     throw e;
   }
 
-  const invoice = await prismadb.invoices.create({
+  const invoice = await supabaseAdmin.from("invoices").insert({
     data: {
       type: source.type,
       status: "DRAFT",

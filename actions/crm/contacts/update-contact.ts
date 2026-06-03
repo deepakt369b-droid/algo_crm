@@ -1,9 +1,10 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { inngest } from "@/inngest/client";
 import { writeAuditLog, diffObjects } from "@/lib/audit-log";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const updateContact = async (data: {
   id: string;
@@ -48,8 +49,8 @@ export const updateContact = async (data: {
   if (!id) return { error: "id is required" };
 
   try {
-    const before = await prismadb.crm_Contacts.findUnique({ where: { id, deletedAt: null } });
-    const contact = await prismadb.crm_Contacts.update({
+    const before = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", id).eq("deletedAt", null).single()).data;
+    const contact = await supabaseAdmin.from("crm_Contacts").update({
       where: { id },
       data: {
         v: 0,

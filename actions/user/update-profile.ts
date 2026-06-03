@@ -1,7 +1,8 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const updateProfile = async (data: {
   userId: string;
@@ -22,10 +23,7 @@ export const updateProfile = async (data: {
   }
 
   try {
-    const user = await prismadb.users.update({
-      data: { name, username, account_name },
-      where: { id: userId },
-    });
+    const user = (await supabaseAdmin.from("users").update({ name, username, account_name }).eq("id", userId).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/profile", "page");
     return { data: user };
   } catch (error) {

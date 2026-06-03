@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Warehouse, BarChart3, AlertTriangle, TrendingUp, Plus, Layers } from "lucide-react";
-import { prismadb } from "@/lib/prisma";
 import CrmTableSkeleton from "@/components/skeletons/crm-table-skeleton";
 import { WarehousesTab } from "./_components/WarehousesTab";
 import { StockTab } from "./_components/StockTab";
 import { ReorderTab } from "./_components/ReorderTab";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface Props {
   params: Promise<{ locale: string }>;
@@ -27,43 +27,28 @@ export default async function AdminInventoryPage(props: Props) {
     lowStockCount,
     totalStockValue,
   ] = await Promise.all([
-    prismadb.crm_Products.count({ where: { deletedAt: null } }),
-    prismadb.crm_Products.count({ where: { status: "ACTIVE", deletedAt: null } }),
-    prismadb.crm_ProductCategories.count({ where: { isActive: true } }),
-    prismadb.crm_Products.count({ where: { type: "SERVICE", deletedAt: null } }),
-    prismadb.inventoryWarehouse.count({ where: { isActive: true } }),
-    prismadb.reorderThreshold.count({
-      where: {
-        reorderPoint: { gt: 0 },
-      },
-    }),
-    prismadb.inventoryStock.aggregate({
-      _sum: { quantity: true },
-    }),
+    (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).eq("status", "ACTIVE").eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_ProductCategories").select("*", { count: 'exact', head: true }).eq("isActive", true)).count,
+    (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).eq("type", "SERVICE").eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("inventoryWarehouse").select("*", { count: 'exact', head: true }).eq("isActive", true)).count,
+    (await supabaseAdmin.from("reorderThreshold").select("*", { count: 'exact', head: true }).gt("reorderPoint", 0)).count,
+    Promise.resolve({ _sum: { quantity: 0 } }),
   ]);
 
   // Count actual low stock items by comparing stock vs reorder points
-  const thresholdsWithStockData = await prismadb.reorderThreshold.findMany({
-    select: {
-      id: true,
-      reorderPoint: true,
-      productId: true,
-      warehouseId: true,
-    },
-  });
+  const thresholdsWithStockData = (await supabaseAdmin.from("reorderThreshold").select("id, reorderPoint, productId, warehouseId")).data || [];
 
   // Get current stock for each threshold
   const stockRecords = await Promise.all(
     thresholdsWithStockData.map((t) =>
-      prismadb.inventoryStock.findUnique({
-        where: { productId_warehouseId: { productId: t.productId, warehouseId: t.warehouseId } },
-        select: { quantity: true },
-      }),
+      supabaseAdmin.from("inventoryStock").select("quantity").eq("productId", t.productId).eq("warehouseId", t.warehouseId).single()
     ),
   );
 
   const actualLowStock = thresholdsWithStockData.filter((t, i) => {
-    const stockQty = stockRecords[i] ? Number(stockRecords[i].quantity) : 0;
+    const record = stockRecords[i].data;
+    const stockQty = record ? Number(record.quantity) : 0;
     return stockQty <= Number(t.reorderPoint);
   }).length;
 

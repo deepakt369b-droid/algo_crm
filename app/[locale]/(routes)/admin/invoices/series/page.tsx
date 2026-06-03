@@ -1,11 +1,10 @@
-import { prismadb } from "@/lib/prisma";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SeriesTable } from "./_components/SeriesTable";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export default async function InvoiceSeriesPage() {
-  const series = await prismadb.invoice_Series.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const series = (await supabaseAdmin.from("invoice_Series").select("*").order("createdAt", { ascending: false })).data;
 
   return (
     <div className="space-y-6">

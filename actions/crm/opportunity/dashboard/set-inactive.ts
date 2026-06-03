@@ -1,6 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function setInactiveOpportunity(id: string) {
   const session = await getSession();
@@ -14,15 +14,7 @@ export async function setInactiveOpportunity(id: string) {
     console.log("Opportunity id is required");
   }
   try {
-    const opportunity = await prismadb.crm_Opportunities.findUnique({
-      where: {
-        id,
-        deletedAt: null,
-      },
-      select: {
-        assigned_to: true,
-      },
-    });
+    const opportunity = (await supabaseAdmin.from("crm_Opportunities").select("assigned_to").eq("id", id).eq("deletedAt", null).single()).data;
 
     if (!opportunity) {
       return { error: "Opportunity not found" };
@@ -32,14 +24,9 @@ export async function setInactiveOpportunity(id: string) {
       return { error: "Forbidden" };
     }
 
-    const result = await prismadb.crm_Opportunities.update({
-      where: {
-        id,
-      },
-      data: {
-        status: "INACTIVE",
-      },
-    });
+    const result = (await supabaseAdmin.from("crm_Opportunities").update({
+            status: "INACTIVE",
+          }).eq("id", id).select("*").single()).data;
 
     console.log(result, "result");
 

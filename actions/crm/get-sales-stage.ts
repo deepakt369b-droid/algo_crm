@@ -1,10 +1,6 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getSaleStages = async () => {
-  const data = await prismadb.crm_Opportunities_Sales_Stages.findMany({
-    orderBy: {
-      probability: "asc",
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Opportunities_Sales_Stages").select("*").order("probability", { ascending: true })).data;
   return data;
 };

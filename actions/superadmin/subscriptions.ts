@@ -1,10 +1,9 @@
 "use server";
 
-import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function getSubscriptions() {
-  const subscriptions = await db.crm_Tenant_Subscriptions.findMany({
+  const subscriptions = await supabaseAdmin.from("crm_Tenant_Subscriptions").findMany({
     orderBy: { createdAt: "desc" },
   });
 
@@ -24,7 +23,7 @@ export async function getSubscriptions() {
 }
 
 export async function createSubscription(data: any) {
-  const subscription = await db.crm_Tenant_Subscriptions.create({
+  const subscription = await supabaseAdmin.from("crm_Tenant_Subscriptions").insert({
     data: {
       tenantId: data.tenantId,
       planName: data.plan.toUpperCase(),
@@ -38,7 +37,7 @@ export async function createSubscription(data: any) {
 }
 
 export async function updateSubscription(data: { id: string; plan?: string; status?: string }) {
-  const subscription = await db.crm_Tenant_Subscriptions.update({
+  const subscription = await supabaseAdmin.from("crm_Tenant_Subscriptions").update({
     where: { id: data.id },
     data: {
       ...(data.plan ? { planName: data.plan.toUpperCase() } : {}),
@@ -50,7 +49,7 @@ export async function updateSubscription(data: { id: string; plan?: string; stat
 }
 
 export async function deleteSubscription(data: { id: string }) {
-  await db.crm_Tenant_Subscriptions.delete({
+  await supabaseAdmin.from("crm_Tenant_Subscriptions").delete({
     where: { id: data.id },
   });
   revalidatePath("/superadmin/subscriptions");

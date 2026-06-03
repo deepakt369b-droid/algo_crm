@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prismadb } from "@/lib/prisma";
 import { headers } from "next/headers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: Request) {
   try {
@@ -25,15 +25,12 @@ export async function POST(req: Request) {
     // Actually, in the simulated signup it didn't create a Convex Tenant either.
     
     // Let's update the user
-    await prismadb.users.update({
-      where: { id: session.user.id },
-      data: {
-        name: `${firstName} ${lastName}`.trim(),
-        // Assign a mock tenantId for now
-        tenantId: workspaceSlug,
-        role: "admin",
-      },
-    });
+    (await supabaseAdmin.from("users").update({
+              name: `${firstName} ${lastName}`.trim(),
+              // Assign a mock tenantId for now
+              tenantId: workspaceSlug,
+              role: "admin",
+            }).eq("id", session.user.id).select("*").single()).data;
 
     return NextResponse.json({ success: true, workspaceSlug });
   } catch (error: any) {

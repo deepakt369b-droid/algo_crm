@@ -1,24 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import TryAgain from "./components/TryAgain";
-import { Users } from "@prisma/client";
+import { Users } from "@/lib/prisma-types";
 import {
   Card,
   CardContent,
   CardDescription,
   CardTitle,
 } from "@/components/ui/card";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const PendingPage = async () => {
-  const adminUsers: Users[] = await prismadb.users.findMany({
-    where: {
-      role: "admin",
-      userStatus: "ACTIVE",
-    },
-  });
+  const adminUsers: Users[] = (await supabaseAdmin.from("users").select("*").eq("role", "admin").eq("userStatus", "ACTIVE")).data;
 
   const session = await getSession();
 

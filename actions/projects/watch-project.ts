@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { junctionTableHelpers } from "@/lib/junction-helpers";
 import { revalidatePath } from "next/cache";
 import {
@@ -8,6 +8,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const watchProject = async (projectId: string) => {
   let user;
@@ -28,12 +29,9 @@ export const watchProject = async (projectId: string) => {
   }
 
   try {
-    await prismadb.boards.update({
-      where: { id: projectId },
-      data: {
-        watchers: junctionTableHelpers.addWatcher(user.id),
-      },
-    });
+    (await supabaseAdmin.from("boards").update({
+              watchers: junctionTableHelpers.addWatcher(user.id),
+            }).eq("id", projectId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };
@@ -62,15 +60,12 @@ export const unwatchProject = async (projectId: string) => {
   }
 
   try {
-    await prismadb.boards.update({
-      where: { id: projectId },
-      data: {
-        watchers: junctionTableHelpers.removeBoardWatcher(
-          projectId,
-          user.id
-        ),
-      },
-    });
+    (await supabaseAdmin.from("boards").update({
+              watchers: junctionTableHelpers.removeBoardWatcher(
+                projectId,
+                user.id
+              ),
+            }).eq("id", projectId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

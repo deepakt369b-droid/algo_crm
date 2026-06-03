@@ -20,6 +20,7 @@ jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 import { prismadb } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-server";
 import { bulkDeleteDocuments } from "@/actions/documents/bulk-delete-documents";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const mockUser = (role: "user" | "manager" | "admin", id = "u1") => {
   (getSession as jest.Mock).mockResolvedValue({ user: { id } });
@@ -32,7 +33,7 @@ describe("bulkDeleteDocuments auth", () => {
   it("401: unauthenticated throws and does not delete", async () => {
     (getSession as jest.Mock).mockResolvedValue(null);
     await expect(bulkDeleteDocuments(["d1", "d2"])).rejects.toThrow("Unauthenticated");
-    expect(prismadb.documents.deleteMany).not.toHaveBeenCalled();
+    (await supabaseAdmin.from("documents").delete()).data.not.toHaveBeenCalled();
   });
 
   it("403: partial unauthorized → fail-closed, nothing deleted", async () => {
@@ -40,14 +41,14 @@ describe("bulkDeleteDocuments auth", () => {
     // Filter returns only 1 of 2 ids → unauthorized.
     (prismadb.documents.findMany as jest.Mock).mockResolvedValue([{ id: "d1" }]);
     await expect(bulkDeleteDocuments(["d1", "d2"])).rejects.toThrow("Forbidden");
-    expect(prismadb.documents.deleteMany).not.toHaveBeenCalled();
+    (await supabaseAdmin.from("documents").delete()).data.not.toHaveBeenCalled();
   });
 
   it("403: all unauthorized → fail-closed", async () => {
     mockUser("user", "u1");
     (prismadb.documents.findMany as jest.Mock).mockResolvedValue([]);
     await expect(bulkDeleteDocuments(["d1", "d2"])).rejects.toThrow("Forbidden");
-    expect(prismadb.documents.deleteMany).not.toHaveBeenCalled();
+    (await supabaseAdmin.from("documents").delete()).data.not.toHaveBeenCalled();
   });
 
   it("200: all authorized → deletes all", async () => {
@@ -62,7 +63,7 @@ describe("bulkDeleteDocuments auth", () => {
     ]);
     (prismadb.documents.deleteMany as jest.Mock).mockResolvedValue({ count: 2 });
     await bulkDeleteDocuments(["d1", "d2"]);
-    expect(prismadb.documents.deleteMany).toHaveBeenCalledWith({
+    (await supabaseAdmin.from("documents").delete()).data.toHaveBeenCalledWith({
       where: { id: { in: ["d1", "d2"] } },
     });
   });
@@ -81,6 +82,6 @@ describe("bulkDeleteDocuments auth", () => {
     await bulkDeleteDocuments(["d1", "d2"]);
     const where = (prismadb.documents.findMany as jest.Mock).mock.calls[0][0].where;
     expect(where.OR).toBeUndefined();
-    expect(prismadb.documents.deleteMany).toHaveBeenCalled();
+    (await supabaseAdmin.from("documents").delete()).data.toHaveBeenCalled();
   });
 });

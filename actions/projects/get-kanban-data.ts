@@ -1,10 +1,11 @@
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanReadBoard,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getKanbanData = async (boardId: string) => {
   let user;
@@ -22,28 +23,10 @@ export const getKanbanData = async (boardId: string) => {
     throw e;
   }
 
-  const board = await prismadb.boards.findUnique({
-    where: {
-      id: boardId,
-    },
-  });
+  const board = (await supabaseAdmin.from("boards").select("*").eq("id", boardId).single()).data;
 
   //Select sections from board with boardId, tasks are included
-  let sections = await prismadb.sections.findMany({
-    where: {
-      board: boardId,
-    },
-    orderBy: {
-      position: "asc",
-    },
-    include: {
-      tasks: {
-        orderBy: {
-          position: "desc",
-        },
-      },
-    },
-  });
+  let sections = (await supabaseAdmin.from("sections").select("*").eq("board", boardId).order("position", { ascending: true })).data;
 
   const data = {
     board,

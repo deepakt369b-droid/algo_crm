@@ -1,5 +1,4 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
 import {
   requireRole,
   AuthenticationError,

@@ -20,6 +20,7 @@ jest.mock("@/inngest/client", () => ({ inngest: { send: jest.fn() } }));
 
 import { prismadb } from "@/lib/prisma";
 import { computeContentHash } from "@/inngest/lib/embedding-utils";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 describe("embed-email: hash-skip path", () => {
   it("skips embedding when content hash is unchanged", async () => {
@@ -31,7 +32,7 @@ describe("embed-email: hash-skip path", () => {
 
     const text = "subject body";
     const newHash = (computeContentHash as jest.Mock)(text);
-    const existing = await prismadb.emailEmbedding.findUnique({ where: { emailId: "e1" }, select: { contentHash: true } });
+    const existing = (await supabaseAdmin.from("emailEmbedding").select("contentHash").eq("emailId", "e1").single()).data;
 
     expect(existing?.contentHash).toBe(newHash);
     expect(prismadb.$executeRaw).not.toHaveBeenCalled();

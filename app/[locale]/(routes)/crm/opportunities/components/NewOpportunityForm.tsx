@@ -42,7 +42,7 @@ import {
   crm_Opportunities_Sales_Stages,
   crm_Opportunities_Type,
   crm_campaigns,
-} from "@prisma/client";
+} from "@/lib/prisma-types";
 import { createOpportunity } from "@/actions/crm/opportunities/create-opportunity";
 
 //TODO: fix all the types

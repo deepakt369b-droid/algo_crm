@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export interface InventoryStockItem {
   id: string;
@@ -38,22 +38,11 @@ export async function getInventoryStock(filters?: InventoryStockFilter): Promise
   const where: Record<string, unknown> = {};
   if (filters?.warehouseId) where.warehouseId = filters.warehouseId;
 
-  const stock = await prismadb.inventoryStock.findMany({
-    where,
-    orderBy: [{ warehouse: { name: "asc" } }, { product: { name: "asc" } }],
-    include: {
-      product: { select: { id: true, name: true, sku: true, unit_price: true, currency: true, type: true } },
-      warehouse: { select: { id: true, name: true, code: true } },
-    },
-  });
+  const stock = (await supabaseAdmin.from("inventoryStock").select("*, product(id, name, sku, unit_price, currency, type), warehouse(id, name, code)").order("warehouse", { ascending: false }).order("product", { ascending: false })).data;
 
   // Get all reorder thresholds for these product-warehouse combinations
   const thresholdKeys = stock.map((s) => ({ productId: s.productId, warehouseId: s.warehouseId }));
-  const thresholds = await prismadb.reorderThreshold.findMany({
-    where: {
-      OR: thresholdKeys.map((k) => ({ productId: k.productId, warehouseId: k.warehouseId })),
-    },
-  });
+  const thresholds = (await supabaseAdmin.from("reorderThreshold").select("*").eq("OR", thresholdKeys.map((k) => ({ productId: k.productId, warehouseId: k.warehouseId })))).data;
 
   const thresholdMap = new Map(
     thresholds.map((t) => [`${t.productId}:${t.warehouseId}`, t]),

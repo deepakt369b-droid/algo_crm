@@ -6,9 +6,10 @@ import {
   AuthorizationError,
 } from "@/lib/authz";
 
-import { prismadb } from "@/lib/prisma";
+
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { minioClient, MINIO_BUCKET } from "@/lib/minio";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function deleteDocument(documentId: string) {
   let user;
@@ -28,13 +29,11 @@ export async function deleteDocument(documentId: string) {
     throw e;
   }
 
-  const document = await prismadb.documents.findUnique({
-    where: { id: documentId },
-  });
+  const document = (await supabaseAdmin.from("documents").select("*").eq("id", documentId).single()).data;
 
   if (!document) throw new Error("Document not found");
 
-  await prismadb.documents.delete({ where: { id: documentId } });
+  (await supabaseAdmin.from("documents").delete().eq("id", documentId).select("*").single()).data;
 
   if (document.key) {
     await minioClient.send(

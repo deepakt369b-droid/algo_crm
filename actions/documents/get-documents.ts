@@ -4,7 +4,7 @@ import {
   documentReadScopeWhere,
   AuthenticationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getDocuments = async () => {
   let user;
@@ -15,22 +15,7 @@ export const getDocuments = async () => {
     throw e;
   }
 
-  const documents = await prismadb.documents.findMany({
-    where: {
-      parent_document_id: null, // Only show root documents, not old versions
-      ...documentReadScopeWhere(user),
-    },
-    orderBy: { date_created: "desc" },
-    include: {
-      created_by: { select: { id: true, name: true, email: true } },
-      assigned_to_user: { select: { id: true, name: true, email: true } },
-      accounts: {
-        select: {
-          account: { select: { id: true, name: true } },
-        },
-      },
-    },
-  });
+  const documents = (await supabaseAdmin.from("documents").select("*, created_by(id, name, email), assigned_to_user(id, name, email), accounts(account(id, name))").eq("parent_document_id", null).order("date_created", { ascending: false })).data;
 
   return documents;
 };

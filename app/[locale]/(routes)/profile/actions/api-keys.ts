@@ -1,10 +1,11 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { encrypt, decrypt } from "@/lib/email-crypto";
-import { ApiKeyProvider } from "@prisma/client";
+import { ApiKeyProvider } from "@/lib/prisma-types";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const PROVIDER_ENV_MAP: Record<ApiKeyProvider, string> = {
   OPENAI: "OPENAI_API_KEY",
@@ -41,10 +42,7 @@ export async function getUserApiKeys(): Promise<UserProviderStatus[]> {
       }
 
       // 2. Check SYSTEM row
-      const systemRow = await prismadb.apiKeys.findFirst({
-        where: { scope: "SYSTEM", provider },
-        select: { encryptedKey: true },
-      });
+      const systemRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", provider).single()).data;
 
       if (systemRow) {
         const plaintext = decrypt(systemRow.encryptedKey);
@@ -57,10 +55,7 @@ export async function getUserApiKeys(): Promise<UserProviderStatus[]> {
       }
 
       // 3. Check USER row
-      const userRow = await prismadb.apiKeys.findFirst({
-        where: { scope: "USER", provider, userId },
-        select: { encryptedKey: true },
-      });
+      const userRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "USER").eq("provider", provider).eq("userId", userId).single()).data;
 
       if (userRow) {
         const plaintext = decrypt(userRow.encryptedKey);
@@ -88,18 +83,16 @@ export async function upsertUserApiKey(
   const userId = session.user.id;
   const encryptedKey = encrypt(key);
 
-  await prismadb.$transaction([
-    prismadb.apiKeys.deleteMany({
+  await Promise.all([
+    supabaseAdmin.from("apiKeys").deleteMany({
       where: { scope: "USER", provider, userId },
     }),
-    prismadb.apiKeys.create({
-      data: {
-        scope: "USER",
-        provider,
-        userId,
-        encryptedKey,
-      },
-    }),
+    (await supabaseAdmin.from("apiKeys").insert({
+              scope: "USER",
+              provider,
+              userId,
+              encryptedKey,
+            }).select("*").single()).data,
   ]);
 
   revalidatePath("/(en)/profile");
@@ -111,7 +104,7 @@ export async function deleteUserApiKey(provider: ApiKeyProvider): Promise<void> 
 
   const userId = session.user.id;
 
-  await prismadb.apiKeys.deleteMany({
+  await supabaseAdmin.from("apiKeys").deleteMany({
     where: { scope: "USER", provider, userId },
   });
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismadb } from "@/lib/prisma";
+
 import {
   paginationSchema,
   paginationArgs,
@@ -7,6 +7,7 @@ import {
   itemResponse,
   notFound,
 } from "../helpers";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const crmProductTools = [
   {
@@ -25,13 +26,8 @@ export const crmProductTools = [
         ...(args.status && { status: args.status as any }),
       };
       const [data, total] = await Promise.all([
-        prismadb.crm_Products.findMany({
-          where,
-          ...paginationArgs(args),
-          orderBy: { createdAt: "desc" },
-          include: { category: true },
-        }),
-        prismadb.crm_Products.count({ where }),
+        (await supabaseAdmin.from("crm_Products").select("*, category").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -41,10 +37,7 @@ export const crmProductTools = [
     description: "Get a single CRM product by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const product = await prismadb.crm_Products.findFirst({
-        where: { id: args.id, deletedAt: null },
-        include: { category: true },
-      });
+      const product = (await supabaseAdmin.from("crm_Products").select("*, category").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!product) notFound("Product");
       return itemResponse(product);
     },
@@ -83,25 +76,23 @@ export const crmProductTools = [
       },
       userId: string
     ) {
-      const product = await prismadb.crm_Products.create({
-        data: {
-          name: args.name,
-          description: args.description,
-          sku: args.sku,
-          type: args.type as any,
-          status: "DRAFT",
-          unit_price: args.unit_price,
-          unit_cost: args.unit_cost,
-          currency: args.currency,
-          tax_rate: args.tax_rate,
-          unit: args.unit,
-          is_recurring: args.is_recurring ?? false,
-          billing_period: args.billing_period as any,
-          categoryId: args.categoryId,
-          createdBy: userId,
-          updatedBy: userId,
-        },
-      });
+      const product = (await supabaseAdmin.from("crm_Products").insert({
+                name: args.name,
+                description: args.description,
+                sku: args.sku,
+                type: args.type as any,
+                status: "DRAFT",
+                unit_price: args.unit_price,
+                unit_cost: args.unit_cost,
+                currency: args.currency,
+                tax_rate: args.tax_rate,
+                unit: args.unit,
+                is_recurring: args.is_recurring ?? false,
+                billing_period: args.billing_period as any,
+                categoryId: args.categoryId,
+                createdBy: userId,
+                updatedBy: userId,
+              }).select("*").single()).data;
       return itemResponse(product);
     },
   },
@@ -125,15 +116,10 @@ export const crmProductTools = [
       categoryId: z.string().uuid().optional(),
     }),
     async handler(args: Record<string, any>, userId: string) {
-      const existing = await prismadb.crm_Products.findFirst({
-        where: { id: args.id, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Products").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Product");
       const { id, ...updateData } = args;
-      const product = await prismadb.crm_Products.update({
-        where: { id },
-        data: { ...updateData, updatedBy: userId },
-      });
+      const product = (await supabaseAdmin.from("crm_Products").update({ ...updateData, updatedBy: userId }).eq("id", id).select("*").single()).data;
       return itemResponse(product);
     },
   },
@@ -142,14 +128,9 @@ export const crmProductTools = [
     description: "Soft-delete a CRM product (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = await prismadb.crm_Products.findFirst({
-        where: { id: args.id, deletedAt: null },
-      });
+      const existing = (await supabaseAdmin.from("crm_Products").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Product");
-      const product = await prismadb.crm_Products.update({
-        where: { id: args.id },
-        data: { deletedAt: new Date(), deletedBy: userId, status: "ARCHIVED" as any },
-      });
+      const product = (await supabaseAdmin.from("crm_Products").update({ deletedAt: new Date(), deletedBy: userId, status: "ARCHIVED" as any }).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: product.id, status: "ARCHIVED" });
     },
   },

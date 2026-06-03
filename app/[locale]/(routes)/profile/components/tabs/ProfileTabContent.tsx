@@ -1,5 +1,5 @@
 // app/[locale]/(routes)/profile/components/tabs/ProfileTabContent.tsx
-import { Users } from "@prisma/client";
+import { Users } from "@/lib/prisma-types";
 import { getTranslations } from "next-intl/server";
 import { ProfilePhotoForm } from "../ProfilePhotoForm";
 import { ProfileForm } from "../ProfileForm";

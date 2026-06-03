@@ -1,8 +1,9 @@
 import React from "react";
 import Container from "@/app/[locale]/(routes)/components/ui/Container";
 import { UserAccessClient } from "./UserAccessClient";
-import { prismadb } from "@/lib/prisma";
+
 import { notFound } from "next/navigation";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface AccessPageProps {
   params: {
@@ -14,15 +15,7 @@ interface AccessPageProps {
 export default async function UserAccessPage({ params }: AccessPageProps) {
   const { userId } = await params;
   
-  const user = await prismadb.users.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      accessibleTabs: true,
-    },
-  });
+  const user = (await supabaseAdmin.from("users").select("id, name, email, accessibleTabs").eq("id", userId).single()).data;
 
   if (!user) {
     return notFound();

@@ -1,14 +1,6 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getUserLeads = async (userId: string) => {
-  const data = await prismadb.crm_Leads.findMany({
-    where: {
-      assigned_to: userId,
-      deletedAt: null,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Leads").select("*").eq("assigned_to", userId).eq("deletedAt", null).order("createdAt", { ascending: false })).data;
   return data;
 };

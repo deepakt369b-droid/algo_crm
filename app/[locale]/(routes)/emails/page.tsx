@@ -10,7 +10,7 @@ import { getSession } from "@/lib/auth-server";
 import { getTranslations } from "next-intl/server";
 import { getEmailAccounts } from "@/actions/emails/accounts";
 import { getEmails } from "@/actions/emails/messages";
-import { EmailFolder } from "@prisma/client";
+import { EmailFolder } from "@/lib/prisma-types";
 
 const EmailRoute = async ({
   searchParams,

@@ -1,16 +1,13 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
 
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function getUserById(userId: string) {
   const session = await getSession();
   if (!session) throw new Error("Unauthorized");
 
-  const user = await prismadb.users.findFirst({
-    where: { id: userId, userStatus: "ACTIVE" },
-    select: { id: true, name: true, avatar: true },
-  });
+  const user = (await supabaseAdmin.from("users").select("id, name, avatar").eq("id", userId).eq("userStatus", "ACTIVE").single()).data;
 
   return user ?? null;
 }

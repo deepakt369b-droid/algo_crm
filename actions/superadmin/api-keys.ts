@@ -1,8 +1,8 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { encrypt, decrypt } from "@/lib/email-crypto";
-import { ApiKeyProvider } from "@prisma/client";
+import { ApiKeyProvider } from "@/lib/prisma-types";
 import {
   requireRole,
   AuthenticationError,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/authz";
 
 import { getSession } from "@/lib/auth-server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 async function ensureSuperAdmin(): Promise<void> {
   const session = await getSession();
@@ -47,10 +48,7 @@ export async function getSystemApiKeys(): Promise<ProviderStatus[]> {
         };
       }
 
-      const row = await prismadb.apiKeys.findFirst({
-        where: { scope: "SYSTEM", provider },
-        select: { encryptedKey: true },
-      });
+      const row = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", provider).single()).data;
 
       if (row) {
         const plaintext = decrypt(row.encryptedKey);
@@ -74,17 +72,15 @@ export async function upsertSystemApiKey(
 
   const encryptedKey = encrypt(key);
 
-  await prismadb.$transaction([
-    prismadb.apiKeys.deleteMany({
+  await Promise.all([
+    supabaseAdmin.from("apiKeys").deleteMany({
       where: { scope: "SYSTEM", provider },
     }),
-    prismadb.apiKeys.create({
-      data: {
-        scope: "SYSTEM",
-        provider,
-        encryptedKey,
-      },
-    }),
+    (await supabaseAdmin.from("apiKeys").insert({
+              scope: "SYSTEM",
+              provider,
+              encryptedKey,
+            }).select("*").single()).data,
   ]);
 
   revalidatePath("/(en)/admin/llm-keys");
@@ -93,7 +89,7 @@ export async function upsertSystemApiKey(
 export async function deleteSystemApiKey(provider: ApiKeyProvider): Promise<void> {
   await ensureSuperAdmin();
 
-  await prismadb.apiKeys.deleteMany({
+  await supabaseAdmin.from("apiKeys").deleteMany({
     where: { scope: "SYSTEM", provider },
   });
 

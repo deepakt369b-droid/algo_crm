@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteTarget,
@@ -8,6 +8,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(
   request: NextRequest,
@@ -37,17 +38,15 @@ export async function POST(
     return new NextResponse("name or email required", { status: 400 });
   }
 
-  const contact = await prismadb.crm_Target_Contact.create({
-    data: {
-      targetId,
-      name: name ?? null,
-      email: email ?? null,
-      phone: phone || null,
-      linkedinUrl: linkedinUrl || null,
-      source: "manual",
-      enrichStatus: "PENDING",
-    },
-  });
+  const contact = (await supabaseAdmin.from("crm_Target_Contact").insert({
+        targetId,
+        name: name ?? null,
+        email: email ?? null,
+        phone: phone || null,
+        linkedinUrl: linkedinUrl || null,
+        source: "manual",
+        enrichStatus: "PENDING",
+      }).select("*").single()).data;
 
   return NextResponse.json(contact);
 }

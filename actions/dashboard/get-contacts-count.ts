@@ -1,6 +1,6 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getContactCount = async () => {
-  const data = await prismadb.crm_Contacts.count({ where: { deletedAt: null } });
+  const data = (await supabaseAdmin.from("crm_Contacts").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count;
   return data;
 };

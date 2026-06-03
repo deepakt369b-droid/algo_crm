@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prismadb } from "@/lib/prisma";
+
 import { createHmac } from "crypto";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 function verifyResendSignature(body: string, signature: string | null): boolean {
   if (!signature || !process.env.RESEND_WEBHOOK_SECRET) return false;
@@ -26,43 +27,29 @@ export async function POST(req: NextRequest) {
   const messageId = event.data.message_id ?? event.data.email_id;
   if (!messageId) return NextResponse.json({ ok: true });
 
-  const send = await prismadb.crm_campaign_sends.findFirst({
-    where: { resend_message_id: messageId },
-  });
+  const send = (await supabaseAdmin.from("crm_campaign_sends").select("*").eq("resend_message_id", messageId).single()).data;
   if (!send) return NextResponse.json({ ok: true }); // unknown message
 
   switch (event.type) {
     case "email.delivered":
       if (send.status === "sent") {
-        await prismadb.crm_campaign_sends.update({
-          where: { id: send.id },
-          data: { status: "delivered" },
-        });
+        (await supabaseAdmin.from("crm_campaign_sends").update({ status: "delivered" }).eq("id", send.id).select("*").single()).data;
       }
       break;
 
     case "email.bounced":
-      await prismadb.crm_campaign_sends.update({
-        where: { id: send.id },
-        data: { status: "bounced", error_message: "Bounced" },
-      });
+      (await supabaseAdmin.from("crm_campaign_sends").update({ status: "bounced", error_message: "Bounced" }).eq("id", send.id).select("*").single()).data;
       break;
 
     case "email.opened":
       if (!send.opened_at) {
-        await prismadb.crm_campaign_sends.update({
-          where: { id: send.id },
-          data: { opened_at: new Date() },
-        });
+        (await supabaseAdmin.from("crm_campaign_sends").update({ opened_at: new Date() }).eq("id", send.id).select("*").single()).data;
       }
       break;
 
     case "email.clicked":
       if (!send.clicked_at) {
-        await prismadb.crm_campaign_sends.update({
-          where: { id: send.id },
-          data: { clicked_at: new Date() },
-        });
+        (await supabaseAdmin.from("crm_campaign_sends").update({ clicked_at: new Date() }).eq("id", send.id).select("*").single()).data;
       }
       break;
   }

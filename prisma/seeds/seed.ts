@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/lib/prisma-types";
 import { Pool } from "pg";
-import { PrismaPg } from "@prisma/adapter-pg";
 import dotenv from "dotenv";
 import path from "path";
 

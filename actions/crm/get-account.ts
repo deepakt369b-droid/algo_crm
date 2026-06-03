@@ -1,55 +1,6 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getAccount = async (accountId: string) => {
-  const data = await prismadb.crm_Accounts.findFirst({
-    where: {
-      id: accountId,
-      deletedAt: null,
-    },
-    include: {
-      contacts: true,
-      opportunities: true,
-      // Documents relationship through DocumentsToAccounts junction table
-      documents: {
-        include: {
-          document: {
-            select: {
-              id: true,
-              document_name: true,
-              document_type: true,
-              document_file_url: true,
-              document_file_mimeType: true,
-              createdAt: true,
-              created_by: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-          },
-        },
-      },
-      assigned_to_user: {
-        select: {
-          name: true,
-        },
-      },
-      // Watchers relationship through AccountWatchers junction table
-      watchers: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Accounts").select("*, contacts, opportunities, documents(*, document(id, document_name, document_type, document_file_url, document_file_mimeType, createdAt, created_by(id, name, email))), assigned_to_user(name), watchers(*, user(id, name, email, avatar))").eq("id", accountId).eq("deletedAt", null).single()).data;
   return data;
 };

@@ -1,6 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 
 export const createTargetList = async (data: {
@@ -15,7 +15,7 @@ export const createTargetList = async (data: {
   if (!name) return { error: "name is required" };
 
   try {
-    const list = await prismadb.crm_TargetLists.create({
+    const list = await supabaseAdmin.from("crm_TargetLists").insert({
       data: {
         name,
         description,

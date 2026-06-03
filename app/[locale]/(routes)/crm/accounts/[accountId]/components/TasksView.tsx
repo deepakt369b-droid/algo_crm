@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { crm_Accounts } from "@prisma/client";
+import { crm_Accounts } from "@/lib/prisma-types";
 
 import {
   Card,

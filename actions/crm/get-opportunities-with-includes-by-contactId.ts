@@ -1,4 +1,3 @@
-import { prismadb } from "@/lib/prisma";
 import {
   requireAuthenticated,
   assertCanReadContact,
@@ -6,6 +5,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getOpportunitiesFullByContactId = async (contactId: string) => {
   let user;
@@ -27,37 +27,7 @@ export const getOpportunitiesFullByContactId = async (contactId: string) => {
 
   // Defense in depth: scope the opportunity list by ownership rules even
   // when the caller has access to the linked contact.
-  const data = await prismadb.crm_Opportunities.findMany({
-    where: {
-      // Filter through ContactsToOpportunities junction table
-      contacts: {
-        some: {
-          contact_id: contactId,
-        },
-      },
-      ...opportunityReadScopeWhere(user),
-    },
-    include: {
-      assigned_account: {
-        select: {
-          name: true,
-        },
-      },
-      assigned_sales_stage: {
-        select: {
-          name: true,
-        },
-      },
-      assigned_to_user: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: {
-      created_on: "desc",
-    },
-  });
+  const data = (await supabaseAdmin.from("crm_Opportunities").select("*").order("created_on", { ascending: false })).data;
 
   return data;
 };

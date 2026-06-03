@@ -1,6 +1,5 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 const ENTITY_SLUGS: Record<string, string> = {

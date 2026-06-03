@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { crm_Opportunities } from "@prisma/client";
+import { crm_Opportunities } from "@/lib/prisma-types";
 import {
   CalendarDays,
   ClipboardList,
@@ -19,13 +19,14 @@ import {
 } from "lucide-react";
 import moment from "moment";
 import { Clapperboard } from "lucide-react";
-import { prismadb } from "@/lib/prisma";
+
 import { getAllCrmData } from "@/actions/crm/get-crm-data";
 import { OpportunityDetailActions } from "./OpportunityDetailActions";
 import { formatCurrency, convertAmount, getExchangeRates, getDefaultCurrency } from "@/lib/currency";
-import { Decimal } from "@prisma/client/runtime/client";
+import Decimal from "decimal.js";
 import { cookies } from "next/headers";
 import { serializeDecimals } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface OppsViewProps {
   data: {
@@ -38,7 +39,7 @@ interface OppsViewProps {
 
 export async function BasicView({ data }: OppsViewProps) {
   //console.log(data, "data");
-  const users = await prismadb.users.findMany();
+  const users = (await supabaseAdmin.from("users").select("*")).data;
   const crmData = await getAllCrmData();
   const { saleTypes, saleStages, campaigns, currencies } = crmData;
   const cookieStore = await cookies();

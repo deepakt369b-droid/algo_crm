@@ -1,13 +1,14 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { CreateNewContract } from "./schema";
 import { InputType, ReturnType } from "./types";
 
 import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog } from "@/lib/audit-log";
 import { getSnapshotRate, getDefaultCurrency } from "@/lib/currency";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await getSession();
@@ -18,11 +19,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     };
   }
 
-  const user = await prismadb.users.findUnique({
-    where: {
-      email: session?.user?.email,
-    },
-  });
+  const user = (await supabaseAdmin.from("users").select("*").eq("email", session?.user?.email).single()).data;
 
   if (!user) {
     return {
@@ -55,24 +52,22 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const snapshotRate = currency
       ? await getSnapshotRate(currency, defaultCurrency)
       : null;
-    const result = await prismadb.crm_Contracts.create({
-      data: {
-        v: 0,
-        title,
-        value: parseFloat(value),
-        startDate,
-        endDate,
-        renewalReminderDate,
-        customerSignedDate,
-        companySignedDate,
-        description,
-        account: account || undefined,
-        assigned_to: assigned_to || undefined,
-        createdBy: user.id,
-        currency: currency || undefined,
-        snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
-      },
-    });
+    const result = (await supabaseAdmin.from("crm_Contracts").insert({
+            v: 0,
+            title,
+            value: parseFloat(value),
+            startDate,
+            endDate,
+            renewalReminderDate,
+            customerSignedDate,
+            companySignedDate,
+            description,
+            account: account || undefined,
+            assigned_to: assigned_to || undefined,
+            createdBy: user.id,
+            currency: currency || undefined,
+            snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
+          }).select("*").single()).data;
     await writeAuditLog({
       entityType: "contract",
       entityId: result.id,

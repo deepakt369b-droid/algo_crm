@@ -1,12 +1,13 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { AddOpportunityLineItem } from "./schema";
 import { InputType, ReturnType } from "./types";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import { calculateLineTotal, sumLineTotals } from "@/lib/line-items";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await getSession();
@@ -21,9 +22,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   } = data;
 
   try {
-    const opportunity = await prismadb.crm_Opportunities.findUnique({
-      where: { id: opportunityId },
-    });
+    const opportunity = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", opportunityId).single()).data;
     if (!opportunity || opportunity.deletedAt) {
       return { error: "Opportunity not found" };
     }
@@ -33,9 +32,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     let snapshotPrice = parseFloat(unit_price);
 
     if (productId) {
-      const product = await prismadb.crm_Products.findUnique({
-        where: { id: productId },
-      });
+      const product = (await supabaseAdmin.from("crm_Products").select("*").eq("id", productId).single()).data;
       if (product && !product.deletedAt && product.status === "ACTIVE") {
         snapshotName = name || product.name;
         snapshotSku = sku || product.sku || undefined;
@@ -52,33 +49,26 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
     const lineTotal = calculateLineTotal(quantity, snapshotPrice, discount_type, discountVal);
 
-    const lineItem = await prismadb.crm_OpportunityLineItems.create({
-      data: {
-        opportunityId,
-        productId: productId || undefined,
-        name: snapshotName,
-        sku: snapshotSku || undefined,
-        description: description || undefined,
-        quantity,
-        unit_price: snapshotPrice,
-        discount_type,
-        discount_value: discountVal,
-        line_total: lineTotal,
-        currency: opportunity.currency || "EUR",
-        sort_order,
-        createdBy: userId,
-        updatedBy: userId,
-      },
-    });
+    const lineItem = (await supabaseAdmin.from("crm_OpportunityLineItems").insert({
+            opportunityId,
+            productId: productId || undefined,
+            name: snapshotName,
+            sku: snapshotSku || undefined,
+            description: description || undefined,
+            quantity,
+            unit_price: snapshotPrice,
+            discount_type,
+            discount_value: discountVal,
+            line_total: lineTotal,
+            currency: opportunity.currency || "EUR",
+            sort_order,
+            createdBy: userId,
+            updatedBy: userId,
+          }).select("*").single()).data;
 
-    const allLineItems = await prismadb.crm_OpportunityLineItems.findMany({
-      where: { opportunityId },
-    });
+    const allLineItems = (await supabaseAdmin.from("crm_OpportunityLineItems").select("*").eq("opportunityId", opportunityId)).data;
     const newTotal = sumLineTotals(allLineItems);
-    await prismadb.crm_Opportunities.update({
-      where: { id: opportunityId },
-      data: { expected_revenue: newTotal },
-    });
+    (await supabaseAdmin.from("crm_Opportunities").update({ expected_revenue: newTotal }).eq("id", opportunityId).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "opportunity_line_item",

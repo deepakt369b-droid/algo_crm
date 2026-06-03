@@ -1,8 +1,8 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function deleteReorderThreshold(id: string): Promise<{ error?: string }> {
   const session = await getSession();
@@ -11,7 +11,7 @@ export async function deleteReorderThreshold(id: string): Promise<{ error?: stri
   }
 
   try {
-    await prismadb.reorderThreshold.delete({ where: { id } });
+    (await supabaseAdmin.from("reorderThreshold").delete().eq("id", id).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");
     return {};
   } catch (error) {
@@ -36,26 +36,18 @@ export interface ReorderThresholdItem {
 }
 
 export async function getReorderThresholds(): Promise<ReorderThresholdItem[]> {
-  const thresholds = await prismadb.reorderThreshold.findMany({
-    include: {
-      product: { select: { id: true, name: true, sku: true } },
-      warehouse: { select: { id: true, name: true } },
-    },
-    orderBy: [{ product: { name: "asc" } }, { warehouse: { name: "asc" } }],
-  });
+  const thresholds = (await supabaseAdmin.from("reorderThreshold").select("*, product(id, name, sku), warehouse(id, name)").order("product", { ascending: false }).order("warehouse", { ascending: false })).data || [];
 
   // Get current stock for each threshold
-  const stockKeys = thresholds.map((t) => ({
+  const stockKeys = thresholds.map((t: any) => ({
     productId: t.productId,
     warehouseId: t.warehouseId,
   }));
 
   const stockRecords = await Promise.all(
-    stockKeys.map((k) =>
-      prismadb.inventoryStock.findUnique({
-        where: { productId_warehouseId: { productId: k.productId, warehouseId: k.warehouseId } },
-      }),
-    ),
+    stockKeys.map(async (k) =>
+      (await supabaseAdmin.from("inventoryStock").select("*").eq("productId", k.productId).eq("warehouseId", k.warehouseId).single()).data
+    )
   );
 
   const stockMap = new Map<string, number>();
@@ -65,7 +57,7 @@ export async function getReorderThresholds(): Promise<ReorderThresholdItem[]> {
     }
   });
 
-  return thresholds.map((t) => {
+  return thresholds.map((t: any) => {
     const currentStock = stockMap.get(`${t.productId}:${t.warehouseId}`) ?? 0;
     return {
       id: t.id,

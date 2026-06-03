@@ -1,5 +1,4 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
 import {
   requireAuthenticated,
   assertCanReadContact,
@@ -30,7 +29,7 @@ export async function getSimilarContacts(
   }
 
   try {
-    const rows = await prismadb.$queryRaw<{ embedding: string }[]>`
+    const rows = await supabaseAdmin.rpc("query_raw", {}) /* TODO */<{ embedding: string }[]>`
       SELECT embedding::text FROM "crm_Embeddings_Contacts"
       WHERE contact_id = ${recordId}::uuid
     `;
@@ -38,7 +37,7 @@ export async function getSimilarContacts(
     const sourceEmbedding = rows[0].embedding;
 
     const overFetch = limit * 3;
-    const similar = await prismadb.$queryRaw<
+    const similar = await supabaseAdmin.rpc("query_raw", {}) /* TODO */<
       { id: string; first_name: string | null; last_name: string; position: string | null; similarity: number }[]
     >`
       SELECT c.id, c.first_name, c.last_name, c.position,

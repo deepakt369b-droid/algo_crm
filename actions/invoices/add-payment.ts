@@ -1,6 +1,6 @@
 "use server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
-import { prismadb } from "@/lib/prisma";
 import { getUser } from "@/actions/get-user";
 import { Decimal } from "decimal.js";
 import { addPaymentSchema } from "@/types/invoice";
@@ -12,7 +12,7 @@ export async function addPayment(raw: unknown) {
   const user = await getUser();
   const input = addPaymentSchema.parse(raw);
 
-  return prismadb.$transaction(async (tx) => {
+  return Promise.all(async (tx) => {
     const invoice = await tx.invoices.findUniqueOrThrow({
       where: { id: input.invoiceId },
       select: { status: true, createdBy: true, grandTotal: true, paidTotal: true },

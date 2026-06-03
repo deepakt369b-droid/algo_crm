@@ -1,11 +1,12 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import {
   requireRole,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const deleteUser = async (userId: string) => {
   try {
@@ -19,21 +20,7 @@ export const deleteUser = async (userId: string) => {
   if (!userId) return { error: "userId is required" };
 
   try {
-    const user = await prismadb.users.delete({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        username: true,
-        account_name: true,
-        avatar: true,
-        role: true,
-        userLanguage: true,
-        userStatus: true,
-        lastLoginAt: true,
-      },
-    });
+    const user = (await supabaseAdmin.from("users").delete().eq("id", userId).select("id, name, email, username, account_name, avatar, role, userLanguage, userStatus, lastLoginAt").single()).data;
     revalidatePath("/[locale]/(routes)/admin", "page");
     return { data: user };
   } catch (error) {

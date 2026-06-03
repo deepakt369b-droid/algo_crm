@@ -1,6 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import {
   requireAuthenticated,
@@ -8,6 +8,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const deleteTask = async (data: { id: string; section?: string }) => {
   let authzUser;
@@ -24,14 +25,7 @@ export const deleteTask = async (data: { id: string; section?: string }) => {
   const { id } = data;
   if (!id) return { error: "Missing task ID" };
 
-  const existing = await prismadb.tasks.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      section: true,
-      assigned_section: { select: { board_relation: { select: { id: true } } } },
-    },
-  });
+  const existing = (await supabaseAdmin.from("tasks").select("id, section, assigned_section(board_relation(id))").eq("id", id).single()).data;
   const parentBoardId = existing?.assigned_section?.board_relation?.id;
   if (!parentBoardId) return { error: "Not found" };
 
@@ -43,35 +37,23 @@ export const deleteTask = async (data: { id: string; section?: string }) => {
   }
 
   try {
-    const currentTask = await prismadb.tasks.findUnique({
-      where: { id },
-    });
+    const currentTask = (await supabaseAdmin.from("tasks").select("*").eq("id", id).single()).data;
 
     // Delete all task comments first (foreign key constraint)
-    await prismadb.tasksComments.deleteMany({
-      where: { task: id },
-    });
+    (await supabaseAdmin.from("tasksComments").delete().eq("task", id)).data;
 
-    await prismadb.tasks.delete({
-      where: { id },
-    });
+    (await supabaseAdmin.from("tasks").delete().eq("id", id).select("*").single()).data;
 
     if (currentTask) {
       // Reorder remaining tasks in the section
-      const tasks = await prismadb.tasks.findMany({
-        where: { section: currentTask.section },
-        orderBy: { position: "asc" },
-      });
+      const tasks = (await supabaseAdmin.from("tasks").select("*").eq("section", currentTask.section).order("position", { ascending: true })).data;
 
       for (const key in tasks) {
         const position = parseInt(key);
-        await prismadb.tasks.update({
-          where: { id: tasks[key].id },
-          data: {
-            updatedBy: session.user.id,
-            position,
-          },
-        });
+        (await supabaseAdmin.from("tasks").update({
+                      updatedBy: session.user.id,
+                      position,
+                    }).eq("id", tasks[key].id).select("*").single()).data;
       }
     }
 

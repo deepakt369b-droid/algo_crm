@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
 import {
   LogOut,
   Settings,
@@ -46,7 +46,8 @@ export function SuperAdminUserNav({ locale, user }: SuperAdminUserNavProps) {
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      const supabase = createClient();
+      await supabase.auth.signOut();
       toast.success("Logged out successfully");
       window.location.href = "/sign-in";
     } catch (err) {

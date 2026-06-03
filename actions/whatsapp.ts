@@ -1,10 +1,9 @@
 "use server";
 
-import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function listInstances(tenantId: string) {
-  const instances = await db.crm_Whatsapp_Instances.findMany({
+  const instances = await supabaseAdmin.from("crm_Whatsapp_Instances").findMany({
     where: { tenantId },
     orderBy: { createdAt: "desc" },
   });
@@ -12,7 +11,7 @@ export async function listInstances(tenantId: string) {
 }
 
 export async function createInstance(data: { tenantId: string; instanceName: string; phoneNumber?: string }) {
-  const instance = await db.crm_Whatsapp_Instances.create({
+  const instance = await supabaseAdmin.from("crm_Whatsapp_Instances").insert({
     data: {
       tenantId: data.tenantId,
       instanceName: data.instanceName,
@@ -25,7 +24,7 @@ export async function createInstance(data: { tenantId: string; instanceName: str
 }
 
 export async function updateInstanceConfig(data: { id: string; credentials?: any; connectionConfig?: any; tenantId: string }) {
-  const instance = await db.crm_Whatsapp_Instances.update({
+  const instance = await supabaseAdmin.from("crm_Whatsapp_Instances").update({
     where: { id: data.id, tenantId: data.tenantId },
     data: {
       credentials: data.credentials,
@@ -37,7 +36,7 @@ export async function updateInstanceConfig(data: { id: string; credentials?: any
 }
 
 export async function deleteInstance(data: { id: string; tenantId: string }) {
-  await db.crm_Whatsapp_Instances.delete({
+  await supabaseAdmin.from("crm_Whatsapp_Instances").delete({
     where: { id: data.id, tenantId: data.tenantId },
   });
   revalidatePath("/admin/whatsapp");

@@ -1,13 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prismadb } from "@/lib/prisma";
+
 import { getUser } from "@/actions/get-user";
 import { mapLegacyRole } from "@/lib/authz";
 import { canReadInvoice, type InvoiceStatus } from "@/lib/invoices/permissions";
 import { renderInvoicePdf } from "@/lib/invoices/pdf/render";
 import { uploadInvoicePdf } from "@/lib/invoices/storage";
 import { buildInvoicePdfData } from "@/lib/invoices/pdf/build-pdf-data";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export type RegenerateResult =
   | { ok: true; pdfGeneratedAt: string }
@@ -24,7 +25,7 @@ export async function regenerateInvoicePdf(
   }
 
   try {
-    const invoice = await prismadb.invoices.findUniqueOrThrow({
+    const invoice = await supabaseAdmin.from("invoices").findUniqueOrThrow({
       where: { id: invoiceId },
       include: {
         lineItems: {
@@ -59,7 +60,7 @@ export async function regenerateInvoicePdf(
       };
     }
 
-    const settings = await prismadb.invoice_Settings.findFirst();
+    const settings = (await supabaseAdmin.from("invoice_Settings").select("*").single()).data;
 
     const pdfData = buildInvoicePdfData(
       invoice,
@@ -71,10 +72,7 @@ export async function regenerateInvoicePdf(
     const storageKey = await uploadInvoicePdf(invoice.id, pdfBuffer);
 
     const pdfGeneratedAt = new Date();
-    await prismadb.invoices.update({
-      where: { id: invoice.id },
-      data: { pdfStorageKey: storageKey, pdfGeneratedAt },
-    });
+    (await supabaseAdmin.from("invoices").update({ pdfStorageKey: storageKey, pdfGeneratedAt }).eq("id", invoice.id).select("*").single()).data;
 
     revalidatePath(`/invoices/${invoiceId}`);
     return { ok: true, pdfGeneratedAt: pdfGeneratedAt.toISOString() };

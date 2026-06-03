@@ -28,7 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   crm_Opportunities,
   crm_Opportunities_Sales_Stages,
-} from "@prisma/client";
+} from "@/lib/prisma-types";
 
 import { DotsHorizontalIcon, PlusCircledIcon } from "@radix-ui/react-icons";
 

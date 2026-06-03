@@ -1,6 +1,7 @@
 import { cache } from "react";
-import { prismadb } from "@/lib/prisma";
+
 import { requireAuthenticated, AuthenticationError } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getProduct = cache(async (id: string) => {
   try {
@@ -9,16 +10,6 @@ export const getProduct = cache(async (id: string) => {
     if (e instanceof AuthenticationError) return null;
     throw e;
   }
-  const product = await prismadb.crm_Products.findUnique({
-    where: { id },
-    include: {
-      category: true,
-      created_by_user: { select: { id: true, name: true } },
-      accountProducts: {
-        include: { account: { select: { id: true, name: true } } },
-        orderBy: { createdAt: "desc" },
-      },
-    },
-  });
+  const product = (await supabaseAdmin.from("crm_Products").select("*, category, created_by_user(id, name), accountProducts(*, account(id, name))").eq("id", id).single()).data;
   return product;
 });

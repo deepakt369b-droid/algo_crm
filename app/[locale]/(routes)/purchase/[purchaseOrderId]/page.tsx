@@ -3,11 +3,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { getPurchaseOrderById } from "@/actions/purchase-orders/get-purchase-order-by-id";
-import { prismadb } from "@/lib/prisma";
+
 import { PurchaseOrderHeader } from "./_components/PurchaseOrderHeader";
 import { PurchaseOrderLineItems } from "./_components/PurchaseOrderLineItems";
 import { PurchaseOrderApprovalWorkflow } from "./_components/PurchaseOrderApprovalWorkflow";
 import { serializeDecimalsList } from "@/lib/serialize-decimals";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface PageProps {
   params: Promise<{ purchaseOrderId: string }>;
@@ -22,20 +23,9 @@ export default async function PurchaseOrderDetailPage({ params }: PageProps) {
   }
 
   const [products, vendors, currencies] = await Promise.all([
-    prismadb.crm_Products.findMany({
-      where: { deletedAt: null, status: "ACTIVE" },
-      select: { id: true, name: true, sku: true, unit_price: true },
-      orderBy: { name: "asc" },
-    }),
-    prismadb.crm_Accounts.findMany({
-      where: { deletedAt: null },
-      select: { id: true, name: true, email: true },
-      orderBy: { name: "asc" },
-    }),
-    prismadb.currency.findMany({
-      where: { isEnabled: true },
-      select: { code: true, name: true, symbol: true },
-    }),
+    (await supabaseAdmin.from("crm_Products").select("id, name, sku, unit_price").eq("deletedAt", null).eq("status", "ACTIVE").order("name", { ascending: true })).data,
+    (await supabaseAdmin.from("crm_Accounts").select("id, name, email").eq("deletedAt", null).order("name", { ascending: true })).data,
+    (await supabaseAdmin.from("currency").select("code, name, symbol").eq("isEnabled", true)).data,
   ]);
 
   const serializedProducts = serializeDecimalsList(products);

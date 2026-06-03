@@ -1,4 +1,4 @@
-import { prismadb } from "@/lib/prisma";
+
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    await prismadb.crm_Contacts.create({
+    await supabaseAdmin.from("crm_Contacts").insert({
       data: {
         first_name: name,
         last_name: surname,

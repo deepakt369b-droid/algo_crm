@@ -1,15 +1,11 @@
 import { WizardShell } from "./components/WizardShell";
 import { getTemplates } from "@/actions/campaigns/templates/get-templates";
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export default async function NewCampaignPage() {
   const [templates, targetLists] = await Promise.all([
     getTemplates(),
-    prismadb.crm_TargetLists.findMany({
-      where: { status: true },
-      orderBy: { name: "asc" },
-      include: { _count: { select: { targets: true } } },
-    }),
+    (await supabaseAdmin.from("crm_TargetLists").select("*, _count(targets)").eq("status", true).order("name", { ascending: true })).data,
   ]);
 
   return (

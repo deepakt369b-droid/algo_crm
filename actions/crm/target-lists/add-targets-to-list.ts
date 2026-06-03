@@ -1,6 +1,5 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export const addTargetsToList = async (targetListId: string, targetIds: string[]) => {
@@ -12,7 +11,7 @@ export const addTargetsToList = async (targetListId: string, targetIds: string[]
   }
 
   try {
-    const result = await prismadb.targetsToTargetLists.createMany({
+    const result = await supabaseAdmin.from("targetsToTargetLists").insertMany({
       data: targetIds.map((id: string) => ({
         target_id: id,
         target_list_id: targetListId,

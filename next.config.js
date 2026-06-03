@@ -5,12 +5,10 @@ const withNextIntl = require("next-intl/plugin")(
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  outputFileTracingRoot: __dirname,
   serverExternalPackages: ["pdf-parse", "pdfjs-dist", "pg-cloudflare", "pg"],
   typescript: {
     ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
   turbopack: {
     root: __dirname,

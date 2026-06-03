@@ -1,8 +1,9 @@
 "use server";
 
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function removePurchaseOrderLineItem(lineItemId: string): Promise<{ error?: string; data?: { id: string } }> {
   const session = await getSession();
@@ -11,14 +12,12 @@ export async function removePurchaseOrderLineItem(lineItemId: string): Promise<{
   }
 
   try {
-    const lineItem = await prismadb.purchaseOrderLineItems.findUnique({
-      where: { id: lineItemId },
-    });
+    const lineItem = (await supabaseAdmin.from("purchaseOrderLineItems").select("*").eq("id", lineItemId).single()).data;
     if (!lineItem) {
       return { error: "Line item not found" };
     }
 
-    const po = await prismadb.purchaseOrders.findUnique({ where: { id: lineItem.purchaseOrderId } });
+    const po = (await supabaseAdmin.from("purchaseOrders").select("*").eq("id", lineItem.purchaseOrderId).single()).data;
     if (!po || po.deletedAt) {
       return { error: "Purchase order not found" };
     }
@@ -26,14 +25,10 @@ export async function removePurchaseOrderLineItem(lineItemId: string): Promise<{
       return { error: "Can only remove line items from draft purchase orders" };
     }
 
-    await prismadb.purchaseOrderLineItems.delete({
-      where: { id: lineItemId },
-    });
+    (await supabaseAdmin.from("purchaseOrderLineItems").delete().eq("id", lineItemId).select("*").single()).data;
 
     // Recalculate totals
-    const allItems = await prismadb.purchaseOrderLineItems.findMany({
-      where: { purchaseOrderId: lineItem.purchaseOrderId },
-    });
+    const allItems = (await supabaseAdmin.from("purchaseOrderLineItems").select("*").eq("purchaseOrderId", lineItem.purchaseOrderId)).data;
     const subtotal = allItems.reduce((sum, li) => sum + Number(li.lineTotal), 0);
     const taxTotal = allItems.reduce((sum, li) => {
       if (li.taxRate) {
@@ -43,15 +38,12 @@ export async function removePurchaseOrderLineItem(lineItemId: string): Promise<{
     }, 0);
     const grandTotal = subtotal + taxTotal;
 
-    await prismadb.purchaseOrders.update({
-      where: { id: lineItem.purchaseOrderId },
-      data: {
-        subtotal,
-        taxTotal,
-        grandTotal,
-        updatedBy: session.user.id,
-      },
-    });
+    (await supabaseAdmin.from("purchaseOrders").update({
+              subtotal,
+              taxTotal,
+              grandTotal,
+              updatedBy: session.user.id,
+            }).eq("id", lineItem.purchaseOrderId).select("*").single()).data;
 
     revalidatePath(`/[locale]/(routes)/admin/purchase/${lineItem.purchaseOrderId}`, "page");
     revalidatePath("/[locale]/(routes)/admin/purchase", "page");

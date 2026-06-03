@@ -1,12 +1,8 @@
 import { Resend } from "resend";
-import { prismadb } from "./prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export default async function resendHelper() {
-  const resendKey = await prismadb.systemServices.findFirst({
-    where: {
-      name: "resend_smtp",
-    },
-  });
+  const resendKey = (await supabaseAdmin.from("systemServices").select("*").eq("name", "resend_smtp").single()).data;
 
   const apiKey = process.env.RESEND_API_KEY || resendKey?.serviceKey;
 

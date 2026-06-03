@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface StockMovementFilter {
   productId?: string;
@@ -26,15 +26,7 @@ export async function getStockMovements(filters?: StockMovementFilter): Promise<
   if (filters?.warehouseId) where.warehouseId = filters.warehouseId;
   if (filters?.type) where.type = filters.type;
 
-  const movements = await prismadb.inventoryMovement.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    take: filters?.limit || 50,
-    include: {
-      product: { select: { id: true, name: true, sku: true } },
-      warehouse: { select: { id: true, name: true } },
-    },
-  });
+  const movements = (await supabaseAdmin.from("inventoryMovement").select("*, product(id, name, sku), warehouse(id, name)").order("createdAt", { ascending: false }).limit(filters?.limit || 50)).data;
 
   return movements.map((m) => ({
     id: m.id,

@@ -1,7 +1,8 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const deleteTask = async (taskId: string) => {
   const session = await getSession();
@@ -12,17 +13,11 @@ export const deleteTask = async (taskId: string) => {
   try {
     // CRM account task comments link via `assigned_crm_account_task`, not
     // the Projects-facing `task` FK — see actions/crm/tasks/add-comment.ts.
-    await prismadb.tasksComments.deleteMany({
-      where: { assigned_crm_account_task: taskId },
-    });
+    (await supabaseAdmin.from("tasksComments").delete().eq("assigned_crm_account_task", taskId)).data;
 
-    await prismadb.documentsToCrmAccountsTasks.deleteMany({
-      where: { crm_accounts_task_id: taskId },
-    });
+    (await supabaseAdmin.from("documentsToCrmAccountsTasks").delete().eq("crm_accounts_task_id", taskId)).data;
 
-    await prismadb.crm_Accounts_Tasks.delete({
-      where: { id: taskId },
-    });
+    (await supabaseAdmin.from("crm_Accounts_Tasks").delete().eq("id", taskId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/crm", "page");
     return { success: true };

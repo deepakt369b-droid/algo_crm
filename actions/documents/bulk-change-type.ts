@@ -4,9 +4,9 @@ import {
   filterAuthorizedDocumentIds,
   AuthenticationError,
 } from "@/lib/authz";
-import { prismadb } from "@/lib/prisma";
-import { DocumentSystemType } from "@prisma/client";
+import { DocumentSystemType } from "@/lib/prisma-types";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function bulkChangeType(documentIds: string[], systemType: DocumentSystemType) {
   let user;
@@ -25,10 +25,7 @@ export async function bulkChangeType(documentIds: string[], systemType: Document
     throw new Error("Forbidden");
   }
 
-  await prismadb.documents.updateMany({
-    where: { id: { in: documentIds } },
-    data: { document_system_type: systemType },
-  });
+  (await supabaseAdmin.from("documents").update({ document_system_type: systemType }).in("id", documentIds)).data;
 
   revalidatePath("/[locale]/(routes)/documents");
 }

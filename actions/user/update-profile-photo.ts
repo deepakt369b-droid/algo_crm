@@ -1,8 +1,9 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function updateProfilePhoto(avatar: string) {
   const session = await getSession();
@@ -10,10 +11,7 @@ export async function updateProfilePhoto(avatar: string) {
 
   if (!avatar) throw new Error("No avatar provided");
 
-  await prismadb.users.update({
-    where: { id: session.user.id },
-    data: { avatar },
-  });
+  (await supabaseAdmin.from("users").update({ avatar }).eq("id", session.user.id).select("*").single()).data;
 
   revalidatePath("/[locale]/profile");
 }

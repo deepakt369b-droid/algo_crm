@@ -1,6 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import {
   requireAuthenticated,
@@ -9,6 +9,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const assignDocumentToTask = async (data: {
   documentId: string;
@@ -43,23 +44,16 @@ export const assignDocumentToTask = async (data: {
   }
 
   try {
-    const task = await prismadb.tasks.findUnique({
-      where: { id: taskId },
-    });
+    const task = (await supabaseAdmin.from("tasks").select("*").eq("id", taskId).single()).data;
 
     if (!task) return { error: "Task not found" };
 
-    await prismadb.documentsToTasks.create({
-      data: {
-        document_id: documentId,
-        task_id: taskId,
-      },
-    });
+    (await supabaseAdmin.from("documentsToTasks").insert({
+              document_id: documentId,
+              task_id: taskId,
+            }).select("*").single()).data;
 
-    await prismadb.tasks.update({
-      where: { id: taskId },
-      data: { updatedBy: session.user.id },
-    });
+    (await supabaseAdmin.from("tasks").update({ updatedBy: session.user.id }).eq("id", taskId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };
@@ -81,25 +75,13 @@ export const disconnectDocumentFromTask = async (data: {
   if (!taskId) return { error: "Missing task ID" };
 
   try {
-    const task = await prismadb.tasks.findUnique({
-      where: { id: taskId },
-    });
+    const task = (await supabaseAdmin.from("tasks").select("*").eq("id", taskId).single()).data;
 
     if (!task) return { error: "Task not found" };
 
-    await prismadb.documentsToTasks.delete({
-      where: {
-        document_id_task_id: {
-          document_id: documentId,
-          task_id: taskId,
-        },
-      },
-    });
+    (await supabaseAdmin.from("documentsToTasks").delete().select("*").single()).data;
 
-    const updatedTask = await prismadb.tasks.update({
-      where: { id: taskId },
-      data: { updatedBy: session.user.id },
-    });
+    const updatedTask = (await supabaseAdmin.from("tasks").update({ updatedBy: session.user.id }).eq("id", taskId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { data: updatedTask };

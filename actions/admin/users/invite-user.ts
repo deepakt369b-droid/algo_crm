@@ -1,14 +1,15 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import InviteUserEmail from "@/emails/InviteUser";
 import resendHelper from "@/lib/resend";
 import { revalidatePath } from "next/cache";
-import { Language } from "@prisma/client";
+import { Language } from "@/lib/prisma-types";
 import {
   requireRole,
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const inviteUser = async (data: {
   name: string;
@@ -24,10 +25,7 @@ export const inviteUser = async (data: {
     throw e;
   }
 
-  const inviter = await prismadb.users.findUnique({
-    where: { id: actor.id },
-    select: { name: true },
-  });
+  const inviter = (await supabaseAdmin.from("users").select("name").eq("id", actor.id).single()).data;
 
   const { name, email, language } = data;
 
@@ -42,34 +40,20 @@ export const inviteUser = async (data: {
     return { error: error?.message || "Resend API key is not configured" };
   }
 
-  const checkexisting = await prismadb.users.findFirst({
-    where: { email },
-  });
+  const checkexisting = (await supabaseAdmin.from("users").select("*").eq("email", email).single()).data;
 
   if (checkexisting) {
     return { error: "User already exists!" };
   }
 
   try {
-    const user = await prismadb.users.create({
-      data: {
-        name,
-        email,
-        userStatus: "ACTIVE",
-        userLanguage: language as Language,
-        role: "user",
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        avatar: true,
-        role: true,
-        userLanguage: true,
-        userStatus: true,
-        lastLoginAt: true,
-      },
-    });
+    const user = (await supabaseAdmin.from("users").insert({
+            name,
+            email,
+            userStatus: "ACTIVE",
+            userLanguage: language as Language,
+            role: "user",
+          }).select("*").single()).data;
 
     if (!user) {
       return { error: "User not created" };

@@ -1,29 +1,9 @@
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function getInvoices() {
-  return prismadb.invoices.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 100,
-    include: {
-      account: { select: { id: true, name: true } },
-      series: { select: { id: true, name: true } },
-    },
-  });
+  return (await supabaseAdmin.from("invoices").select("*, account(id, name), series(id, name)").order("createdAt", { ascending: false }).limit(100)).data;
 }
 
 export async function getInvoiceById(id: string) {
-  return prismadb.invoices.findUnique({
-    where: { id },
-    include: {
-      lineItems: {
-        include: { product: true, taxRate: true },
-        orderBy: { position: "asc" },
-      },
-      payments: { orderBy: { paidAt: "desc" } },
-      activity: { orderBy: { createdAt: "desc" } },
-      attachments: true,
-      account: true,
-      series: true,
-    },
-  });
+  return (await supabaseAdmin.from("invoices").select("*").single()).data;
 }

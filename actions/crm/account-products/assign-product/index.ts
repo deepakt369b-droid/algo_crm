@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import {
   requireAuthenticated,
   assertCanWriteAccount,
@@ -12,6 +12,7 @@ import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog } from "@/lib/audit-log";
 import { getSnapshotRate, getDefaultCurrency } from "@/lib/currency";
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const { accountId, productId, quantity, custom_price, currency, status, start_date, end_date, renewal_date, notes } = data;
@@ -34,7 +35,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const userId = user.id;
 
   try {
-    const product = await prismadb.crm_Products.findUnique({ where: { id: productId } });
+    const product = (await supabaseAdmin.from("crm_Products").select("*").eq("id", productId).single()).data;
     if (!product || product.deletedAt) {
       return { error: "Product not found" };
     }
@@ -42,9 +43,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return { error: "Only active products can be assigned to accounts" };
     }
 
-    const existingAssignment = await prismadb.crm_AccountProducts.findFirst({
-      where: { accountId, productId, status: { in: ["ACTIVE", "PENDING"] } },
-    });
+    const existingAssignment = (await supabaseAdmin.from("crm_AccountProducts").select("*").in("status", ["ACTIVE", "PENDING"]).single()).data;
     if (existingAssignment) {
       return { error: "This product is already assigned to this account with an active or pending status" };
     }
@@ -59,21 +58,19 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const defaultCurrency = await getDefaultCurrency();
     const snapshotRate = currency ? await getSnapshotRate(currency, defaultCurrency) : null;
 
-    const assignment = await prismadb.crm_AccountProducts.create({
-      data: {
-        accountId, productId, quantity,
-        custom_price: custom_price ? parseFloat(custom_price) : undefined,
-        currency,
-        snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
-        status: status || "ACTIVE",
-        start_date,
-        end_date: end_date || undefined,
-        renewal_date: renewal_date || undefined,
-        notes: notes || undefined,
-        createdBy: userId,
-        updatedBy: userId,
-      },
-    });
+    const assignment = (await supabaseAdmin.from("crm_AccountProducts").insert({
+            accountId, productId, quantity,
+            custom_price: custom_price ? parseFloat(custom_price) : undefined,
+            currency,
+            snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
+            status: status || "ACTIVE",
+            start_date,
+            end_date: end_date || undefined,
+            renewal_date: renewal_date || undefined,
+            notes: notes || undefined,
+            createdBy: userId,
+            updatedBy: userId,
+          }).select("*").single()).data;
 
     await writeAuditLog({ entityType: "account_product", entityId: assignment.id, action: "created", changes: null, userId });
 

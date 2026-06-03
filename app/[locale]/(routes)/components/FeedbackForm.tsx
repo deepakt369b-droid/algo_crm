@@ -5,7 +5,7 @@ import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFeedbackTicket } from "@/actions/feedback/feedback-tickets";
-import { FeedbackPriority } from "@prisma/client";
+import { FeedbackPriority } from "@/lib/prisma-types";
 
 import {
   Form,

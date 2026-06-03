@@ -1,5 +1,5 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import {
   requireAuthenticated,
@@ -7,6 +7,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const updateSectionTitle = async (data: {
   sectionId: string;
@@ -23,10 +24,7 @@ export const updateSectionTitle = async (data: {
   const { sectionId, newTitle } = data;
   if (!sectionId) return { error: "Missing section ID" };
 
-  const existing = await prismadb.sections.findUnique({
-    where: { id: sectionId },
-    select: { board: true },
-  });
+  const existing = (await supabaseAdmin.from("sections").select("board").eq("id", sectionId).single()).data;
   if (!existing) return { error: "Not found" };
 
   try {
@@ -37,10 +35,7 @@ export const updateSectionTitle = async (data: {
   }
 
   try {
-    await prismadb.sections.update({
-      where: { id: sectionId },
-      data: { title: newTitle },
-    });
+    (await supabaseAdmin.from("sections").update({ title: newTitle }).eq("id", sectionId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

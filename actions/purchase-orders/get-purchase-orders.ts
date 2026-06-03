@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export interface PurchaseOrderListItem {
   id: string;
@@ -16,15 +16,7 @@ export interface PurchaseOrderListItem {
 }
 
 export async function getPurchaseOrders(): Promise<PurchaseOrderListItem[]> {
-  const orders = await prismadb.purchaseOrders.findMany({
-    where: { deletedAt: null },
-    orderBy: { createdAt: "desc" },
-    include: {
-      vendor: { select: { id: true, name: true } },
-      requestedByUser: { select: { id: true, name: true } },
-      lineItems: { select: { id: true } },
-    },
-  });
+  const orders = (await supabaseAdmin.from("purchaseOrders").select("*, vendor(id, name), requestedByUser(id, name), lineItems(id)").eq("deletedAt", null).order("createdAt", { ascending: false })).data;
 
   return orders.map((order) => ({
     id: order.id,

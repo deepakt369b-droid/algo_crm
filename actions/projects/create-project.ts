@@ -1,7 +1,8 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import { requireAuthenticated, AuthenticationError } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const createProject = async (data: {
   title: string;
@@ -21,9 +22,9 @@ export const createProject = async (data: {
   if (!description) return { error: "Missing project description" };
 
   try {
-    const boardsCount = await prismadb.boards.count();
+    const boardsCount = (await supabaseAdmin.from("boards").select("*", { count: 'exact', head: true })).count;
 
-    const newBoard = await prismadb.boards.create({
+    const newBoard = await supabaseAdmin.from("boards").insert({
       data: {
         v: 0,
         user: user.id,
@@ -36,14 +37,12 @@ export const createProject = async (data: {
       },
     });
 
-    await prismadb.sections.create({
-      data: {
-        v: 0,
-        board: newBoard.id,
-        title: "Backlog",
-        position: 0,
-      },
-    });
+    (await supabaseAdmin.from("sections").insert({
+              v: 0,
+              board: newBoard.id,
+              title: "Backlog",
+              position: 0,
+            }).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { data: newBoard };

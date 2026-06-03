@@ -1,11 +1,12 @@
 "use server";
-import { prismadb } from "@/lib/prisma";
+
 import { UpdateProduct } from "./schema";
 import { InputType, ReturnType } from "./types";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog, diffObjects } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import { requireRole, AuthenticationError, AuthorizationError } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   let actor;
@@ -21,13 +22,13 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const { id, ...updateData } = data;
 
   try {
-    const existing = await prismadb.crm_Products.findUnique({ where: { id } });
+    const existing = (await supabaseAdmin.from("crm_Products").select("*").eq("id", id).single()).data;
     if (!existing || existing.deletedAt) {
       return { error: "Product not found" };
     }
 
     if (updateData.sku && updateData.sku !== existing.sku) {
-      const skuExists = await prismadb.crm_Products.findUnique({ where: { sku: updateData.sku } });
+      const skuExists = (await supabaseAdmin.from("crm_Products").select("*").eq("sku", updateData.sku).single()).data;
       if (skuExists) {
         return { error: `A product with SKU "${updateData.sku}" already exists` };
       }
@@ -39,7 +40,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return { error: "Billing period is required for recurring products" };
     }
 
-    const product = await prismadb.crm_Products.update({
+    const product = await supabaseAdmin.from("crm_Products").update({
       where: { id },
       data: {
         ...(updateData.name !== undefined && { name: updateData.name }),

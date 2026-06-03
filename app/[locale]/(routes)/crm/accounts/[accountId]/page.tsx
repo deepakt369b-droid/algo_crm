@@ -31,7 +31,7 @@ import {
   crm_Contracts,
   crm_Leads,
   crm_Opportunities,
-} from "@prisma/client";
+} from "@/lib/prisma-types";
 
 import AccountsTasksView from "./components/TasksView";
 import ContractsView from "../../components/ContractsView";

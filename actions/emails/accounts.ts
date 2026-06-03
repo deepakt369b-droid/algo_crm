@@ -1,9 +1,10 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { encrypt } from "@/lib/email-crypto";
 import Imap from "imap";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 async function requireSession() {
   const session = await getSession();
@@ -13,25 +14,7 @@ async function requireSession() {
 
 export async function getEmailAccounts() {
   const userId = await requireSession();
-  return prismadb.emailAccount.findMany({
-    where: { userId },
-    select: {
-      id: true,
-      label: true,
-      imapHost: true,
-      imapPort: true,
-      imapSsl: true,
-      smtpHost: true,
-      smtpPort: true,
-      smtpSsl: true,
-      username: true,
-      isActive: true,
-      sentFolderName: true,
-      lastSyncedAt: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  return (await supabaseAdmin.from("emailAccount").select("id, label, imapHost, imapPort, imapSsl, smtpHost, smtpPort, smtpSsl, username, isActive, sentFolderName, lastSyncedAt, createdAt").eq("userId", userId).order("createdAt", { ascending: true })).data;
 }
 
 type CreateInput = {
@@ -60,36 +43,33 @@ export async function createEmailAccount(input: CreateInput) {
   if (input.smtpPort < 1 || input.smtpPort > 65535) throw new Error("Invalid SMTP port");
 
   const passwordEncrypted = encrypt(input.password);
-  return prismadb.emailAccount.create({
-    data: {
-      userId,
-      label: input.label,
-      imapHost: input.imapHost,
-      imapPort: input.imapPort,
-      imapSsl: input.imapSsl,
-      smtpHost: input.smtpHost,
-      smtpPort: input.smtpPort,
-      smtpSsl: input.smtpSsl,
-      username: input.username,
-      passwordEncrypted,
-      ...(input.sentFolderName && { sentFolderName: input.sentFolderName }),
-    },
-    select: { id: true, label: true },
-  });
+  return (await supabaseAdmin.from("emailAccount").insert({
+        userId,
+        label: input.label,
+        imapHost: input.imapHost,
+        imapPort: input.imapPort,
+        imapSsl: input.imapSsl,
+        smtpHost: input.smtpHost,
+        smtpPort: input.smtpPort,
+        smtpSsl: input.smtpSsl,
+        username: input.username,
+        passwordEncrypted,
+        ...(input.sentFolderName && { sentFolderName: input.sentFolderName }),
+      }).select("*").single()).data;
 }
 
 export async function deleteEmailAccount(id: string) {
   const userId = await requireSession();
-  const account = await prismadb.emailAccount.findFirst({ where: { id, userId } });
+  const account = (await supabaseAdmin.from("emailAccount").select("*").eq("id", id).eq("userId", userId).single()).data;
   if (!account) throw new Error("Not found");
-  await prismadb.emailAccount.delete({ where: { id } });
+  (await supabaseAdmin.from("emailAccount").delete().eq("id", id).select("*").single()).data;
 }
 
 export async function setEmailAccountActive(id: string, isActive: boolean) {
   const userId = await requireSession();
-  const account = await prismadb.emailAccount.findFirst({ where: { id, userId } });
+  const account = (await supabaseAdmin.from("emailAccount").select("*").eq("id", id).eq("userId", userId).single()).data;
   if (!account) throw new Error("Not found");
-  return prismadb.emailAccount.update({ where: { id }, data: { isActive } });
+  return (await supabaseAdmin.from("emailAccount").update({ isActive }).eq("id", id).select("*").single()).data;
 }
 
 type TestInput = {

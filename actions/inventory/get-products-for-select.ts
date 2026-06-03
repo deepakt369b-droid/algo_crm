@@ -1,6 +1,6 @@
 "use server";
 
-import { prismadb } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export interface ProductOption {
   id: string;
@@ -9,10 +9,6 @@ export interface ProductOption {
 }
 
 export async function getProductsForSelect(): Promise<ProductOption[]> {
-  const products = await prismadb.crm_Products.findMany({
-    where: { deletedAt: null },
-    select: { id: true, name: true, sku: true },
-    orderBy: { name: "asc" },
-  });
+  const products = (await supabaseAdmin.from("crm_Products").select("id, name, sku").eq("deletedAt", null).order("name", { ascending: true })).data;
   return products;
 }

@@ -1,9 +1,10 @@
-import { prismadb } from "@/lib/prisma";
+
 import type { ReportFilters, KPIData } from "./types";
 import { getExchangeRates, convertAmount } from "@/lib/currency";
-import { Decimal } from "@prisma/client/runtime/client";
+import Decimal from "decimal.js";
 import type { ReportScope } from "@/lib/authz/scopes/report-scope";
 import { getReportScope } from "@/lib/authz/scopes/report-scope";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const DEFAULT_SCOPE: ReportScope = getReportScope({ id: "", role: "manager" });
 
@@ -53,86 +54,38 @@ export async function getDashboardKPIs(
     contractsPrev,
   ] = await Promise.all([
     // totalRevenue
-    prismadb.crm_Opportunities.findMany({
-      where: { created_on: { gte: filters.dateFrom, lte: filters.dateTo }, deletedAt: null, status: "CLOSED", ...scope.opportunity },
-      select: { budget: true, currency: true },
-    }),
-    prismadb.crm_Opportunities.findMany({
-      where: { created_on: { gte: prev.dateFrom, lte: prev.dateTo }, deletedAt: null, status: "CLOSED", ...scope.opportunity },
-      select: { budget: true, currency: true },
-    }),
+    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("deletedAt", null).eq("status", "CLOSED")).data,
+    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("deletedAt", null).eq("status", "CLOSED")).data,
     // pipelineValue
-    prismadb.crm_Opportunities.findMany({
-      where: { created_on: { gte: filters.dateFrom, lte: filters.dateTo }, deletedAt: null, status: "ACTIVE", ...scope.opportunity },
-      select: { budget: true, currency: true },
-    }),
-    prismadb.crm_Opportunities.findMany({
-      where: { created_on: { gte: prev.dateFrom, lte: prev.dateTo }, deletedAt: null, status: "ACTIVE", ...scope.opportunity },
-      select: { budget: true, currency: true },
-    }),
+    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("deletedAt", null).eq("status", "ACTIVE")).data,
+    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("deletedAt", null).eq("status", "ACTIVE")).data,
     // newLeads
-    prismadb.crm_Leads.count({
-      where: { createdAt: { gte: filters.dateFrom, lte: filters.dateTo }, deletedAt: null, ...scope.lead },
-    }),
-    prismadb.crm_Leads.count({
-      where: { createdAt: { gte: prev.dateFrom, lte: prev.dateTo }, deletedAt: null, ...scope.lead },
-    }),
+    (await supabaseAdmin.from("crm_Leads").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Leads").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
     // conversionRate: closed opps count
-    prismadb.crm_Opportunities.count({
-      where: { created_on: { gte: filters.dateFrom, lte: filters.dateTo }, deletedAt: null, status: "CLOSED", ...scope.opportunity },
-    }),
-    prismadb.crm_Opportunities.count({
-      where: { created_on: { gte: prev.dateFrom, lte: prev.dateTo }, deletedAt: null, status: "CLOSED", ...scope.opportunity },
-    }),
+    (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true }).eq("deletedAt", null).eq("status", "CLOSED")).count,
+    (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true }).eq("deletedAt", null).eq("status", "CLOSED")).count,
     // newContacts (crm_Contacts has created_on, no deletedAt)
-    prismadb.crm_Contacts.count({
-      where: { created_on: { gte: filters.dateFrom, lte: filters.dateTo }, ...scope.contact },
-    }),
-    prismadb.crm_Contacts.count({
-      where: { created_on: { gte: prev.dateFrom, lte: prev.dateTo }, ...scope.contact },
-    }),
+    (await supabaseAdmin.from("crm_Contacts").select("*", { count: 'exact', head: true })).count,
+    (await supabaseAdmin.from("crm_Contacts").select("*", { count: 'exact', head: true })).count,
     // activeUsers (status = ACTIVE, not date-filtered) - global; manager/admin only typically read this KPI
-    prismadb.users.count({
-      where: { userStatus: "ACTIVE" },
-    }),
-    prismadb.users.count({
-      where: { userStatus: "ACTIVE", created_on: { lte: prev.dateTo } },
-    }),
+    (await supabaseAdmin.from("users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE")).count,
+    (await supabaseAdmin.from("users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE").lte("created_on", prev.dateTo)).count,
     // tasks total
-    prismadb.tasks.count({
-      where: { createdAt: { gte: filters.dateFrom, lte: filters.dateTo }, ...scope.task },
-    }),
-    prismadb.tasks.count({
-      where: { createdAt: { gte: prev.dateFrom, lte: prev.dateTo }, ...scope.task },
-    }),
+    (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true })).count,
+    (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true })).count,
     // open tasks (ACTIVE = not completed)
-    prismadb.tasks.count({
-      where: { createdAt: { gte: filters.dateFrom, lte: filters.dateTo }, taskStatus: "ACTIVE", ...scope.task },
-    }),
-    prismadb.tasks.count({
-      where: { createdAt: { gte: prev.dateFrom, lte: prev.dateTo }, taskStatus: "ACTIVE", ...scope.task },
-    }),
+    (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("taskStatus", "ACTIVE")).count,
+    (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("taskStatus", "ACTIVE")).count,
     // campaignsSent (sends have no direct scope; manager/admin = no-op)
-    prismadb.crm_campaign_sends.count({
-      where: { sent_at: { gte: filters.dateFrom, lte: filters.dateTo } },
-    }),
-    prismadb.crm_campaign_sends.count({
-      where: { sent_at: { gte: prev.dateFrom, lte: prev.dateTo } },
-    }),
+    (await supabaseAdmin.from("crm_campaign_sends").select("*", { count: 'exact', head: true })).count,
+    (await supabaseAdmin.from("crm_campaign_sends").select("*", { count: 'exact', head: true })).count,
     // newAccounts
-    prismadb.crm_Accounts.count({
-      where: { createdAt: { gte: filters.dateFrom, lte: filters.dateTo }, deletedAt: null, ...scope.account },
-    }),
-    prismadb.crm_Accounts.count({
-      where: { createdAt: { gte: prev.dateFrom, lte: prev.dateTo }, deletedAt: null, ...scope.account },
-    }),
+    (await supabaseAdmin.from("crm_Accounts").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Accounts").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
     // contractsExpiring (no direct scope; manager/admin = no-op)
-    prismadb.crm_Contracts.count({
-      where: { endDate: { gte: filters.dateFrom, lte: filters.dateTo }, deletedAt: null },
-    }),
-    prismadb.crm_Contracts.count({
-      where: { endDate: { gte: prev.dateFrom, lte: prev.dateTo }, deletedAt: null },
-    }),
+    (await supabaseAdmin.from("crm_Contracts").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Contracts").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
   ]);
 
   function sumConverted(opps: { budget: unknown; currency: string | null }[]): number {

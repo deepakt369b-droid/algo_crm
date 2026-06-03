@@ -28,7 +28,7 @@ import {
 import { CheckSquare, Eye, MessagesSquare, Pencil } from "lucide-react";
 import UpdateTaskDialog from "../../dialogs/UpdateTask";
 import { Button } from "@/components/ui/button";
-import { Sections } from "@prisma/client";
+import { Sections } from "@/lib/prisma-types";
 import { ElementRef, useRef, useState } from "react";
 import FormSheet from "@/components/sheets/form-sheet";
 

@@ -1,11 +1,12 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
-import { prismadb } from "@/lib/prisma";
+
 import { revalidatePath } from "next/cache";
 import sendEmail from "@/lib/sendmail";
 import { inngest } from "@/inngest/client";
 import { writeAuditLog } from "@/lib/audit-log";
 import { getSnapshotRate, getDefaultCurrency } from "@/lib/currency";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const createOpportunity = async (data: {
   account?: string;
@@ -47,33 +48,29 @@ export const createOpportunity = async (data: {
     const snapshotRate = currency
       ? await getSnapshotRate(currency, defaultCurrency)
       : null;
-    const opportunity = await prismadb.crm_Opportunities.create({
-      data: {
-        account: account || undefined,
-        assigned_to: assigned_to || userId,
-        budget: budget ? parseFloat(budget) : undefined,
-        campaign: campaign || undefined,
-        close_date,
-        contact: contact || undefined,
-        createdBy: userId,
-        last_activity_by: userId,
-        updatedBy: userId,
-        currency: currency || undefined,
-        description: description || undefined,
-        expected_revenue: expected_revenue ? parseFloat(expected_revenue) : undefined,
-        snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
-        name,
-        next_step: next_step || undefined,
-        sales_stage: sales_stage || undefined,
-        status: "ACTIVE",
-        type: type || undefined,
-      },
-    });
+    const opportunity = (await supabaseAdmin.from("crm_Opportunities").insert({
+            account: account || undefined,
+            assigned_to: assigned_to || userId,
+            budget: budget ? parseFloat(budget) : undefined,
+            campaign: campaign || undefined,
+            close_date,
+            contact: contact || undefined,
+            createdBy: userId,
+            last_activity_by: userId,
+            updatedBy: userId,
+            currency: currency || undefined,
+            description: description || undefined,
+            expected_revenue: expected_revenue ? parseFloat(expected_revenue) : undefined,
+            snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
+            name,
+            next_step: next_step || undefined,
+            sales_stage: sales_stage || undefined,
+            status: "ACTIVE",
+            type: type || undefined,
+          }).select("*").single()).data;
 
     if (assigned_to && assigned_to !== userId) {
-      const notifyRecipient = await prismadb.users.findFirst({
-        where: { id: assigned_to },
-      });
+      const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", assigned_to).single()).data;
 
       if (notifyRecipient) {
         await sendEmail({

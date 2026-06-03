@@ -1,12 +1,13 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
 
-import { prismadb } from "@/lib/prisma";
+
 import { DeleteContract } from "./schema";
 import { InputType, ReturnType } from "./types";
 
 import { createSafeAction } from "@/lib/create-safe-action";
 import { writeAuditLog } from "@/lib/audit-log";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await getSession();
@@ -17,11 +18,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     };
   }
 
-  const user = await prismadb.users.findUnique({
-    where: {
-      email: session?.user?.email,
-    },
-  });
+  const user = (await supabaseAdmin.from("users").select("*").eq("email", session?.user?.email).single()).data;
 
   if (!user) {
     return {
@@ -38,10 +35,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   }
 
   try {
-    await prismadb.crm_Contracts.update({
-      where: { id: id },
-      data: { deletedAt: new Date(), deletedBy: user.id },
-    });
+    (await supabaseAdmin.from("crm_Contracts").update({ deletedAt: new Date(), deletedBy: user.id }).eq("id", id).select("*").single()).data;
     await writeAuditLog({
       entityType: "contract",
       entityId: id,

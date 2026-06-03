@@ -39,7 +39,7 @@ import { getExpectedRevenue } from "@/actions/crm/opportunity/get-expected-reven
 import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import { getDefaultCurrency, formatCurrency as formatCurrencyUtil } from "@/lib/currency";
-import { Decimal } from "@prisma/client/runtime/client";
+import Decimal from "decimal.js";
 
 const DashboardPage = async () => {
   const session = await getSession();

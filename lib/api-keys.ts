@@ -1,6 +1,7 @@
-import { prismadb } from "@/lib/prisma";
+
 import { decrypt } from "@/lib/email-crypto";
-import type { ApiKeyProvider } from "@prisma/client";
+import type { ApiKeyProvider } from "@/lib/prisma-types";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export type { ApiKeyProvider };
 
@@ -27,18 +28,12 @@ export async function getApiKey(
   if (envKey) return envKey;
 
   // Tier 2: system-wide DB key
-  const systemRow = await prismadb.apiKeys.findFirst({
-    where: { scope: "SYSTEM", provider },
-    select: { encryptedKey: true },
-  });
+  const systemRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", provider).single()).data;
   if (systemRow) return decrypt(systemRow.encryptedKey);
 
   // Tier 3: user-specific DB key
   if (userId) {
-    const userRow = await prismadb.apiKeys.findFirst({
-      where: { scope: "USER", userId, provider },
-      select: { encryptedKey: true },
-    });
+    const userRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "USER").eq("userId", userId).eq("provider", provider).single()).data;
     if (userRow) return decrypt(userRow.encryptedKey);
   }
 
