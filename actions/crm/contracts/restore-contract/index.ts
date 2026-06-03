@@ -12,7 +12,7 @@ export const restoreContract = async (contractId: string) => {
   if (!contractId) return { error: "contractId is required" };
 
   try {
-    (await supabaseAdmin.from("crm_Contracts").update({ deletedAt: null, deletedBy: null }).eq("id", contractId).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Contracts").update({ deletedAt: null, deletedBy: null }).select("*").single().eq("id", contractId).select("*").single()).data;
     await writeAuditLog({
       entityType: "contract",
       entityId: contractId,

@@ -34,5 +34,5 @@ export const updateCampaign = async (
     throw e;
   }
 
-  return supabaseAdmin.from("crm_campaigns").update({ where: { id }, data });
+  return supabaseAdmin.from("crm_campaigns").update(data).eq("id", id).select("*").single();
 };

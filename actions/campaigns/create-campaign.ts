@@ -55,22 +55,20 @@ export const createCampaign = async (data: {
   const { target_list_ids, steps, ...campaignData } = data;
 
   return supabaseAdmin.from("crm_campaigns").insert({
-    data: {
-      ...campaignData,
-      v: 0,
-      status: data.scheduled_at ? "scheduled" : "draft",
-      created_by: user.id,
-      target_lists: {
-        create: target_list_ids.map((id) => ({ target_list_id: id })),
-      },
-      steps: {
-        create: steps.map((s) => ({
-          ...s,
-          scheduled_at: data.scheduled_at
-            ? new Date(data.scheduled_at.getTime() + s.delay_days * 86_400_000)
-            : null,
-        })),
-      },
-    },
-  });
+        ...campaignData,
+        v: 0,
+        status: data.scheduled_at ? "scheduled" : "draft",
+        created_by: user.id,
+        target_lists: {
+          create: target_list_ids.map((id) => ({ target_list_id: id })),
+        },
+        steps: {
+          create: steps.map((s) => ({
+            ...s,
+            scheduled_at: data.scheduled_at
+              ? new Date(data.scheduled_at.getTime() + s.delay_days * 86_400_000)
+              : null,
+          })),
+        },
+      }).select("*").single();
 };

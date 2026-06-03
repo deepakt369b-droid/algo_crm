@@ -39,7 +39,7 @@ export async function bulkDeleteDocuments(documentIds: string[]) {
   );
 
   // Delete from DB (cascade handles chunks, embeddings, junction tables)
-  (await supabaseAdmin.from("documents").delete().in("id", documentIds)).data;
+  (await supabaseAdmin.from("documents").delete().select("*").single().in("id", documentIds)).data;
 
   revalidatePath("/[locale]/(routes)/documents");
 }

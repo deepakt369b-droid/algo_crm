@@ -56,15 +56,15 @@ export const addCommentToTask = async (data: {
     if (section) {
       // Task from Projects module - add user as board watcher
       (await supabaseAdmin.from("boards").update({
-                  watchers: junctionTableHelpers.addWatcher(session.user.id),
-                }).eq("id", section.board).select("*").single()).data;
+                        watchers: junctionTableHelpers.addWatcher(session.user.id),
+                      }).select("*").single().eq("id", section.board).select("*").single()).data;
 
       const newComment = (await supabaseAdmin.from("tasksComments").insert({
-                v: 0,
-                comment,
-                task: taskId,
-                user: session.user.id,
-              }).select("*").single()).data;
+                      v: 0,
+                      comment,
+                      task: taskId,
+                      user: session.user.id,
+                    }).select("*").single()).data;
 
       // Send email to all board watchers except the commenter
       try {
@@ -122,11 +122,11 @@ export const addCommentToTask = async (data: {
     } else {
       // Task from CRM module (no section board)
       const newComment = (await supabaseAdmin.from("tasksComments").insert({
-                v: 0,
-                comment,
-                task: taskId,
-                user: session.user.id,
-              }).select("*").single()).data;
+                      v: 0,
+                      comment,
+                      task: taskId,
+                      user: session.user.id,
+                    }).select("*").single()).data;
 
       revalidatePath("/[locale]/(routes)/projects", "page");
       return { data: newComment };

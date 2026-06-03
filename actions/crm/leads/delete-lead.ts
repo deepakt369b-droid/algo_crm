@@ -12,7 +12,7 @@ export const deleteLead = async (leadId: string) => {
   if (!leadId) return { error: "leadId is required" };
 
   try {
-    (await supabaseAdmin.from("crm_Leads").update({ deletedAt: new Date(), deletedBy: session.user.id }).eq("id", leadId).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Leads").update({ deletedAt: new Date(), deletedBy: session.user.id }).select("*").single().eq("id", leadId).select("*").single()).data;
     await writeAuditLog({
       entityType: "lead",
       entityId: leadId,

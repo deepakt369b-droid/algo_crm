@@ -30,8 +30,8 @@ export const watchProject = async (projectId: string) => {
 
   try {
     (await supabaseAdmin.from("boards").update({
-              watchers: junctionTableHelpers.addWatcher(user.id),
-            }).eq("id", projectId).select("*").single()).data;
+                  watchers: junctionTableHelpers.addWatcher(user.id),
+                }).select("*").single().eq("id", projectId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };
@@ -61,11 +61,11 @@ export const unwatchProject = async (projectId: string) => {
 
   try {
     (await supabaseAdmin.from("boards").update({
-              watchers: junctionTableHelpers.removeBoardWatcher(
-                projectId,
-                user.id
-              ),
-            }).eq("id", projectId).select("*").single()).data;
+                  watchers: junctionTableHelpers.removeBoardWatcher(
+                    projectId,
+                    user.id
+                  ),
+                }).select("*").single().eq("id", projectId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

@@ -20,13 +20,7 @@ export async function issueInvoice(raw: unknown) {
   const input = issueInvoiceSchema.parse(raw);
 
   // Read invoice and settings outside the transaction to avoid holding locks during network calls
-  const invoice = await supabaseAdmin.from("invoices").findUniqueOrThrow({
-    where: { id: input.invoiceId },
-    include: {
-      lineItems: { include: { taxRate: true } },
-      account: true,
-    },
-  });
+  const invoice = (await supabaseAdmin.from("invoices").select("*, lineItems(*, taxRate(*)), account(*)").eq("id", input.invoiceId).single()).data;
 
   if (
     !canIssueInvoice(

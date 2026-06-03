@@ -32,14 +32,11 @@ export const removeAssignment = async (id: string) => {
   }
 
   try {
-    const assignment = await supabaseAdmin.from("crm_AccountProducts").update({
-      where: { id },
-      data: {
-        status: "CANCELLED",
-        updatedBy: user.id,
-        v: { increment: 1 },
-      },
-    });
+    const assignment = (await supabaseAdmin.from("crm_AccountProducts").update({
+            status: "CANCELLED",
+            updatedBy: user.id,
+            v: { increment: 1 },
+          }).select("*").single()).data;
 
     await writeAuditLog({ entityType: "account_product", entityId: id, action: "cancelled", changes: null, userId: user.id });
 

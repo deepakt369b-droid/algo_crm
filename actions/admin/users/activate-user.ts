@@ -21,7 +21,7 @@ export const activateUser = async (userId: string) => {
   if (!userId) return { error: "userId is required" };
 
   try {
-    const user = (await supabaseAdmin.from("users").update({ userStatus: "ACTIVE" }).eq("id", userId).select("*").single()).data;
+    const user = (await supabaseAdmin.from("users").update({ userStatus: "ACTIVE" }).select("*").single().eq("id", userId).select("*").single()).data;
 
     let message;
     switch (user.userLanguage) {

@@ -3,9 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 export async function getSubscriptions() {
-  const subscriptions = await supabaseAdmin.from("crm_Tenant_Subscriptions").findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const subscriptions = (await supabaseAdmin.from("crm_Tenant_Subscriptions").select("*").order("createdAt", { ascending: false })).data;
 
   return subscriptions.map((sub) => ({
     id: sub.id,
@@ -23,35 +21,28 @@ export async function getSubscriptions() {
 }
 
 export async function createSubscription(data: any) {
-  const subscription = await supabaseAdmin.from("crm_Tenant_Subscriptions").insert({
-    data: {
-      tenantId: data.tenantId,
-      planName: data.plan.toUpperCase(),
-      status: data.status.toUpperCase(),
-      billingCycle: "MONTHLY",
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-    },
-  });
+  const subscription = (await supabaseAdmin.from("crm_Tenant_Subscriptions").insert({
+        tenantId: data.tenantId,
+        planName: data.plan.toUpperCase(),
+        status: data.status.toUpperCase(),
+        billingCycle: "MONTHLY",
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      }).select("*").single()).data;
   revalidatePath("/superadmin/subscriptions");
   return subscription;
 }
 
 export async function updateSubscription(data: { id: string; plan?: string; status?: string }) {
-  const subscription = await supabaseAdmin.from("crm_Tenant_Subscriptions").update({
-    where: { id: data.id },
-    data: {
-      ...(data.plan ? { planName: data.plan.toUpperCase() } : {}),
-      ...(data.status ? { status: data.status.toUpperCase() } : {}),
-    },
-  });
+  const subscription = (await supabaseAdmin.from("crm_Tenant_Subscriptions").update({
+        ...(data.plan ? { planName: data.plan.toUpperCase() } : {}),
+        ...(data.status ? { status: data.status.toUpperCase() } : {}),
+      }).eq("id", data.id).select("*").single()).data;
   revalidatePath("/superadmin/subscriptions");
   return subscription;
 }
 
 export async function deleteSubscription(data: { id: string }) {
-  await supabaseAdmin.from("crm_Tenant_Subscriptions").delete({
-    where: { id: data.id },
-  });
+  (await supabaseAdmin.from("crm_Tenant_Subscriptions").delete().eq("id", data.id).select("*").single()).data;
   revalidatePath("/superadmin/subscriptions");
   return { success: true };
 }

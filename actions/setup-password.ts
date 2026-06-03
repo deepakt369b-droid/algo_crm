@@ -36,14 +36,14 @@ export async function setupPassword(password: string) {
     const account = (await supabaseAdmin.from("account").select("*").eq("userId", user.id).eq("providerId", "credential").single()).data;
 
     if (account) {
-      (await supabaseAdmin.from("account").update({ password: hashedPassword }).eq("id", account.id).select("*").single()).data;
+      (await supabaseAdmin.from("account").update({ password: hashedPassword }).select("*").single().eq("id", account.id).select("*").single()).data;
     } else {
       (await supabaseAdmin.from("account").insert({
-                  userId: user.id,
-                  accountId: user.email,
-                  providerId: "credential",
-                  password: hashedPassword,
-                }).select("*").single()).data;
+                        userId: user.id,
+                        accountId: user.email,
+                        providerId: "credential",
+                        password: hashedPassword,
+                      }).select("*").single()).data;
     }
 
     return { success: true };

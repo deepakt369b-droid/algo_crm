@@ -25,7 +25,7 @@ export async function removePurchaseOrderLineItem(lineItemId: string): Promise<{
       return { error: "Can only remove line items from draft purchase orders" };
     }
 
-    (await supabaseAdmin.from("purchaseOrderLineItems").delete().eq("id", lineItemId).select("*").single()).data;
+    (await supabaseAdmin.from("purchaseOrderLineItems").delete().select("*").single().eq("id", lineItemId).select("*").single()).data;
 
     // Recalculate totals
     const allItems = (await supabaseAdmin.from("purchaseOrderLineItems").select("*").eq("purchaseOrderId", lineItem.purchaseOrderId)).data;
@@ -39,11 +39,11 @@ export async function removePurchaseOrderLineItem(lineItemId: string): Promise<{
     const grandTotal = subtotal + taxTotal;
 
     (await supabaseAdmin.from("purchaseOrders").update({
-              subtotal,
-              taxTotal,
-              grandTotal,
-              updatedBy: session.user.id,
-            }).eq("id", lineItem.purchaseOrderId).select("*").single()).data;
+                  subtotal,
+                  taxTotal,
+                  grandTotal,
+                  updatedBy: session.user.id,
+                }).select("*").single().eq("id", lineItem.purchaseOrderId).select("*").single()).data;
 
     revalidatePath(`/[locale]/(routes)/admin/purchase/${lineItem.purchaseOrderId}`, "page");
     revalidatePath("/[locale]/(routes)/admin/purchase", "page");

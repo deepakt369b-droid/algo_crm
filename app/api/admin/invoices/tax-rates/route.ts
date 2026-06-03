@@ -40,11 +40,11 @@ export async function POST(request: NextRequest) {
   }
 
   const taxRate = (await supabaseAdmin.from("invoice_TaxRates").insert({
-        name,
-        rate,
-        isDefault: isDefault ?? false,
-        active: active ?? true,
-      }).select("*").single()).data;
+          name,
+          rate,
+          isDefault: isDefault ?? false,
+          active: active ?? true,
+        }).select("*").single()).data;
 
   return NextResponse.json({ data: taxRate }, { status: 201 });
 }

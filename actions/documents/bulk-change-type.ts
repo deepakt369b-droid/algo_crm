@@ -25,7 +25,7 @@ export async function bulkChangeType(documentIds: string[], systemType: Document
     throw new Error("Forbidden");
   }
 
-  (await supabaseAdmin.from("documents").update({ document_system_type: systemType }).in("id", documentIds)).data;
+  (await supabaseAdmin.from("documents").update({ document_system_type: systemType }).select("*").single().in("id", documentIds)).data;
 
   revalidatePath("/[locale]/(routes)/documents");
 }

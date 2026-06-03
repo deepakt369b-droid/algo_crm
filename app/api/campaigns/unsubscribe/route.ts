@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (!send.unsubscribed_at) {
-    (await supabaseAdmin.from("crm_campaign_sends").update({ unsubscribed_at: new Date() }).eq("unsubscribe_token", token).select("*").single()).data;
+    (await supabaseAdmin.from("crm_campaign_sends").update({ unsubscribed_at: new Date() }).select("*").single().eq("unsubscribe_token", token).select("*").single()).data;
   }
 
   return new NextResponse(

@@ -39,12 +39,12 @@ export const createAccount = async (data: {
 
   try {
     const account = (await supabaseAdmin.from("crm_Accounts").insert({
-            v: 0,
-            createdBy: session.user.id,
-            updatedBy: session.user.id,
-            ...data,
-            status: "Active",
-          }).select("*").single()).data;
+                v: 0,
+                createdBy: session.user.id,
+                updatedBy: session.user.id,
+                ...data,
+                status: "Active",
+              }).select("*").single()).data;
     await writeAuditLog({
       entityType: "account",
       entityId: account.id,

@@ -40,26 +40,23 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return { error: "Billing period is required for recurring products" };
     }
 
-    const product = await supabaseAdmin.from("crm_Products").update({
-      where: { id },
-      data: {
-        ...(updateData.name !== undefined && { name: updateData.name }),
-        ...(updateData.description !== undefined && { description: updateData.description }),
-        ...(updateData.sku !== undefined && { sku: updateData.sku || null }),
-        ...(updateData.type !== undefined && { type: updateData.type }),
-        ...(updateData.status !== undefined && { status: updateData.status }),
-        ...(updateData.unit_price !== undefined && { unit_price: parseFloat(updateData.unit_price) }),
-        ...(updateData.unit_cost !== undefined && { unit_cost: updateData.unit_cost ? parseFloat(updateData.unit_cost) : null }),
-        ...(updateData.currency !== undefined && { currency: updateData.currency }),
-        ...(updateData.tax_rate !== undefined && { tax_rate: updateData.tax_rate ? parseFloat(updateData.tax_rate) : null }),
-        ...(updateData.unit !== undefined && { unit: updateData.unit || null }),
-        ...(updateData.is_recurring !== undefined && { is_recurring: updateData.is_recurring }),
-        ...(updateData.billing_period !== undefined && { billing_period: !willBeRecurring ? null : updateData.billing_period }),
-        ...(updateData.categoryId !== undefined && { categoryId: updateData.categoryId || null }),
-        updatedBy: userId,
-        v: { increment: 1 },
-      },
-    });
+    const product = (await supabaseAdmin.from("crm_Products").update({
+            ...(updateData.name !== undefined && { name: updateData.name }),
+            ...(updateData.description !== undefined && { description: updateData.description }),
+            ...(updateData.sku !== undefined && { sku: updateData.sku || null }),
+            ...(updateData.type !== undefined && { type: updateData.type }),
+            ...(updateData.status !== undefined && { status: updateData.status }),
+            ...(updateData.unit_price !== undefined && { unit_price: parseFloat(updateData.unit_price) }),
+            ...(updateData.unit_cost !== undefined && { unit_cost: updateData.unit_cost ? parseFloat(updateData.unit_cost) : null }),
+            ...(updateData.currency !== undefined && { currency: updateData.currency }),
+            ...(updateData.tax_rate !== undefined && { tax_rate: updateData.tax_rate ? parseFloat(updateData.tax_rate) : null }),
+            ...(updateData.unit !== undefined && { unit: updateData.unit || null }),
+            ...(updateData.is_recurring !== undefined && { is_recurring: updateData.is_recurring }),
+            ...(updateData.billing_period !== undefined && { billing_period: !willBeRecurring ? null : updateData.billing_period }),
+            ...(updateData.categoryId !== undefined && { categoryId: updateData.categoryId || null }),
+            updatedBy: userId,
+            v: { increment: 1 },
+          }).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "product",

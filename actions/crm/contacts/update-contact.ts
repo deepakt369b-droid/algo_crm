@@ -50,21 +50,18 @@ export const updateContact = async (data: {
 
   try {
     const before = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", id).eq("deletedAt", null).single()).data;
-    const contact = await supabaseAdmin.from("crm_Contacts").update({
-      where: { id },
-      data: {
-        v: 0,
-        updatedBy: userId,
-        accountsIDs: assigned_account || undefined,
-        assigned_to: assigned_to || undefined,
-        contact_type_id: contact_type_id || undefined,
-        birthday:
-          birthday_day && birthday_month && birthday_year
-            ? birthday_day + "/" + birthday_month + "/" + birthday_year
-            : null,
-        ...rest,
-      } as any,
-    });
+    const contact = (await supabaseAdmin.from("crm_Contacts").update({
+            v: 0,
+            updatedBy: userId,
+            accountsIDs: assigned_account || undefined,
+            assigned_to: assigned_to || undefined,
+            contact_type_id: contact_type_id || undefined,
+            birthday:
+              birthday_day && birthday_month && birthday_year
+                ? birthday_day + "/" + birthday_month + "/" + birthday_year
+                : null,
+            ...rest,
+          } as any).select("*").single()).data;
     const changes = before ? diffObjects(before as Record<string, unknown>, contact as Record<string, unknown>) : null;
     await writeAuditLog({
       entityType: "contact",

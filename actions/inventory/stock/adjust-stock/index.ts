@@ -39,14 +39,14 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     // Record movement if quantity changed
     if (quantityDiff !== 0) {
       (await supabaseAdmin.from("inventoryMovement").insert({
-                  productId,
-                  warehouseId,
-                  type: "ADJUSTMENT",
-                  quantity: Math.abs(quantityDiff),
-                  reference: note || "Manual adjustment",
-                  note: note || undefined,
-                  createdBy: session.user.id,
-                }).select("*").single()).data;
+                        productId,
+                        warehouseId,
+                        type: "ADJUSTMENT",
+                        quantity: Math.abs(quantityDiff),
+                        reference: note || "Manual adjustment",
+                        note: note || undefined,
+                        createdBy: session.user.id,
+                      }).select("*").single()).data;
     }
 
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");

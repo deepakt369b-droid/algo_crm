@@ -58,15 +58,15 @@ export const campaignTools = [
       userId: string
     ) {
       const campaign = (await supabaseAdmin.from("crm_campaigns").insert({
-                v: 0,
-                name: args.name,
-                description: args.description,
-                from_name: args.from_name,
-                reply_to: args.reply_to,
-                template_id: args.template_id,
-                status: "draft",
-                created_by: userId,
-              }).select("*").single()).data;
+                      v: 0,
+                      name: args.name,
+                      description: args.description,
+                      from_name: args.from_name,
+                      reply_to: args.reply_to,
+                      template_id: args.template_id,
+                      status: "draft",
+                      created_by: userId,
+                    }).select("*").single()).data;
       return itemResponse(campaign);
     },
   },
@@ -86,7 +86,7 @@ export const campaignTools = [
       if (!existing) notFound("Campaign");
       if (existing.status === "sending") conflict("Cannot update a campaign that is currently sending");
       const { id, ...updateData } = args;
-      const campaign = await supabaseAdmin.from("crm_campaigns").update({ where: { id }, data: updateData });
+      const campaign = (await supabaseAdmin.from("crm_campaigns").update(updateData).select("*").single()).data;
       return itemResponse(campaign);
     },
   },
@@ -98,10 +98,7 @@ export const campaignTools = [
       const existing = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Campaign");
       if (existing.status === "sending") conflict("Cannot delete a campaign that is currently sending");
-      await supabaseAdmin.from("crm_campaigns").update({
-        where: { id: args.id },
-        data: softDeleteData(userId),
-      });
+      (await supabaseAdmin.from("crm_campaigns").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: args.id, deletedAt: new Date().toISOString() });
     },
   },
@@ -118,7 +115,7 @@ export const campaignTools = [
         conflict(`Cannot send campaign in status: ${campaign.status}`);
       }
       const now = new Date();
-      (await supabaseAdmin.from("crm_campaigns").update({ status: "sending", scheduled_at: now }).eq("id", args.id).select("*").single()).data;
+      (await supabaseAdmin.from("crm_campaigns").update({ status: "sending", scheduled_at: now }).select("*").single().eq("id", args.id).select("*").single()).data;
       await inngest.send({ name: "campaigns/send-now", data: { campaignId: args.id } });
       return itemResponse({ id: args.id, status: "sending" });
     },
@@ -131,7 +128,7 @@ export const campaignTools = [
       const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).single()).data;
       if (!campaign) notFound("Campaign");
       if (campaign.status !== "sending") conflict(`Cannot pause campaign in status: ${campaign.status}`);
-      (await supabaseAdmin.from("crm_campaigns").update({ status: "paused" }).eq("id", args.id).select("*").single()).data;
+      (await supabaseAdmin.from("crm_campaigns").update({ status: "paused" }).select("*").single().eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: args.id, status: "paused" });
     },
   },
@@ -143,7 +140,7 @@ export const campaignTools = [
       const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).single()).data;
       if (!campaign) notFound("Campaign");
       if (campaign.status !== "paused") conflict(`Cannot resume campaign in status: ${campaign.status}`);
-      (await supabaseAdmin.from("crm_campaigns").update({ status: "sending" }).eq("id", args.id).select("*").single()).data;
+      (await supabaseAdmin.from("crm_campaigns").update({ status: "sending" }).select("*").single().eq("id", args.id).select("*").single()).data;
       await inngest.send({ name: "campaigns/send-now", data: { campaignId: args.id } });
       return itemResponse({ id: args.id, status: "sending" });
     },
@@ -188,13 +185,13 @@ export const campaignTools = [
       userId: string
     ) {
       const template = (await supabaseAdmin.from("crm_campaign_templates").insert({
-                name: args.name,
-                description: args.description,
-                subject_default: args.subject_default,
-                content_html: args.content_html,
-                content_json: args.content_json,
-                created_by: userId,
-              }).select("*").single()).data;
+                      name: args.name,
+                      description: args.description,
+                      subject_default: args.subject_default,
+                      content_html: args.content_html,
+                      content_json: args.content_json,
+                      created_by: userId,
+                    }).select("*").single()).data;
       return itemResponse(template);
     },
   },
@@ -213,7 +210,7 @@ export const campaignTools = [
       const existing = (await supabaseAdmin.from("crm_campaign_templates").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Template");
       const { id, ...updateData } = args;
-      const template = await supabaseAdmin.from("crm_campaign_templates").update({ where: { id }, data: updateData });
+      const template = (await supabaseAdmin.from("crm_campaign_templates").update(updateData).select("*").single()).data;
       return itemResponse(template);
     },
   },
@@ -224,10 +221,7 @@ export const campaignTools = [
     async handler(args: { id: string }, userId: string) {
       const existing = (await supabaseAdmin.from("crm_campaign_templates").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Template");
-      await supabaseAdmin.from("crm_campaign_templates").update({
-        where: { id: args.id },
-        data: softDeleteData(userId),
-      });
+      (await supabaseAdmin.from("crm_campaign_templates").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: args.id, deletedAt: new Date().toISOString() });
     },
   },
@@ -250,7 +244,7 @@ export const campaignTools = [
     ) {
       const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.campaign_id).eq("deletedAt", null).single()).data;
       if (!campaign) notFound("Campaign");
-      const step = await supabaseAdmin.from("crm_campaign_steps").insert({ data: args });
+      const step = (await supabaseAdmin.from("crm_campaign_steps").insert(args).select("*").single()).data;
       return itemResponse(step);
     },
   },
@@ -269,7 +263,7 @@ export const campaignTools = [
       const existing = (await supabaseAdmin.from("crm_campaign_steps").select("*").eq("id", args.id).single()).data;
       if (!existing) notFound("CampaignStep");
       const { id, ...updateData } = args;
-      const step = await supabaseAdmin.from("crm_campaign_steps").update({ where: { id }, data: updateData });
+      const step = (await supabaseAdmin.from("crm_campaign_steps").update(updateData).select("*").single()).data;
       return itemResponse(step);
     },
   },
@@ -280,7 +274,7 @@ export const campaignTools = [
     async handler(args: { id: string }, _userId: string) {
       const existing = (await supabaseAdmin.from("crm_campaign_steps").select("*").eq("id", args.id).single()).data;
       if (!existing) notFound("CampaignStep");
-      (await supabaseAdmin.from("crm_campaign_steps").delete().eq("id", args.id).select("*").single()).data;
+      (await supabaseAdmin.from("crm_campaign_steps").delete().select("*").single().eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: args.id, deleted: true });
     },
   },

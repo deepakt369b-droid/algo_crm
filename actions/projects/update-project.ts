@@ -36,12 +36,12 @@ export const updateProject = async (data: {
 
   try {
     (await supabaseAdmin.from("boards").update({
-              title,
-              description,
-              visibility,
-              updatedBy: user.id,
-              updatedAt: new Date(),
-            }).eq("id", id).select("*").single()).data;
+                  title,
+                  description,
+                  visibility,
+                  updatedBy: user.id,
+                  updatedAt: new Date(),
+                }).select("*").single().eq("id", id).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

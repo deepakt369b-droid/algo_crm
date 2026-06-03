@@ -75,25 +75,22 @@ export const crmContractTools = [
     }),
     async handler(args: Record<string, any>, userId: string) {
       const { lineItems, startDate, endDate, ...contractData } = args;
-      const contract = await supabaseAdmin.from("crm_Contracts").insert({
-        data: {
-          v: 0,
-          ...contractData,
-          ...(startDate && { startDate: new Date(startDate) }),
-          ...(endDate && { endDate: new Date(endDate) }),
-          createdBy: userId,
-          updatedBy: userId,
-          ...(lineItems?.length && {
-            lineItems: {
-              create: lineItems.map((li: any) => ({
-                ...li,
+      const contract = (await supabaseAdmin.from("crm_Contracts").insert({
+                v: 0,
+                ...contractData,
+                ...(startDate && { startDate: new Date(startDate) }),
+                ...(endDate && { endDate: new Date(endDate) }),
                 createdBy: userId,
-              })),
-            },
-          }),
-        },
-        include: { lineItems: true },
-      });
+                updatedBy: userId,
+                ...(lineItems?.length && {
+                  lineItems: {
+                    create: lineItems.map((li: any) => ({
+                      ...li,
+                      createdBy: userId,
+                    })),
+                  },
+                }),
+              }).select("*").single()).data;
       return itemResponse(contract);
     },
   },
@@ -119,11 +116,11 @@ export const crmContractTools = [
       if (!existing) notFound("Contract");
       const { id, startDate, endDate, ...rest } = args;
       const contract = (await supabaseAdmin.from("crm_Contracts").update({
-                ...rest,
-                ...(startDate !== undefined && { startDate: new Date(startDate) }),
-                ...(endDate !== undefined && { endDate: new Date(endDate) }),
-                updatedBy: userId,
-              }).eq("id", id).select("*").single()).data;
+                      ...rest,
+                      ...(startDate !== undefined && { startDate: new Date(startDate) }),
+                      ...(endDate !== undefined && { endDate: new Date(endDate) }),
+                      updatedBy: userId,
+                    }).select("*").single().eq("id", id).select("*").single()).data;
       return itemResponse(contract);
     },
   },
@@ -134,7 +131,7 @@ export const crmContractTools = [
     async handler(args: { id: string }, userId: string) {
       const existing = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Contract");
-      const contract = (await supabaseAdmin.from("crm_Contracts").update({ deletedAt: new Date(), deletedBy: userId }).eq("id", args.id).select("*").single()).data;
+      const contract = (await supabaseAdmin.from("crm_Contracts").update({ deletedAt: new Date(), deletedBy: userId }).select("*").single().eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: contract.id, status: "DELETED" });
     },
   },

@@ -24,25 +24,23 @@ export const createProject = async (data: {
   try {
     const boardsCount = (await supabaseAdmin.from("boards").select("*", { count: 'exact', head: true })).count;
 
-    const newBoard = await supabaseAdmin.from("boards").insert({
-      data: {
-        v: 0,
-        user: user.id,
-        title,
-        description,
-        position: boardsCount > 0 ? boardsCount : 0,
-        visibility,
-        sharedWith: [user.id],
-        createdBy: user.id,
-      },
-    });
+    const newBoard = (await supabaseAdmin.from("boards").insert({
+            v: 0,
+            user: user.id,
+            title,
+            description,
+            position: boardsCount > 0 ? boardsCount : 0,
+            visibility,
+            sharedWith: [user.id],
+            createdBy: user.id,
+          }).select("*").single()).data;
 
     (await supabaseAdmin.from("sections").insert({
-              v: 0,
-              board: newBoard.id,
-              title: "Backlog",
-              position: 0,
-            }).select("*").single()).data;
+                  v: 0,
+                  board: newBoard.id,
+                  title: "Backlog",
+                  position: 0,
+                }).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { data: newBoard };

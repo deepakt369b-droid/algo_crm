@@ -64,13 +64,13 @@ interface WriteAuditLogParams {
 
 export async function writeAuditLog(params: WriteAuditLogParams): Promise<void> {
   try {
-    await supabaseAdmin.from("crm_AuditLog").insert({
-        entityType: params.entityType,
-        entityId: params.entityId,
-        action: params.action,
-        changes: params.changes ?? null,
-        userId: params.userId ?? null,
-    });
+    (await supabaseAdmin.from("crm_AuditLog").insert({
+              entityType: params.entityType,
+              entityId: params.entityId,
+              action: params.action,
+              changes: params.changes ?? null,
+              userId: params.userId ?? null,
+          }).select("*").single()).data;
   } catch (err) {
     console.error("[AUDIT_LOG_WRITE_FAILED]", err);
     // Never rethrow — audit failures must not block CRM mutations

@@ -24,5 +24,5 @@ export const deleteCampaign = async (id: string) => {
     throw e;
   }
 
-  return (await supabaseAdmin.from("crm_campaigns").update({ status: "deleted" }).eq("id", id).select("*").single()).data;
+  return (await supabaseAdmin.from("crm_campaigns").update({ status: "deleted" }).select("*").single().eq("id", id).select("*").single()).data;
 };

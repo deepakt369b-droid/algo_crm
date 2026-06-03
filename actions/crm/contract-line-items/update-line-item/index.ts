@@ -35,25 +35,22 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
     const lineTotal = calculateLineTotal(qty, price, discType, discVal);
 
-    const lineItem = await supabaseAdmin.from("crm_ContractLineItems").update({
-      where: { id },
-      data: {
-        ...(updateData.name !== undefined && { name: updateData.name }),
-        ...(updateData.description !== undefined && { description: updateData.description }),
-        ...(updateData.quantity !== undefined && { quantity: updateData.quantity }),
-        ...(updateData.unit_price !== undefined && { unit_price: price }),
-        ...(updateData.discount_type !== undefined && { discount_type: updateData.discount_type }),
-        ...(updateData.discount_value !== undefined && { discount_value: discVal }),
-        ...(updateData.sort_order !== undefined && { sort_order: updateData.sort_order }),
-        line_total: lineTotal,
-        updatedBy: userId,
-        v: { increment: 1 },
-      },
-    });
+    const lineItem = (await supabaseAdmin.from("crm_ContractLineItems").update({
+            ...(updateData.name !== undefined && { name: updateData.name }),
+            ...(updateData.description !== undefined && { description: updateData.description }),
+            ...(updateData.quantity !== undefined && { quantity: updateData.quantity }),
+            ...(updateData.unit_price !== undefined && { unit_price: price }),
+            ...(updateData.discount_type !== undefined && { discount_type: updateData.discount_type }),
+            ...(updateData.discount_value !== undefined && { discount_value: discVal }),
+            ...(updateData.sort_order !== undefined && { sort_order: updateData.sort_order }),
+            line_total: lineTotal,
+            updatedBy: userId,
+            v: { increment: 1 },
+          }).select("*").single()).data;
 
     const allLineItems = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("contractId", existing.contractId)).data;
     const newTotal = sumLineTotals(allLineItems);
-    (await supabaseAdmin.from("crm_Contracts").update({ value: newTotal }).eq("id", existing.contractId).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Contracts").update({ value: newTotal }).select("*").single().eq("id", existing.contractId).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "contract_line_item",

@@ -8,12 +8,12 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 export async function saveConfig(input: { name: string; category: ReportCategory; filters: Record<string, unknown>; isShared: boolean }) {
   const user = await requireAuthenticated();
   return (await supabaseAdmin.from("crm_Report_Config").insert({
-        name: input.name,
-        category: input.category,
-        filters: input.filters as Prisma.InputJsonValue,
-        isShared: input.isShared,
-        createdBy: user.id,
-      }).select("*").single()).data;
+          name: input.name,
+          category: input.category,
+          filters: input.filters as Prisma.InputJsonValue,
+          isShared: input.isShared,
+          createdBy: user.id,
+        }).select("*").single()).data;
 }
 
 export async function loadConfigs(category: ReportCategory) {
@@ -36,7 +36,7 @@ async function loadAndAuthorize(configId: string, user: { id: string; role: stri
 export async function deleteConfig(configId: string) {
   const user = await requireAuthenticated();
   await loadAndAuthorize(configId, user);
-  return (await supabaseAdmin.from("crm_Report_Config").delete().eq("id", configId).select("*").single()).data;
+  return (await supabaseAdmin.from("crm_Report_Config").delete().select("*").single().eq("id", configId).select("*").single()).data;
 }
 
 export async function duplicateConfig(configId: string, newName: string) {
@@ -52,16 +52,16 @@ export async function duplicateConfig(configId: string, newName: string) {
     throw new AuthorizationError();
   }
   return (await supabaseAdmin.from("crm_Report_Config").insert({
-        name: newName,
-        category: original.category,
-        filters: original.filters as Prisma.InputJsonValue,
-        isShared: false,
-        createdBy: user.id,
-      }).select("*").single()).data;
+          name: newName,
+          category: original.category,
+          filters: original.filters as Prisma.InputJsonValue,
+          isShared: false,
+          createdBy: user.id,
+        }).select("*").single()).data;
 }
 
 export async function toggleShare(configId: string, isShared: boolean) {
   const user = await requireAuthenticated();
   await loadAndAuthorize(configId, user);
-  return (await supabaseAdmin.from("crm_Report_Config").update({ isShared }).eq("id", configId).select("*").single()).data;
+  return (await supabaseAdmin.from("crm_Report_Config").update({ isShared }).select("*").single().eq("id", configId).select("*").single()).data;
 }

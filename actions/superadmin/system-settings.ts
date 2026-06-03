@@ -91,14 +91,14 @@ export async function saveSystemSettings(data: Record<string, string>) {
     if (data.openaiApiKey && !data.openaiApiKey.includes("••••")) {
       const encryptedKey = encrypt(data.openaiApiKey);
       operations.push(
-        (await supabaseAdmin.from("apiKeys").delete().eq("scope", "SYSTEM").eq("provider", "OPENAI")).data
+        (await supabaseAdmin.from("apiKeys").delete().select("*").single().eq("scope", "SYSTEM").eq("provider", "OPENAI")).data
       );
       operations.push(
         (await supabaseAdmin.from("apiKeys").insert({
-                      scope: "SYSTEM",
-                      provider: "OPENAI",
-                      encryptedKey,
-                    }).select("*").single()).data
+                                scope: "SYSTEM",
+                                provider: "OPENAI",
+                                encryptedKey,
+                              }).select("*").single()).data
       );
     }
 
@@ -106,14 +106,14 @@ export async function saveSystemSettings(data: Record<string, string>) {
     if (data.anthropicApiKey && !data.anthropicApiKey.includes("••••")) {
       const encryptedKey = encrypt(data.anthropicApiKey);
       operations.push(
-        (await supabaseAdmin.from("apiKeys").delete().eq("scope", "SYSTEM").eq("provider", "ANTHROPIC")).data
+        (await supabaseAdmin.from("apiKeys").delete().select("*").single().eq("scope", "SYSTEM").eq("provider", "ANTHROPIC")).data
       );
       operations.push(
         (await supabaseAdmin.from("apiKeys").insert({
-                      scope: "SYSTEM",
-                      provider: "ANTHROPIC",
-                      encryptedKey,
-                    }).select("*").single()).data
+                                scope: "SYSTEM",
+                                provider: "ANTHROPIC",
+                                encryptedKey,
+                              }).select("*").single()).data
       );
     }
     

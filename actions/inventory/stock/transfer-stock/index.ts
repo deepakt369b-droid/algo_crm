@@ -52,25 +52,25 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     }, { onConflict: "productId,warehouseId" });
 
     // Record movements
-    await supabaseAdmin.from("inventoryMovement").insert({
-      productId,
-      warehouseId: fromWarehouseId,
-      type: "TRANSFER_OUT",
-      quantity,
-      reference: `Transferred to ${toWarehouse.name}`,
-      note: note || undefined,
-      createdBy: session.user.id,
-    });
+    (await supabaseAdmin.from("inventoryMovement").insert({
+            productId,
+            warehouseId: fromWarehouseId,
+            type: "TRANSFER_OUT",
+            quantity,
+            reference: `Transferred to ${toWarehouse.name}`,
+            note: note || undefined,
+            createdBy: session.user.id,
+          }).select("*").single()).data;
 
-    await supabaseAdmin.from("inventoryMovement").insert({
-      productId,
-      warehouseId: toWarehouseId,
-      type: "TRANSFER_IN",
-      quantity,
-      reference: `Transferred from ${fromWarehouse.name}`,
-      note: note || undefined,
-      createdBy: session.user.id,
-    });
+    (await supabaseAdmin.from("inventoryMovement").insert({
+            productId,
+            warehouseId: toWarehouseId,
+            type: "TRANSFER_IN",
+            quantity,
+            reference: `Transferred from ${fromWarehouse.name}`,
+            note: note || undefined,
+            createdBy: session.user.id,
+          }).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");
     return { data: { productId, fromWarehouseId, toWarehouseId, quantity } };

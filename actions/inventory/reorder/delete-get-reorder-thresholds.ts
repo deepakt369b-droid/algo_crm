@@ -11,7 +11,7 @@ export async function deleteReorderThreshold(id: string): Promise<{ error?: stri
   }
 
   try {
-    (await supabaseAdmin.from("reorderThreshold").delete().eq("id", id).select("*").single()).data;
+    (await supabaseAdmin.from("reorderThreshold").delete().select("*").single().eq("id", id).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");
     return {};
   } catch (error) {

@@ -65,15 +65,15 @@ export const projectTools = [
       userId: string
     ) {
       const board = (await supabaseAdmin.from("boards").insert({
-        v: 0,
-        title: args.title,
-        description: args.description,
-        icon: args.icon,
-        visibility: args.visibility,
-        user: userId,
-        createdBy: userId,
-        updatedBy: userId,
-      }).select().single()).data;
+              v: 0,
+              title: args.title,
+              description: args.description,
+              icon: args.icon,
+              visibility: args.visibility,
+              user: userId,
+              createdBy: userId,
+              updatedBy: userId,
+            }).select("*").single().select().single()).data;
       return itemResponse(board);
     },
   },
@@ -96,8 +96,8 @@ export const projectTools = [
       if (!existing) notFound("Board");
       const { id, ...updateData } = args;
       const board = (await supabaseAdmin.from("boards").update({
-        ...updateData, updatedBy: userId
-      }).eq("id", id).select().single()).data;
+              ...updateData, updatedBy: userId
+            }).select("*").single().eq("id", id).select().single()).data;
       return itemResponse(board);
     },
   },
@@ -112,7 +112,7 @@ export const projectTools = [
         .is("deletedAt", null)
         .single()).data;
       if (!existing) notFound("Board");
-      const board = (await supabaseAdmin.from("boards").update(softDeleteData(userId)).eq("id", args.id).select().single()).data;
+      const board = (await supabaseAdmin.from("boards").update(softDeleteData(userId)).select("*").single().eq("id", args.id).select().single()).data;
       return itemResponse({ id: board.id, deletedAt: board.deletedAt });
     },
   },
@@ -135,11 +135,11 @@ export const projectTools = [
       const maxPosResult = await supabaseAdmin.from("sections").select("position").eq("board", args.board).order("position", { ascending: false }).limit(1).single();
       const maxPosition = maxPosResult.data?.position ? BigInt(maxPosResult.data.position) : BigInt(0);
       const section = (await supabaseAdmin.from("sections").insert({
-        v: 0,
-        board: args.board,
-        title: args.title,
-        position: Number(maxPosition) + 1000,
-      }).select().single()).data;
+              v: 0,
+              board: args.board,
+              title: args.title,
+              position: Number(maxPosition) + 1000,
+            }).select("*").single().select().single()).data;
       return itemResponse(section);
     },
   },
@@ -156,8 +156,8 @@ export const projectTools = [
       if (!existing) notFound("Section");
       const { id, position, ...rest } = args;
       const section = (await supabaseAdmin.from("sections").update({
-        ...rest, ...(position !== undefined && { position })
-      }).eq("id", id).select().single()).data;
+              ...rest, ...(position !== undefined && { position })
+            }).select("*").single().eq("id", id).select().single()).data;
       return itemResponse(section);
     },
   },
@@ -170,7 +170,7 @@ export const projectTools = [
       if (!section) notFound("Section");
       // @ts-ignore
       if (section.tasks && section.tasks[0]?.count > 0) conflict("Cannot delete section with tasks. Move or delete tasks first.");
-      await supabaseAdmin.from("sections").delete().eq("id", args.id);
+      await supabaseAdmin.from("sections").delete().select("*").single().eq("id", args.id);
       return itemResponse({ id: args.id, deleted: true });
     },
   },
@@ -228,17 +228,17 @@ export const projectTools = [
       const maxPosResult = await supabaseAdmin.from("tasks").select("position").eq("section", args.section).order("position", { ascending: false }).limit(1).single();
       const maxPosition = maxPosResult.data?.position ? BigInt(maxPosResult.data.position) : BigInt(0);
       const task = (await supabaseAdmin.from("tasks").insert({
-        v: 0,
-        title: args.title,
-        content: args.content,
-        section: args.section,
-        priority: args.priority,
-        position: Number(maxPosition) + 1000,
-        user: userId,
-        createdBy: userId,
-        updatedBy: userId,
-        ...(args.dueDateAt && { dueDateAt: new Date(args.dueDateAt).toISOString() }),
-      }).select().single()).data;
+              v: 0,
+              title: args.title,
+              content: args.content,
+              section: args.section,
+              priority: args.priority,
+              position: Number(maxPosition) + 1000,
+              user: userId,
+              createdBy: userId,
+              updatedBy: userId,
+              ...(args.dueDateAt && { dueDateAt: new Date(args.dueDateAt).toISOString() }),
+            }).select("*").single().select().single()).data;
       return itemResponse(task);
     },
   },
@@ -258,10 +258,10 @@ export const projectTools = [
       if (!existing) notFound("Task");
       const { id, dueDateAt, ...rest } = args;
       const task = (await supabaseAdmin.from("tasks").update({
-        ...rest,
-        ...(dueDateAt !== undefined && { dueDateAt: new Date(dueDateAt).toISOString() }),
-        updatedBy: userId,
-      }).eq("id", id).select().single()).data;
+              ...rest,
+              ...(dueDateAt !== undefined && { dueDateAt: new Date(dueDateAt).toISOString() }),
+              updatedBy: userId,
+            }).select("*").single().eq("id", id).select().single()).data;
       return itemResponse(task);
     },
   },
@@ -279,10 +279,10 @@ export const projectTools = [
       const sec = (await supabaseAdmin.from("sections").select("id").eq("id", args.section).single()).data;
       if (!sec) notFound("Section");
       const task = (await supabaseAdmin.from("tasks").update({
-        section: args.section,
-        ...(args.position !== undefined && { position: args.position }),
-        updatedBy: userId,
-      }).eq("id", args.id).select().single()).data;
+              section: args.section,
+              ...(args.position !== undefined && { position: args.position }),
+              updatedBy: userId,
+            }).select("*").single().eq("id", args.id).select().single()).data;
       return itemResponse(task);
     },
   },
@@ -294,8 +294,8 @@ export const projectTools = [
       const existing = (await supabaseAdmin.from("tasks").select("id").eq("id", args.id).single()).data;
       if (!existing) notFound("Task");
       const task = (await supabaseAdmin.from("tasks").update({
-        taskStatus: "COMPLETE", updatedBy: userId
-      }).eq("id", args.id).select().single()).data;
+              taskStatus: "COMPLETE", updatedBy: userId
+            }).select("*").single().eq("id", args.id).select().single()).data;
       return itemResponse({ id: task.id, status: "COMPLETE" });
     },
   },
@@ -312,8 +312,8 @@ export const projectTools = [
       const existing = (await supabaseAdmin.from("tasks").select("id").eq("id", args.task).single()).data;
       if (!existing) notFound("Task");
       const tc = (await supabaseAdmin.from("tasksComments").insert({
-        v: 0, task: args.task, comment: args.comment, user: userId
-      }).select().single()).data;
+              v: 0, task: args.task, comment: args.comment, user: userId
+            }).select("*").single().select().single()).data;
       return itemResponse(tc);
     },
   },
@@ -343,9 +343,9 @@ export const projectTools = [
       document_id: z.string().uuid(),
     }),
     async handler(args: { task_id: string; document_id: string }, _userId: string) {
-      await supabaseAdmin.from("documentsToTasks").insert({
-        task_id: args.task_id, document_id: args.document_id
-      });
+      (await supabaseAdmin.from("documentsToTasks").insert({
+                task_id: args.task_id, document_id: args.document_id
+              }).select("*").single()).data;
       return itemResponse({ task_id: args.task_id, document_id: args.document_id });
     },
   },
@@ -361,10 +361,10 @@ export const projectTools = [
     async handler(args: { board_id: string; watch: boolean }, userId: string) {
       if (args.watch) {
         await supabaseAdmin.from("boardWatchers").insert({
-          board_id: args.board_id, user_id: userId
-        }).catch(() => {}); // Already watching — ignore duplicate
+                  board_id: args.board_id, user_id: userId
+                }).select("*").single().catch(() => {}); // Already watching — ignore duplicate
       } else {
-        await supabaseAdmin.from("boardWatchers").delete().match({
+        await supabaseAdmin.from("boardWatchers").delete().select("*").single().match({
           board_id: args.board_id, user_id: userId
         }).catch(() => {}); // Not watching — ignore
       }

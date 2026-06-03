@@ -113,16 +113,16 @@ export const crmDocumentTools = [
       const fileUrl = `${MINIO_PUBLIC_URL}/${MINIO_BUCKET}/${key}`;
 
       const doc = (await supabaseAdmin.from("documents").insert({
-                document_name: args.document_name,
-                document_file_mimeType: args.contentType,
-                document_file_url: fileUrl,
-                key,
-                description: args.description,
-                visibility: args.visibility,
-                created_by_user: userId,
-                createdBy: userId,
-                processing_status: "PENDING",
-              }).select("*").single()).data;
+                      document_name: args.document_name,
+                      document_file_mimeType: args.contentType,
+                      document_file_url: fileUrl,
+                      key,
+                      description: args.description,
+                      visibility: args.visibility,
+                      created_by_user: userId,
+                      createdBy: userId,
+                      processing_status: "PENDING",
+                    }).select("*").single()).data;
 
       const command = new PutObjectCommand({
         Bucket: MINIO_BUCKET,
@@ -241,10 +241,7 @@ export const crmDocumentTools = [
     async handler(args: { id: string }, userId: string) {
       const existing = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Document");
-      const doc = await supabaseAdmin.from("documents").update({
-        where: { id: args.id },
-        data: softDeleteData(userId),
-      });
+      const doc = (await supabaseAdmin.from("documents").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: doc.id, deletedAt: doc.deletedAt });
     },
   },

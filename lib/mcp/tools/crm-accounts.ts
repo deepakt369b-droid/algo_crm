@@ -83,14 +83,14 @@ export const crmAccountTools = [
     ) {
       const { name, ...rest } = args;
       const account = (await supabaseAdmin.from("crm_Accounts").insert({
-                v: 0,
-                name,
-                ...rest,
-                assigned_to: userId,
-                createdBy: userId,
-                updatedBy: userId,
-                status: "Active",
-              }).select("*").single()).data;
+                      v: 0,
+                      name,
+                      ...rest,
+                      assigned_to: userId,
+                      createdBy: userId,
+                      updatedBy: userId,
+                      status: "Active",
+                    }).select("*").single()).data;
       return itemResponse(account);
     },
   },
@@ -119,7 +119,7 @@ export const crmAccountTools = [
       const existing = (await supabaseAdmin.from("crm_Accounts").select("*").eq("id", args.id).eq("assigned_to", userId).single()).data;
       if (!existing) notFound("Account");
       const { id, ...updateData } = args;
-      const account = (await supabaseAdmin.from("crm_Accounts").update({ ...updateData, updatedBy: userId }).eq("id", id).select("*").single()).data;
+      const account = (await supabaseAdmin.from("crm_Accounts").update({ ...updateData, updatedBy: userId }).select("*").single().eq("id", id).select("*").single()).data;
       return itemResponse(account);
     },
   },
@@ -130,10 +130,7 @@ export const crmAccountTools = [
     async handler(args: { id: string }, userId: string) {
       const existing = (await supabaseAdmin.from("crm_Accounts").select("*").eq("id", args.id).eq("assigned_to", userId).single()).data;
       if (!existing) notFound("Account");
-      const account = await supabaseAdmin.from("crm_Accounts").update({
-        where: { id: args.id },
-        data: softDeleteData(userId),
-      });
+      const account = (await supabaseAdmin.from("crm_Accounts").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: account.id, deletedAt: account.deletedAt });
     },
   },

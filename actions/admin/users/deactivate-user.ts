@@ -20,7 +20,7 @@ export const deactivateUser = async (userId: string) => {
   if (!userId) return { error: "userId is required" };
 
   try {
-    const user = (await supabaseAdmin.from("users").update({ userStatus: "INACTIVE" }).eq("id", userId).select("*").single()).data;
+    const user = (await supabaseAdmin.from("users").update({ userStatus: "INACTIVE" }).select("*").single().eq("id", userId).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/admin", "page");
     return { data: user };
   } catch (error) {

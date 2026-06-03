@@ -11,9 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch instance settings from Postgres
-    const instance = await supabaseAdmin.from("crm_Whatsapp_Instances").findUnique({
-      where: { id: instanceId },
-    });
+    const instance = (await supabaseAdmin.from("crm_Whatsapp_Instances").select("*").eq("id", instanceId).single()).data;
     
     if (!instance) {
       return NextResponse.json({ error: "Instance not found" }, { status: 404 });

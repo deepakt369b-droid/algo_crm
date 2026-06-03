@@ -67,10 +67,7 @@ export const crmTargetListTools = [
       const existing = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("TargetList");
       const { id, ...updateData } = args;
-      const tl = await supabaseAdmin.from("crm_TargetLists").update({
-        where: { id },
-        data: updateData,
-      });
+      const tl = (await supabaseAdmin.from("crm_TargetLists").update(updateData).select("*").single()).data;
       return itemResponse(tl);
     },
   },
@@ -81,10 +78,7 @@ export const crmTargetListTools = [
     async handler(args: { id: string }, _userId: string) {
       const existing = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("TargetList");
-      const tl = await supabaseAdmin.from("crm_TargetLists").update({
-        where: { id: args.id },
-        data: softDeleteData(_userId),
-      });
+      const tl = (await supabaseAdmin.from("crm_TargetLists").update(softDeleteData(_userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: tl.id, deletedAt: tl.deletedAt });
     },
   },
@@ -101,13 +95,12 @@ export const crmTargetListTools = [
     ) {
       const tl = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.target_list_id).eq("deletedAt", null).single()).data;
       if (!tl) notFound("TargetList");
-      await supabaseAdmin.from("targetsToTargetLists").insertMany({
-        data: args.target_ids.map((tid) => ({
+      await supabaseAdmin.from("targetsToTargetLists").insert(
+        args.target_ids.map((tid) => ({
           target_id: tid,
           target_list_id: args.target_list_id,
-        })),
-        skipDuplicates: true,
-      });
+        }))
+      );
       return itemResponse({
         target_list_id: args.target_list_id,
         added: args.target_ids.length,
@@ -125,7 +118,7 @@ export const crmTargetListTools = [
       args: { target_list_id: string; target_ids: string[] },
       _userId: string
     ) {
-      (await supabaseAdmin.from("targetsToTargetLists").delete().eq("target_list_id", args.target_list_id).in("target_id", args.target_ids)).data;
+      (await supabaseAdmin.from("targetsToTargetLists").delete().select("*").single().eq("target_list_id", args.target_list_id).in("target_id", args.target_ids)).data;
       return itemResponse({
         target_list_id: args.target_list_id,
         removed: args.target_ids.length,

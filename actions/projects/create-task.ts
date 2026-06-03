@@ -53,20 +53,20 @@ export const createTask = async (data: {
     const tasksCount = (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("section", sectionId.id)).count;
 
     const task = (await supabaseAdmin.from("tasks").insert({
-            v: 0,
-            priority,
-            title,
-            content,
-            dueDateAt,
-            section: sectionId.id,
-            createdBy: session.user.id,
-            updatedBy: session.user.id,
-            position: tasksCount > 0 ? tasksCount : 0,
-            user,
-            taskStatus: "ACTIVE",
-          }).select("*").single()).data;
+                v: 0,
+                priority,
+                title,
+                content,
+                dueDateAt,
+                section: sectionId.id,
+                createdBy: session.user.id,
+                updatedBy: session.user.id,
+                position: tasksCount > 0 ? tasksCount : 0,
+                user,
+                taskStatus: "ACTIVE",
+              }).select("*").single()).data;
 
-    (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).eq("id", board).select("*").single()).data;
+    (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).select("*").single().eq("id", board).select("*").single()).data;
 
     // Send email notification if assigning to a different user
     if (user !== session.user.id) {

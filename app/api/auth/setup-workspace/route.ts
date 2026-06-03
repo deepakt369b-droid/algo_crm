@@ -26,11 +26,11 @@ export async function POST(req: Request) {
     
     // Let's update the user
     (await supabaseAdmin.from("users").update({
-              name: `${firstName} ${lastName}`.trim(),
-              // Assign a mock tenantId for now
-              tenantId: workspaceSlug,
-              role: "admin",
-            }).eq("id", session.user.id).select("*").single()).data;
+                  name: `${firstName} ${lastName}`.trim(),
+                  // Assign a mock tenantId for now
+                  tenantId: workspaceSlug,
+                  role: "admin",
+                }).select("*").single().eq("id", session.user.id).select("*").single()).data;
 
     return NextResponse.json({ success: true, workspaceSlug });
   } catch (error: any) {

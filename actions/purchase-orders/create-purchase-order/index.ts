@@ -33,22 +33,22 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const orderNumber = `PO-${dateStr}-${String(count + 1).padStart(4, "0")}`;
 
     const purchaseOrder = (await supabaseAdmin.from("purchaseOrders").insert({
-            orderNumber,
-            vendorId,
-            currency,
-            orderDate: orderDate ? new Date(orderDate) : new Date(),
-            expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : undefined,
-            notes: notes || undefined,
-            termsAndConditions: termsAndConditions || undefined,
-            shippingAddress: shippingAddress ? JSON.parse(shippingAddress) : undefined,
-            billingAddress: billingAddress ? JSON.parse(billingAddress) : undefined,
-            requestedBy: userId,
-            createdBy: userId,
-            updatedBy: userId,
-            subtotal: 0,
-            taxTotal: 0,
-            grandTotal: 0,
-          }).select("*").single()).data;
+                orderNumber,
+                vendorId,
+                currency,
+                orderDate: orderDate ? new Date(orderDate) : new Date(),
+                expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : undefined,
+                notes: notes || undefined,
+                termsAndConditions: termsAndConditions || undefined,
+                shippingAddress: shippingAddress ? JSON.parse(shippingAddress) : undefined,
+                billingAddress: billingAddress ? JSON.parse(billingAddress) : undefined,
+                requestedBy: userId,
+                createdBy: userId,
+                updatedBy: userId,
+                subtotal: 0,
+                taxTotal: 0,
+                grandTotal: 0,
+              }).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "purchase_order",

@@ -27,7 +27,7 @@ export const sendCampaignNow = async (id: string) => {
   }
 
   const now = new Date();
-  (await supabaseAdmin.from("crm_campaigns").update({ status: "sending", scheduled_at: now }).eq("id", id).select("*").single()).data;
+  (await supabaseAdmin.from("crm_campaigns").update({ status: "sending", scheduled_at: now }).select("*").single().eq("id", id).select("*").single()).data;
 
   await inngest.send({
     name: "campaigns/send-now",

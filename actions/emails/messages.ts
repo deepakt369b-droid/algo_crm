@@ -79,7 +79,7 @@ export async function getEmail(id: string) {
         );
 
         if (body.bodyText || body.bodyHtml) {
-          (await supabaseAdmin.from("email").update({ bodyText: body.bodyText ?? null, bodyHtml: body.bodyHtml ?? null }).eq("id", id).select("*").single()).data;
+          (await supabaseAdmin.from("email").update({ bodyText: body.bodyText ?? null, bodyHtml: body.bodyHtml ?? null }).select("*").single().eq("id", id).select("*").single()).data;
           // Patch in-memory so caller gets the body immediately (before any send that may throw)
           email.bodyText = body.bodyText ?? null;
           email.bodyHtml = body.bodyHtml ?? null;
@@ -98,7 +98,7 @@ export async function getEmail(id: string) {
 
   // Mark as read (fire-and-forget)
   if (!email.isRead) {
-    (await supabaseAdmin.from("email").update({ isRead: true }).eq("id", id).select("*").single()).data.catch(() => {});
+    (await supabaseAdmin.from("email").update({ isRead: true }).select("*").single().eq("id", id).select("*").single()).data.catch(() => {});
   }
 
   return email;
@@ -108,7 +108,7 @@ export async function deleteEmail(id: string) {
   const userId = await requireSession();
   const email = (await supabaseAdmin.from("email").select("*").eq("id", id).eq("userId", userId).eq("isDeleted", false).single()).data;
   if (!email) throw new Error("Not found");
-  (await supabaseAdmin.from("email").update({ isDeleted: true }).eq("id", id).select("*").single()).data;
+  (await supabaseAdmin.from("email").update({ isDeleted: true }).select("*").single().eq("id", id).select("*").single()).data;
 }
 
 type SendInput = {
@@ -150,17 +150,17 @@ export async function sendEmail(input: SendInput) {
 
   // Write sent message to DB immediately so it appears in Sent view
   (await supabaseAdmin.from("email").insert({
-          emailAccountId: input.accountId,
-          userId,
-          rfcMessageId: info.messageId ?? `local-${crypto.randomUUID()}@flowlinepro`,
-          folder: EmailFolder.SENT,
-          subject: input.subject,
-          fromEmail: account.username,
-          toRecipients: input.to.map((e) => ({ email: e })),
-          ccRecipients: input.cc?.map((e) => ({ email: e })) ?? [],
-          bccRecipients: input.bcc?.map((e) => ({ email: e })) ?? [],
-          bodyText: input.body,
-          sentAt: new Date(),
-          isRead: true,
-        }).select("*").single()).data;
+            emailAccountId: input.accountId,
+            userId,
+            rfcMessageId: info.messageId ?? `local-${crypto.randomUUID()}@flowlinepro`,
+            folder: EmailFolder.SENT,
+            subject: input.subject,
+            fromEmail: account.username,
+            toRecipients: input.to.map((e) => ({ email: e })),
+            ccRecipients: input.cc?.map((e) => ({ email: e })) ?? [],
+            bccRecipients: input.bcc?.map((e) => ({ email: e })) ?? [],
+            bodyText: input.body,
+            sentAt: new Date(),
+            isRead: true,
+          }).select("*").single()).data;
 }

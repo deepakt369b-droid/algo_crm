@@ -11,7 +11,7 @@ export async function tryScopedUpdateContact(
 ): Promise<boolean> {
   const row = await findContactInScope(user, contactId);
   if (!row) return false;
-  const result = await supabaseAdmin.from("crm_Contacts").update({ ...data, updatedBy: user.id }).eq("id", contactId);
+  const result = await supabaseAdmin.from("crm_Contacts").update({ ...data, updatedBy: user.id }).select("*").single().eq("id", contactId);
   return result.error == null;
 }
 
@@ -22,7 +22,7 @@ export async function tryScopedUpdateTarget(
 ): Promise<boolean> {
   const row = await findTargetInScope(user, targetId);
   if (!row) return false;
-  const result = await supabaseAdmin.from("crm_Targets").update({ ...data, updatedBy: user.id }).eq("id", targetId);
+  const result = await supabaseAdmin.from("crm_Targets").update({ ...data, updatedBy: user.id }).select("*").single().eq("id", targetId);
   return result.error == null;
 }
 
@@ -30,44 +30,26 @@ export async function tryScopedUpdateTarget(
 // Read path now uses contactReadScopeWhere (D2) which adds linked-account scope.
 async function findContactInScope(user: AuthzUser, contactId: string) {
   if (user.role === "admin" || user.role === "manager") {
-    return supabaseAdmin.from("crm_Contacts").findFirst({
-      where: { id: contactId },
-      select: { id: true },
-    });
+    return supabaseAdmin.from("crm_Contacts").select("id").eq("id", contactId).single();
   }
-  return supabaseAdmin.from("crm_Contacts").findFirst({
-    where: {
-      id: contactId,
-      OR: [
-        { assigned_to: user.id },
-        { createdBy: user.id },
-      ],
-    },
-    select: { id: true },
-  });
+  return supabaseAdmin.from("crm_Contacts").select("id").eq("id", contactId).eq("OR", [
+          { assigned_to: user.id },
+          { createdBy: user.id },
+        ]).single();
 }
 
 async function findTargetInScope(user: AuthzUser, targetId: string) {
   if (user.role === "admin" || user.role === "manager") {
-    return supabaseAdmin.from("crm_Targets").findFirst({
-      where: { id: targetId },
-      select: { id: true },
-    });
+    return supabaseAdmin.from("crm_Targets").select("id").eq("id", targetId).single();
   }
-  return supabaseAdmin.from("crm_Targets").findFirst({
-    where: { id: targetId, created_by: user.id },
-    select: { id: true },
-  });
+  return supabaseAdmin.from("crm_Targets").select("id").eq("id", targetId).eq("created_by", user.id).single();
 }
 
 export async function assertCanReadContact(
   user: AuthzUser,
   contactId: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("crm_Contacts").findFirst({
-    where: { id: contactId, ...contactReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("crm_Contacts").select("id").eq("id", contactId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -100,10 +82,7 @@ export async function filterAuthorizedContactIds(
   contactIds: string[],
 ): Promise<string[]> {
   if (contactIds.length === 0) return [];
-  const rows = await supabaseAdmin.from("crm_Contacts").findMany({
-    where: { id: { in: contactIds }, ...contactReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const rows = (await supabaseAdmin.from("crm_Contacts").select("id").in("id", contactIds)).data;
   return rows.map((r: { id: string }) => r.id);
 }
 
@@ -112,10 +91,7 @@ export async function filterAuthorizedAccountIds(
   accountIds: string[],
 ): Promise<string[]> {
   if (accountIds.length === 0) return [];
-  const rows = await supabaseAdmin.from("crm_Accounts").findMany({
-    where: { id: { in: accountIds }, ...accountReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const rows = (await supabaseAdmin.from("crm_Accounts").select("id").in("id", accountIds)).data;
   return rows.map((r: { id: string }) => r.id);
 }
 
@@ -124,10 +100,7 @@ export async function filterAuthorizedLeadIds(
   leadIds: string[],
 ): Promise<string[]> {
   if (leadIds.length === 0) return [];
-  const rows = await supabaseAdmin.from("crm_Leads").findMany({
-    where: { id: { in: leadIds }, ...leadReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const rows = (await supabaseAdmin.from("crm_Leads").select("id").in("id", leadIds)).data;
   return rows.map((r: { id: string }) => r.id);
 }
 
@@ -136,10 +109,7 @@ export async function filterAuthorizedOpportunityIds(
   opportunityIds: string[],
 ): Promise<string[]> {
   if (opportunityIds.length === 0) return [];
-  const rows = await supabaseAdmin.from("crm_Opportunities").findMany({
-    where: { id: { in: opportunityIds }, ...opportunityReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const rows = (await supabaseAdmin.from("crm_Opportunities").select("id").in("id", opportunityIds)).data;
   return rows.map((r: { id: string }) => r.id);
 }
 
@@ -147,10 +117,7 @@ export async function assertCanCancelContactEnrichment(
   user: AuthzUser,
   enrichmentId: string,
 ): Promise<void> {
-  const row = (await supabaseAdmin.from("crm_Contact_Enrichment").findUnique({
-    where: { id: enrichmentId },
-    select: { id: true, triggeredBy: true },
-  })) as { id: string; triggeredBy: string | null } | null;
+  const row = ((await supabaseAdmin.from("crm_Contact_Enrichment").select("id, triggeredBy").eq("id", enrichmentId).single()).data) as { id: string; triggeredBy: string | null } | null;
   if (!row) throw new AuthorizationError();
   if (user.role === "admin" || user.role === "manager") return;
   if (row.triggeredBy !== user.id) throw new AuthorizationError();
@@ -160,10 +127,7 @@ export async function assertCanCancelTargetEnrichment(
   user: AuthzUser,
   enrichmentId: string,
 ): Promise<void> {
-  const row = (await supabaseAdmin.from("crm_Target_Enrichment").findUnique({
-    where: { id: enrichmentId },
-    select: { id: true, triggeredBy: true },
-  })) as { id: string; triggeredBy: string | null } | null;
+  const row = ((await supabaseAdmin.from("crm_Target_Enrichment").select("id, triggeredBy").eq("id", enrichmentId).single()).data) as { id: string; triggeredBy: string | null } | null;
   if (!row) throw new AuthorizationError();
   if (user.role === "admin" || user.role === "manager") return;
   if (row.triggeredBy !== user.id) throw new AuthorizationError();
@@ -178,10 +142,7 @@ export async function filterAuthorizedTargetIds(
     user.role === "admin" || user.role === "manager"
       ? { id: { in: targetIds } }
       : { id: { in: targetIds }, created_by: user.id };
-  const rows = await supabaseAdmin.from("crm_Targets").findMany({
-    where: baseWhere,
-    select: { id: true },
-  });
+  const rows = (await supabaseAdmin.from("crm_Targets").select("id")).data;
   return rows.map((r: { id: string }) => r.id);
 }
 
@@ -213,10 +174,7 @@ export async function assertCanReadAccount(
   user: AuthzUser,
   accountId: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("crm_Accounts").findFirst({
-    where: { id: accountId, ...accountReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("crm_Accounts").select("id").eq("id", accountId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -231,10 +189,7 @@ export async function assertCanWriteAccount(
           id: accountId,
           OR: accountUserScopeOR(user.id),
         };
-  const row = await supabaseAdmin.from("crm_Accounts").findFirst({
-    where,
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("crm_Accounts").select("id").single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -307,10 +262,7 @@ export async function assertCanReadLead(
   user: AuthzUser,
   leadId: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("crm_Leads").findFirst({
-    where: { id: leadId, ...leadReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("crm_Leads").select("id").eq("id", leadId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -318,10 +270,7 @@ export async function assertCanReadOpportunity(
   user: AuthzUser,
   opportunityId: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("crm_Opportunities").findFirst({
-    where: { id: opportunityId, ...opportunityReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("crm_Opportunities").select("id").eq("id", opportunityId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -329,10 +278,7 @@ export async function assertCanReadContract(
   user: AuthzUser,
   contractId: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("crm_Contracts").findFirst({
-    where: { id: contractId, ...contractReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("crm_Contracts").select("id").eq("id", contractId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -356,10 +302,7 @@ export async function assertCanReadTargetList(
   user: AuthzUser,
   listId: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("crm_TargetLists").findFirst({
-    where: { id: listId, ...targetListReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("crm_TargetLists").select("id").eq("id", listId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -423,10 +366,7 @@ export async function assertCanReadDocument(
   user: AuthzUser,
   documentId: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("documents").findFirst({
-    where: { id: documentId, ...documentReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("documents").select("id").eq("id", documentId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -442,10 +382,7 @@ export async function filterAuthorizedDocumentIds(
   documentIds: string[],
 ): Promise<string[]> {
   if (documentIds.length === 0) return [];
-  const rows = await supabaseAdmin.from("documents").findMany({
-    where: { id: { in: documentIds }, ...documentReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const rows = (await supabaseAdmin.from("documents").select("id").in("id", documentIds)).data;
   return rows.map((r: { id: string }) => r.id);
 }
 
@@ -507,10 +444,7 @@ export async function assertCanReadCampaign(
   user: AuthzUser,
   id: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("crm_campaigns").findFirst({
-    where: { id, ...campaignReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("crm_campaigns").select("id").single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -525,10 +459,7 @@ export async function assertCanReadTemplate(
   user: AuthzUser,
   id: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("crm_campaign_templates").findFirst({
-    where: { id, ...campaignTemplateReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("crm_campaign_templates").select("id").single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -573,10 +504,7 @@ export async function assertCanReadBoard(
   user: AuthzUser,
   boardId: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("boards").findFirst({
-    where: { id: boardId, ...boardReadScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("boards").select("id").eq("id", boardId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -584,10 +512,7 @@ export async function assertCanWriteBoard(
   user: AuthzUser,
   boardId: string,
 ): Promise<void> {
-  const row = await supabaseAdmin.from("boards").findFirst({
-    where: { id: boardId, ...boardWriteScopeWhere(user) },
-    select: { id: true },
-  });
+  const row = (await supabaseAdmin.from("boards").select("id").eq("id", boardId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -595,14 +520,7 @@ export async function assertCanReadTask(
   user: AuthzUser,
   taskId: string,
 ): Promise<void> {
-  const task = await supabaseAdmin.from("tasks").findUnique({
-    where: { id: taskId },
-    select: {
-      assigned_section: {
-        select: { board_relation: { select: { id: true } } },
-      },
-    },
-  });
+  const task = (await supabaseAdmin.from("tasks").select("*").eq("id", taskId).single()).data;
   const boardId = task?.assigned_section?.board_relation?.id;
   if (!boardId) throw new AuthorizationError();
   return assertCanReadBoard(user, boardId);
@@ -612,15 +530,7 @@ export async function assertCanWriteTask(
   user: AuthzUser,
   taskId: string,
 ): Promise<void> {
-  const task = await supabaseAdmin.from("tasks").findUnique({
-    where: { id: taskId },
-    select: {
-      user: true,
-      assigned_section: {
-        select: { board_relation: { select: { id: true } } },
-      },
-    },
-  });
+  const task = (await supabaseAdmin.from("tasks").select("user").eq("id", taskId).single()).data;
   const boardId = task?.assigned_section?.board_relation?.id;
   if (!boardId) throw new AuthorizationError();
   if (user.role === "user" && task?.user === user.id) return;

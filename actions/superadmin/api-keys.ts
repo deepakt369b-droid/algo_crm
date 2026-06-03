@@ -77,10 +77,10 @@ export async function upsertSystemApiKey(
       where: { scope: "SYSTEM", provider },
     }),
     (await supabaseAdmin.from("apiKeys").insert({
-              scope: "SYSTEM",
-              provider,
-              encryptedKey,
-            }).select("*").single()).data,
+                  scope: "SYSTEM",
+                  provider,
+                  encryptedKey,
+                }).select("*").single()).data,
   ]);
 
   revalidatePath("/(en)/admin/llm-keys");

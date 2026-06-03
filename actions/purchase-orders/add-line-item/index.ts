@@ -27,15 +27,15 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const lineTotal = Number((quantity * unitPrice).toFixed(2));
 
     const lineItem = (await supabaseAdmin.from("purchaseOrderLineItems").insert({
-            purchaseOrderId,
-            productId: productId || undefined,
-            description,
-            quantity,
-            unitPrice,
-            taxRate: taxRate || undefined,
-            lineTotal,
-            sortOrder,
-          }).select("*").single()).data;
+                purchaseOrderId,
+                productId: productId || undefined,
+                description,
+                quantity,
+                unitPrice,
+                taxRate: taxRate || undefined,
+                lineTotal,
+                sortOrder,
+              }).select("*").single()).data;
 
     // Recalculate totals
     const allItems = (await supabaseAdmin.from("purchaseOrderLineItems").select("*").eq("purchaseOrderId", purchaseOrderId)).data;
@@ -49,11 +49,11 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const grandTotal = subtotal + taxTotal;
 
     (await supabaseAdmin.from("purchaseOrders").update({
-              subtotal: subtotal,
-              taxTotal: taxTotal,
-              grandTotal: grandTotal,
-              updatedBy: session.user.id,
-            }).eq("id", purchaseOrderId).select("*").single()).data;
+                  subtotal: subtotal,
+                  taxTotal: taxTotal,
+                  grandTotal: grandTotal,
+                  updatedBy: session.user.id,
+                }).select("*").single().eq("id", purchaseOrderId).select("*").single()).data;
 
     revalidatePath(`/[locale]/(routes)/admin/purchase/${purchaseOrderId}`, "page");
     revalidatePath("/[locale]/(routes)/admin/purchase", "page");

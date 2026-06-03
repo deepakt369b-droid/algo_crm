@@ -86,7 +86,7 @@ export async function createCurrency(data: { code: string; name: string; symbol:
 export async function toggleCurrency(code: string, isEnabled: boolean) {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
-  (await supabaseAdmin.from("currency").update({ isEnabled }).eq("code", code).select("*").single()).data;
+  (await supabaseAdmin.from("currency").update({ isEnabled }).select("*").single().eq("code", code).select("*").single()).data;
   revalidatePath("/", "layout");
 }
 
@@ -94,7 +94,7 @@ export async function setDefaultCurrency(code: string) {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
   await Promise.all([
-    (await supabaseAdmin.from("currency").update({ isDefault: false })).data,
+    ((await supabaseAdmin.from("currency").update({ isDefault: false }).select("*").single()).data).data,
     supabaseAdmin.from("crm_SystemSettings").upsert({ key: "default_currency", value: code }, { onConflict: "key" }),
   ]);
   revalidatePath("/", "layout");

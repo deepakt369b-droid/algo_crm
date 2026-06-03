@@ -43,12 +43,12 @@ export async function POST(request: NextRequest) {
   }
 
   const series = (await supabaseAdmin.from("invoice_Series").insert({
-        name,
-        prefixTemplate,
-        resetPolicy: resetPolicy ?? "YEARLY",
-        isDefault: isDefault ?? false,
-        active: active ?? true,
-      }).select("*").single()).data;
+          name,
+          prefixTemplate,
+          resetPolicy: resetPolicy ?? "YEARLY",
+          isDefault: isDefault ?? false,
+          active: active ?? true,
+        }).select("*").single()).data;
 
   return NextResponse.json({ data: series }, { status: 201 });
 }

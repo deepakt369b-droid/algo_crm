@@ -85,13 +85,13 @@ export const crmContactTools = [
     ) {
       const { last_name, ...rest } = args;
       const contact = (await supabaseAdmin.from("crm_Contacts").insert({
-                v: 0,
-                last_name,
-                ...rest,
-                assigned_to: userId,
-                createdBy: userId,
-                updatedBy: userId,
-              }).select("*").single()).data;
+                      v: 0,
+                      last_name,
+                      ...rest,
+                      assigned_to: userId,
+                      createdBy: userId,
+                      updatedBy: userId,
+                    }).select("*").single()).data;
       return itemResponse(contact);
     },
   },
@@ -122,7 +122,7 @@ export const crmContactTools = [
       const existing = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Contact");
       const { id, ...updateData } = args;
-      const contact = (await supabaseAdmin.from("crm_Contacts").update({ ...updateData, updatedBy: userId }).eq("id", id).select("*").single()).data;
+      const contact = (await supabaseAdmin.from("crm_Contacts").update({ ...updateData, updatedBy: userId }).select("*").single().eq("id", id).select("*").single()).data;
       return itemResponse(contact);
     },
   },
@@ -133,10 +133,7 @@ export const crmContactTools = [
     async handler(args: { id: string }, userId: string) {
       const existing = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Contact");
-      const contact = await supabaseAdmin.from("crm_Contacts").update({
-        where: { id: args.id },
-        data: softDeleteData(userId),
-      });
+      const contact = (await supabaseAdmin.from("crm_Contacts").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: contact.id, deletedAt: contact.deletedAt });
     },
   },

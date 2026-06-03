@@ -31,24 +31,14 @@ export async function createFeedbackTicket(data: CreateTicketInput) {
 
   try {
     // 1. Create ticket in the database
-    const ticket = await supabaseAdmin.from("feedbackTicket").insert({
-      data: {
-        userId: session.user.id,
-        subject: subject || "No Subject",
-        message,
-        priority: priority || FeedbackPriority.MEDIUM,
-        category: category || "General",
-        status: FeedbackStatus.OPEN,
-      },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const ticket = (await supabaseAdmin.from("feedbackTicket").insert({
+            userId: session.user.id,
+            subject: subject || "No Subject",
+            message,
+            priority: priority || FeedbackPriority.MEDIUM,
+            category: category || "General",
+            status: FeedbackStatus.OPEN,
+          }).select("*").single()).data;
 
     // 2. Try sending an email notification
     try {
@@ -136,10 +126,7 @@ export async function updateTicketStatus(
       updateData.respondedAt = new Date();
     }
 
-    const ticket = await supabaseAdmin.from("feedbackTicket").update({
-      where: { id: ticketId },
-      data: updateData,
-    });
+    const ticket = (await supabaseAdmin.from("feedbackTicket").update(updateData).eq("id", ticketId).select("*").single()).data;
 
     revalidatePath("/superadmin/feedback");
     return { success: true, ticket };

@@ -46,21 +46,19 @@ export const createContact = async (data: {
   } = data;
 
   try {
-    const contact = await supabaseAdmin.from("crm_Contacts").insert({
-      data: {
-        v: 0,
-        createdBy: userId,
-        updatedBy: userId,
-        accountsIDs: assigned_account ?? undefined,
-        assigned_to: assigned_to ?? undefined,
-        contact_type_id: contact_type_id ?? undefined,
-        birthday:
-          birthday_day && birthday_month && birthday_year
-            ? birthday_day + "/" + birthday_month + "/" + birthday_year
-            : null,
-        ...rest,
-      } as any,
-    });
+    const contact = (await supabaseAdmin.from("crm_Contacts").insert({
+            v: 0,
+            createdBy: userId,
+            updatedBy: userId,
+            accountsIDs: assigned_account ?? undefined,
+            assigned_to: assigned_to ?? undefined,
+            contact_type_id: contact_type_id ?? undefined,
+            birthday:
+              birthday_day && birthday_month && birthday_year
+                ? birthday_day + "/" + birthday_month + "/" + birthday_year
+                : null,
+            ...rest,
+          } as any).select("*").single()).data;
 
     if (assigned_to && assigned_to !== userId) {
       const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", assigned_to).single()).data;

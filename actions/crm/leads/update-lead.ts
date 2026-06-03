@@ -51,23 +51,23 @@ export const updateLead = async (data: {
   try {
     const before = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", id).eq("deletedAt", null).single()).data;
     const lead = (await supabaseAdmin.from("crm_Leads").update({
-            v: 1,
-            updatedBy: userId,
-            firstName,
-            lastName,
-            company,
-            jobTitle,
-            email,
-            phone,
-            description,
-            lead_source_id: lead_source_id || undefined,
-            lead_status_id: lead_status_id || undefined,
-            lead_type_id: lead_type_id || undefined,
-            refered_by,
-            campaign,
-            assigned_to: assigned_to || userId,
-            accountsIDs: accountIDs,
-          }).eq("id", id).select("*").single()).data;
+                v: 1,
+                updatedBy: userId,
+                firstName,
+                lastName,
+                company,
+                jobTitle,
+                email,
+                phone,
+                description,
+                lead_source_id: lead_source_id || undefined,
+                lead_status_id: lead_status_id || undefined,
+                lead_type_id: lead_type_id || undefined,
+                refered_by,
+                campaign,
+                assigned_to: assigned_to || userId,
+                accountsIDs: accountIDs,
+              }).select("*").single().eq("id", id).select("*").single()).data;
 
     if (assigned_to && assigned_to !== userId) {
       const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", assigned_to).single()).data;

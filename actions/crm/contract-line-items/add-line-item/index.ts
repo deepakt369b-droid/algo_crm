@@ -50,25 +50,25 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const lineTotal = calculateLineTotal(quantity, snapshotPrice, discount_type, discountVal);
 
     const lineItem = (await supabaseAdmin.from("crm_ContractLineItems").insert({
-            contractId,
-            productId: productId || undefined,
-            name: snapshotName,
-            sku: snapshotSku || undefined,
-            description: description || undefined,
-            quantity,
-            unit_price: snapshotPrice,
-            discount_type,
-            discount_value: discountVal,
-            line_total: lineTotal,
-            currency: contract.currency || "EUR",
-            sort_order,
-            createdBy: userId,
-            updatedBy: userId,
-          }).select("*").single()).data;
+                contractId,
+                productId: productId || undefined,
+                name: snapshotName,
+                sku: snapshotSku || undefined,
+                description: description || undefined,
+                quantity,
+                unit_price: snapshotPrice,
+                discount_type,
+                discount_value: discountVal,
+                line_total: lineTotal,
+                currency: contract.currency || "EUR",
+                sort_order,
+                createdBy: userId,
+                updatedBy: userId,
+              }).select("*").single()).data;
 
     const allLineItems = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("contractId", contractId)).data;
     const newTotal = sumLineTotals(allLineItems);
-    (await supabaseAdmin.from("crm_Contracts").update({ value: newTotal }).eq("id", contractId).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Contracts").update({ value: newTotal }).select("*").single().eq("id", contractId).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "contract_line_item",

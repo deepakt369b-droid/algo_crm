@@ -11,7 +11,7 @@ export const deleteAccount = async (accountId: string) => {
   if (!accountId) return { error: "accountId is required" };
 
   try {
-    (await supabaseAdmin.from("crm_Accounts").update({ deletedAt: new Date(), deletedBy: session.user.id }).eq("id", accountId).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Accounts").update({ deletedAt: new Date(), deletedBy: session.user.id }).select("*").single().eq("id", accountId).select("*").single()).data;
     await writeAuditLog({
       entityType: "account",
       entityId: accountId,

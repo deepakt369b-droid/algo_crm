@@ -30,10 +30,10 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     }
 
     const warehouse = (await supabaseAdmin.from("inventoryWarehouse").update({
-            ...fields,
-            ...(code ? { code: code.toUpperCase() } : {}),
-            updatedBy: session.user.id,
-          }).eq("id", id).select("*").single()).data;
+                ...fields,
+                ...(code ? { code: code.toUpperCase() } : {}),
+                updatedBy: session.user.id,
+              }).select("*").single().eq("id", id).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");
     return { data: { id: warehouse.id, name: warehouse.name, code: warehouse.code } };

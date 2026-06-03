@@ -64,22 +64,22 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       ? await getSnapshotRate(currency, defaultCurrency)
       : null;
     const result = (await supabaseAdmin.from("crm_Contracts").update({
-            v: data.v + 1,
-            title,
-            value: parseFloat(value),
-            startDate,
-            endDate,
-            renewalReminderDate,
-            customerSignedDate,
-            companySignedDate,
-            description,
-            status,
-            account: account || undefined,
-            assigned_to: assigned_to || undefined,
-            createdBy: user.id,
-            currency: currency || undefined,
-            snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
-          }).eq("id", data.id).select("*").single()).data;
+                v: data.v + 1,
+                title,
+                value: parseFloat(value),
+                startDate,
+                endDate,
+                renewalReminderDate,
+                customerSignedDate,
+                companySignedDate,
+                description,
+                status,
+                account: account || undefined,
+                assigned_to: assigned_to || undefined,
+                createdBy: user.id,
+                currency: currency || undefined,
+                snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
+              }).select("*").single().eq("id", data.id).select("*").single()).data;
 
     const changes = before ? diffObjects(before as Record<string, unknown>, result as Record<string, unknown>) : null;
     await writeAuditLog({

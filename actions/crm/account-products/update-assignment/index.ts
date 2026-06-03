@@ -47,20 +47,17 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return { error: "Renewal date must be after start date" };
     }
 
-    const assignment = await supabaseAdmin.from("crm_AccountProducts").update({
-      where: { id },
-      data: {
-        ...(updateData.quantity !== undefined && { quantity: updateData.quantity }),
-        ...(updateData.custom_price !== undefined && { custom_price: updateData.custom_price ? parseFloat(updateData.custom_price) : null }),
-        ...(updateData.status !== undefined && { status: updateData.status }),
-        ...(updateData.start_date !== undefined && { start_date: updateData.start_date }),
-        ...(updateData.end_date !== undefined && { end_date: updateData.end_date }),
-        ...(updateData.renewal_date !== undefined && { renewal_date: updateData.renewal_date }),
-        ...(updateData.notes !== undefined && { notes: updateData.notes }),
-        updatedBy: userId,
-        v: { increment: 1 },
-      },
-    });
+    const assignment = (await supabaseAdmin.from("crm_AccountProducts").update({
+            ...(updateData.quantity !== undefined && { quantity: updateData.quantity }),
+            ...(updateData.custom_price !== undefined && { custom_price: updateData.custom_price ? parseFloat(updateData.custom_price) : null }),
+            ...(updateData.status !== undefined && { status: updateData.status }),
+            ...(updateData.start_date !== undefined && { start_date: updateData.start_date }),
+            ...(updateData.end_date !== undefined && { end_date: updateData.end_date }),
+            ...(updateData.renewal_date !== undefined && { renewal_date: updateData.renewal_date }),
+            ...(updateData.notes !== undefined && { notes: updateData.notes }),
+            updatedBy: userId,
+            v: { increment: 1 },
+          }).select("*").single()).data;
 
     await writeAuditLog({ entityType: "account_product", entityId: assignment.id, action: "updated", changes: diffObjects(existing as unknown as Record<string, unknown>, assignment as unknown as Record<string, unknown>), userId });
 

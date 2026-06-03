@@ -17,9 +17,9 @@ export const deleteProduct = async (id: string) => {
 
   try {
     (await supabaseAdmin.from("crm_Products").update({
-              deletedAt: new Date(),
-              deletedBy: actor.id,
-            }).eq("id", id).select("*").single()).data;
+                  deletedAt: new Date(),
+                  deletedBy: actor.id,
+                }).select("*").single().eq("id", id).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "product",

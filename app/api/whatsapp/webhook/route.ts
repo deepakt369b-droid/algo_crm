@@ -12,13 +12,10 @@ export async function POST(request: NextRequest) {
     console.log(`[WhatsApp Webhook] Received status update for instance: ${instanceId} -> ${status}`);
 
     // Update instance status in Postgres
-    await supabaseAdmin.from("crm_Whatsapp_Instances").update({
-      where: { id: instanceId },
-      data: {
-        status,
-        ...(phoneNumber ? { phoneNumber } : {}),
-      },
-    });
+    (await supabaseAdmin.from("crm_Whatsapp_Instances").update({
+              status,
+              ...(phoneNumber ? { phoneNumber } : {}),
+            }).eq("id", instanceId).select("*").single()).data;
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

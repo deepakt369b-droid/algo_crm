@@ -49,11 +49,11 @@ export const assignDocumentToTask = async (data: {
     if (!task) return { error: "Task not found" };
 
     (await supabaseAdmin.from("documentsToTasks").insert({
-              document_id: documentId,
-              task_id: taskId,
-            }).select("*").single()).data;
+                  document_id: documentId,
+                  task_id: taskId,
+                }).select("*").single()).data;
 
-    (await supabaseAdmin.from("tasks").update({ updatedBy: session.user.id }).eq("id", taskId).select("*").single()).data;
+    (await supabaseAdmin.from("tasks").update({ updatedBy: session.user.id }).select("*").single().eq("id", taskId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };
@@ -81,7 +81,7 @@ export const disconnectDocumentFromTask = async (data: {
 
     (await supabaseAdmin.from("documentsToTasks").delete().select("*").single()).data;
 
-    const updatedTask = (await supabaseAdmin.from("tasks").update({ updatedBy: session.user.id }).eq("id", taskId).select("*").single()).data;
+    const updatedTask = (await supabaseAdmin.from("tasks").update({ updatedBy: session.user.id }).select("*").single().eq("id", taskId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { data: updatedTask };

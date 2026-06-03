@@ -13,8 +13,8 @@ export async function updateUserAccess(userId: string, accessibleTabs: string[])
   }
 
   (await supabaseAdmin.from("users").update({
-          accessibleTabs,
-        }).eq("id", userId).select("*").single()).data;
+            accessibleTabs,
+          }).select("*").single().eq("id", userId).select("*").single()).data;
 
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${userId}/access`);

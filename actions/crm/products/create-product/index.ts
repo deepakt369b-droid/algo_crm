@@ -37,22 +37,22 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     }
 
     const product = (await supabaseAdmin.from("crm_Products").insert({
-            name,
-            description: description || undefined,
-            sku: sku || undefined,
-            type,
-            status: status || "DRAFT",
-            unit_price: parseFloat(unit_price),
-            unit_cost: unit_cost ? parseFloat(unit_cost) : undefined,
-            currency,
-            tax_rate: tax_rate ? parseFloat(tax_rate) : undefined,
-            unit: unit || undefined,
-            is_recurring: is_recurring || false,
-            billing_period: is_recurring ? billing_period : undefined,
-            categoryId: categoryId || undefined,
-            createdBy: userId,
-            updatedBy: userId,
-          }).select("*").single()).data;
+                name,
+                description: description || undefined,
+                sku: sku || undefined,
+                type,
+                status: status || "DRAFT",
+                unit_price: parseFloat(unit_price),
+                unit_cost: unit_cost ? parseFloat(unit_cost) : undefined,
+                currency,
+                tax_rate: tax_rate ? parseFloat(tax_rate) : undefined,
+                unit: unit || undefined,
+                is_recurring: is_recurring || false,
+                billing_period: is_recurring ? billing_period : undefined,
+                categoryId: categoryId || undefined,
+                createdBy: userId,
+                updatedBy: userId,
+              }).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "product",

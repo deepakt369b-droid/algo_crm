@@ -33,17 +33,17 @@ export const createTask = async (data: {
 
   try {
     const task = (await supabaseAdmin.from("crm_Accounts_Tasks").insert({
-            v: 0,
-            priority,
-            title,
-            content,
-            account,
-            dueDateAt,
-            createdBy: user,
-            updatedBy: user,
-            user,
-            taskStatus: "ACTIVE",
-          }).select("*").single()).data;
+                v: 0,
+                priority,
+                title,
+                content,
+                account,
+                dueDateAt,
+                createdBy: user,
+                updatedBy: user,
+                user,
+                taskStatus: "ACTIVE",
+              }).select("*").single()).data;
 
     // Notification to user who is not a task creator
     if (user !== session.user.id) {

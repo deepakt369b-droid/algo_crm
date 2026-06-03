@@ -33,15 +33,15 @@ const ResendCard = async () => {
 
     if (!parsed.id) {
       (await supabaseAdmin.from("systemServices").insert({
-                  v: 0,
-                  name: "resend_smtp",
-                  serviceKey: parsed.serviceKey,
-                }).select("*").single()).data;
+                        v: 0,
+                        name: "resend_smtp",
+                        serviceKey: parsed.serviceKey,
+                      }).select("*").single()).data;
       revalidatePath("/admin");
     } else {
       (await supabaseAdmin.from("systemServices").update({
-                  serviceKey: parsed.serviceKey,
-                }).eq("id", parsed.id).select("*").single()).data;
+                        serviceKey: parsed.serviceKey,
+                      }).select("*").single().eq("id", parsed.id).select("*").single()).data;
       revalidatePath("/admin");
     }
   };

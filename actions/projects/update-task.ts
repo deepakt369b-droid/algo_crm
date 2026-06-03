@@ -54,16 +54,16 @@ export const updateTask = async (data: {
 
   try {
     const task = (await supabaseAdmin.from("tasks").update({
-            priority,
-            title,
-            content,
-            updatedBy: user,
-            dueDateAt,
-            user,
-          }).eq("id", taskId).select("*").single()).data;
+                priority,
+                title,
+                content,
+                updatedBy: user,
+                dueDateAt,
+                user,
+              }).select("*").single().eq("id", taskId).select("*").single()).data;
 
     if (resolvedBoardId) {
-      (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).eq("id", resolvedBoardId).select("*").single()).data;
+      (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).select("*").single().eq("id", resolvedBoardId).select("*").single()).data;
     }
 
     // Send email notification if assigning to a different user

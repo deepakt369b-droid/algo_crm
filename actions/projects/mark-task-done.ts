@@ -33,9 +33,9 @@ export const markTaskDone = async (taskId: string) => {
 
   try {
     (await supabaseAdmin.from("tasks").update({
-              taskStatus: "COMPLETE",
-              updatedBy: session.user.id,
-            }).eq("id", taskId).select("*").single()).data;
+                  taskStatus: "COMPLETE",
+                  updatedBy: session.user.id,
+                }).select("*").single().eq("id", taskId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

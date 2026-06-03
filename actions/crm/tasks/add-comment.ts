@@ -25,11 +25,11 @@ export const addComment = async (data: {
     // Projects-facing `task` FK points at a different table (`Tasks`), so
     // writing taskId there would violate the FK constraint.
     const newComment = (await supabaseAdmin.from("tasksComments").insert({
-            v: 0,
-            comment,
-            assigned_crm_account_task: taskId,
-            user: session.user.id,
-          }).select("*").single()).data;
+                v: 0,
+                comment,
+                assigned_crm_account_task: taskId,
+                user: session.user.id,
+              }).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/crm", "page");
     return { data: newComment };

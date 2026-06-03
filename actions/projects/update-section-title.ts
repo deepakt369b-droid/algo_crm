@@ -35,7 +35,7 @@ export const updateSectionTitle = async (data: {
   }
 
   try {
-    (await supabaseAdmin.from("sections").update({ title: newTitle }).eq("id", sectionId).select("*").single()).data;
+    (await supabaseAdmin.from("sections").update({ title: newTitle }).select("*").single().eq("id", sectionId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

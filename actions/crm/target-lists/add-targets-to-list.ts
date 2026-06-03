@@ -1,5 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { revalidatePath } from "next/cache";
 
 export const addTargetsToList = async (targetListId: string, targetIds: string[]) => {
@@ -11,13 +12,12 @@ export const addTargetsToList = async (targetListId: string, targetIds: string[]
   }
 
   try {
-    const result = await supabaseAdmin.from("targetsToTargetLists").insertMany({
-      data: targetIds.map((id: string) => ({
+    const result = await supabaseAdmin.from("targetsToTargetLists").insert(
+      targetIds.map((id: string) => ({
         target_id: id,
         target_list_id: targetListId,
-      })),
-      skipDuplicates: true,
-    });
+      }))
+    );
     revalidatePath("/[locale]/(routes)/crm/target-lists", "page");
     return { added: result.count };
   } catch (error) {

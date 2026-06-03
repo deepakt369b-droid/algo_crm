@@ -19,7 +19,7 @@ export const updateTargetList = async (data: {
   try {
     const existing = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", id).eq("deletedAt", null).single()).data;
     if (!existing) return { error: "Target list not found" };
-    const list = (await supabaseAdmin.from("crm_TargetLists").update({ name, description, status }).eq("id", id).select("*").single()).data;
+    const list = (await supabaseAdmin.from("crm_TargetLists").update({ name, description, status }).select("*").single().eq("id", id).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/crm/target-lists", "page");
     return { data: list };
   } catch (error) {

@@ -39,21 +39,21 @@ export async function createDocument(input: CreateDocumentInput) {
   }
 
   const document = (await supabaseAdmin.from("documents").insert({
-        v: 0,
-        document_name: input.name,
-        description: "new document",
-        document_file_url: input.url,
-        key: input.key,
-        size: input.size,
-        document_file_mimeType: input.mimeType,
-        content_hash: input.contentHash ?? null,
-        processing_status: "PENDING",
-        createdBy: user.id,
-        assigned_user: user.id,
-        ...(input.accountId
-          ? { accounts: { create: { account_id: input.accountId } } }
-          : {}),
-      }).select("*").single()).data;
+          v: 0,
+          document_name: input.name,
+          description: "new document",
+          document_file_url: input.url,
+          key: input.key,
+          size: input.size,
+          document_file_mimeType: input.mimeType,
+          content_hash: input.contentHash ?? null,
+          processing_status: "PENDING",
+          createdBy: user.id,
+          assigned_user: user.id,
+          ...(input.accountId
+            ? { accounts: { create: { account_id: input.accountId } } }
+            : {}),
+        }).select("*").single()).data;
 
   await inngest.send({
     name: "document/uploaded",

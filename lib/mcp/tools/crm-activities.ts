@@ -94,27 +94,24 @@ export const crmActivityTools = [
       userId: string
     ) {
       const { links, date, ...rest } = args;
-      const activity = await supabaseAdmin.from("crm_Activities").insert({
-        data: {
-          ...rest,
-          type: rest.type as any,
-          status: rest.status as any,
-          date: new Date(date),
-          createdBy: userId,
-          updatedBy: userId,
-          ...(links?.length && {
-            links: {
-              createMany: {
-                data: links.map((l) => ({
-                  entityType: l.entityType,
-                  entityId: l.entityId,
-                })),
-              },
-            },
-          }),
-        },
-        include: { links: true },
-      });
+      const activity = (await supabaseAdmin.from("crm_Activities").insert({
+                ...rest,
+                type: rest.type as any,
+                status: rest.status as any,
+                date: new Date(date),
+                createdBy: userId,
+                updatedBy: userId,
+                ...(links?.length && {
+                  links: {
+                    createMany: {
+                      data: links.map((l) => ({
+                        entityType: l.entityType,
+                        entityId: l.entityId,
+                      })),
+                    },
+                  },
+                }),
+              }).select("*").single()).data;
       return itemResponse(activity);
     },
   },
@@ -146,11 +143,11 @@ export const crmActivityTools = [
       if (!existing) notFound("Activity");
       const { id, date, status, ...rest } = args;
       const activity = (await supabaseAdmin.from("crm_Activities").update({
-                ...rest,
-                ...(date !== undefined && { date: new Date(date) }),
-                ...(status !== undefined && { status: status as any }),
-                updatedBy: userId,
-              }).eq("id", id).select("*").single()).data;
+                      ...rest,
+                      ...(date !== undefined && { date: new Date(date) }),
+                      ...(status !== undefined && { status: status as any }),
+                      updatedBy: userId,
+                    }).select("*").single().eq("id", id).select("*").single()).data;
       return itemResponse(activity);
     },
   },
@@ -161,10 +158,7 @@ export const crmActivityTools = [
     async handler(args: { id: string }, userId: string) {
       const existing = (await supabaseAdmin.from("crm_Activities").select("*").eq("id", args.id).eq("createdBy", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Activity");
-      const activity = await supabaseAdmin.from("crm_Activities").update({
-        where: { id: args.id },
-        data: softDeleteData(userId),
-      });
+      const activity = (await supabaseAdmin.from("crm_Activities").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: activity.id, deletedAt: activity.deletedAt });
     },
   },

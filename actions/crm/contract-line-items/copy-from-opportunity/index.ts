@@ -43,8 +43,8 @@ export const copyLineItemsFromOpportunity = async (
     const existingItems = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("contractId", contractId).order("sort_order", { ascending: false }).limit(1)).data;
     const startOrder = existingItems.length > 0 ? existingItems[0].sort_order + 1 : 0;
 
-    await supabaseAdmin.from("crm_ContractLineItems").insertMany({
-      data: sourceItems.map((item, index) => ({
+    await supabaseAdmin.from("crm_ContractLineItems").insert(
+      sourceItems.map((item, index) => ({
         contractId,
         productId: item.productId,
         name: item.name,
@@ -59,8 +59,8 @@ export const copyLineItemsFromOpportunity = async (
         sort_order: startOrder + index,
         createdBy: userId,
         updatedBy: userId,
-      })),
-    });
+      }))
+    );
 
     const allContractItems = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("contractId", contractId)).data;
     const newTotal = sumLineTotals(allContractItems);

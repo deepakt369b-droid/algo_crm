@@ -23,16 +23,16 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     }
 
     const warehouse = (await supabaseAdmin.from("inventoryWarehouse").insert({
-            name,
-            code: code.toUpperCase(),
-            description: description || undefined,
-            address: address || undefined,
-            city: city || undefined,
-            country: country || undefined,
-            isActive,
-            createdBy: session.user.id,
-            updatedBy: session.user.id,
-          }).select("*").single()).data;
+                name,
+                code: code.toUpperCase(),
+                description: description || undefined,
+                address: address || undefined,
+                city: city || undefined,
+                country: country || undefined,
+                isActive,
+                createdBy: session.user.id,
+                updatedBy: session.user.id,
+              }).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");
     return { data: { id: warehouse.id, name: warehouse.name, code: warehouse.code } };

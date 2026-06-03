@@ -25,8 +25,8 @@ export async function setInactiveOpportunity(id: string) {
     }
 
     const result = (await supabaseAdmin.from("crm_Opportunities").update({
-            status: "INACTIVE",
-          }).eq("id", id).select("*").single()).data;
+                status: "INACTIVE",
+              }).select("*").single().eq("id", id).select("*").single()).data;
 
     console.log(result, "result");
 

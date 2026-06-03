@@ -18,10 +18,7 @@ export async function updateInvoice(invoiceId: string, raw: unknown) {
   const user = await getUser();
   const input = updateInvoiceSchema.parse(raw);
 
-  const existing = await supabaseAdmin.from("invoices").findUniqueOrThrow({
-    where: { id: invoiceId },
-    select: { status: true, createdBy: true, paidTotal: true },
-  });
+  const existing = (await supabaseAdmin.from("invoices").select("status, createdBy, paidTotal").eq("id", invoiceId).single()).data;
 
   if (
     !canEditInvoice(
@@ -107,15 +104,12 @@ export async function updateInvoice(invoiceId: string, raw: unknown) {
   }
 
   // No line items change — simple field update
-  const updated = await supabaseAdmin.from("invoices").update({
-    where: { id: invoiceId },
-    data: {
-      ...buildUpdateData(input),
-      activity: {
-        create: { actorId: user.id, action: "UPDATED" },
-      },
-    },
-  });
+  const updated = (await supabaseAdmin.from("invoices").update({
+        ...buildUpdateData(input),
+        activity: {
+          create: { actorId: user.id, action: "UPDATED" },
+        },
+      }).eq("id", invoiceId).select("*").single()).data;
 
   return serializeDecimals(updated);
 }

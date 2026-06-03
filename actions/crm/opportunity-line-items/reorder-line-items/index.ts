@@ -15,7 +15,7 @@ export const reorderOpportunityLineItems = async (
   try {
     await Promise.all(
       items.map((item) =>
-        (await supabaseAdmin.from("crm_OpportunityLineItems").update({ sort_order: item.sort_order }).eq("id", item.id).select("*").single()).data
+        (await supabaseAdmin.from("crm_OpportunityLineItems").update({ sort_order: item.sort_order }).select("*").single().eq("id", item.id).select("*").single()).data
       )
     );
 

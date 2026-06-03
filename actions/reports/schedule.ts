@@ -13,12 +13,12 @@ export async function createSchedule(input: { reportConfigId: string; cronExpres
     throw new AuthorizationError();
   }
   return (await supabaseAdmin.from("crm_Report_Schedule").insert({
-        reportConfigId: input.reportConfigId,
-        cronExpression: input.cronExpression,
-        recipients: input.recipients,
-        format: input.format,
-        createdBy: user.id,
-      }).select("*").single()).data;
+          reportConfigId: input.reportConfigId,
+          cronExpression: input.cronExpression,
+          recipients: input.recipients,
+          format: input.format,
+          createdBy: user.id,
+        }).select("*").single()).data;
 }
 
 export async function listSchedules() {
@@ -39,11 +39,11 @@ async function loadAndAuthorizeSchedule(scheduleId: string, user: { id: string; 
 export async function updateSchedule(scheduleId: string, data: { cronExpression?: string; recipients?: string[]; format?: ExportFormat; isActive?: boolean }) {
   const user = await requireAuthenticated();
   await loadAndAuthorizeSchedule(scheduleId, user);
-  return supabaseAdmin.from("crm_Report_Schedule").update({ where: { id: scheduleId }, data });
+  return supabaseAdmin.from("crm_Report_Schedule").update(data).eq("id", scheduleId).select("*").single();
 }
 
 export async function deleteSchedule(scheduleId: string) {
   const user = await requireAuthenticated();
   await loadAndAuthorizeSchedule(scheduleId, user);
-  return (await supabaseAdmin.from("crm_Report_Schedule").delete().eq("id", scheduleId).select("*").single()).data;
+  return (await supabaseAdmin.from("crm_Report_Schedule").delete().select("*").single().eq("id", scheduleId).select("*").single()).data;
 }

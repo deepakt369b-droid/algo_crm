@@ -53,23 +53,23 @@ export const updateOpportunity = async (data: {
       : null;
     const before = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", id).eq("deletedAt", null).single()).data;
     const opportunity = (await supabaseAdmin.from("crm_Opportunities").update({
-            account: account || undefined,
-            assigned_to: assigned_to || undefined,
-            budget: budget ? parseFloat(budget) : undefined,
-            campaign: campaign || undefined,
-            close_date,
-            contact: contact || undefined,
-            updatedBy: userId,
-            currency,
-            description,
-            expected_revenue: expected_revenue ? parseFloat(expected_revenue) : undefined,
-            snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
-            name,
-            next_step,
-            sales_stage: sales_stage || undefined,
-            status: "ACTIVE",
-            type: type || undefined,
-          }).eq("id", id).select("*").single()).data;
+                account: account || undefined,
+                assigned_to: assigned_to || undefined,
+                budget: budget ? parseFloat(budget) : undefined,
+                campaign: campaign || undefined,
+                close_date,
+                contact: contact || undefined,
+                updatedBy: userId,
+                currency,
+                description,
+                expected_revenue: expected_revenue ? parseFloat(expected_revenue) : undefined,
+                snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
+                name,
+                next_step,
+                sales_stage: sales_stage || undefined,
+                status: "ACTIVE",
+                type: type || undefined,
+              }).select("*").single().eq("id", id).select("*").single()).data;
     const serialize = (obj: any) => JSON.parse(JSON.stringify(obj, (_, v) => typeof v === "bigint" ? v.toString() : v));
     const changes = before ? diffObjects(serialize(before), serialize(opportunity)) : null;
     await writeAuditLog({

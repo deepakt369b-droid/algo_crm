@@ -48,12 +48,12 @@ export const inviteUser = async (data: {
 
   try {
     const user = (await supabaseAdmin.from("users").insert({
-            name,
-            email,
-            userStatus: "ACTIVE",
-            userLanguage: language as Language,
-            role: "user",
-          }).select("*").single()).data;
+                name,
+                email,
+                userStatus: "ACTIVE",
+                userLanguage: language as Language,
+                role: "user",
+              }).select("*").single()).data;
 
     if (!user) {
       return { error: "User not created" };

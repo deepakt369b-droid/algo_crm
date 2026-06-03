@@ -49,19 +49,19 @@ export const createTaskInBoard = async (data: {
       const tasksCount = (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("section", section)).count;
 
       (await supabaseAdmin.from("tasks").insert({
-                  v: 0,
-                  priority: "normal",
-                  title: "New task",
-                  content: "",
-                  section,
-                  createdBy: session.user.id,
-                  updatedBy: session.user.id,
-                  position: tasksCount > 0 ? tasksCount : 0,
-                  user: session.user.id,
-                  taskStatus: "ACTIVE",
-                }).select("*").single()).data;
+                        v: 0,
+                        priority: "normal",
+                        title: "New task",
+                        content: "",
+                        section,
+                        createdBy: session.user.id,
+                        updatedBy: session.user.id,
+                        position: tasksCount > 0 ? tasksCount : 0,
+                        user: session.user.id,
+                        taskStatus: "ACTIVE",
+                      }).select("*").single()).data;
 
-      (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).eq("id", boardId).select("*").single()).data;
+      (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).select("*").single().eq("id", boardId).select("*").single()).data;
 
       revalidatePath("/[locale]/(routes)/projects", "page");
       return { success: true };
@@ -76,20 +76,20 @@ export const createTaskInBoard = async (data: {
     const tasksCount = (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("section", section)).count;
 
     const task = (await supabaseAdmin.from("tasks").insert({
-            v: 0,
-            priority,
-            title,
-            content,
-            dueDateAt,
-            section,
-            createdBy: user,
-            updatedBy: user,
-            position: tasksCount > 0 ? tasksCount : 0,
-            user,
-            taskStatus: "ACTIVE",
-          }).select("*").single()).data;
+                v: 0,
+                priority,
+                title,
+                content,
+                dueDateAt,
+                section,
+                createdBy: user,
+                updatedBy: user,
+                position: tasksCount > 0 ? tasksCount : 0,
+                user,
+                taskStatus: "ACTIVE",
+              }).select("*").single()).data;
 
-    (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).eq("id", boardId).select("*").single()).data;
+    (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).select("*").single().eq("id", boardId).select("*").single()).data;
 
     // Send email notification if assigning to a different user
     if (user !== session.user.id) {

@@ -19,10 +19,7 @@ export async function duplicateInvoice(invoiceId: string) {
     throw e;
   }
 
-  const source = await supabaseAdmin.from("invoices").findUniqueOrThrow({
-    where: { id: invoiceId },
-    include: { lineItems: { orderBy: { position: "asc" } } },
-  });
+  const source = (await supabaseAdmin.from("invoices").select("*, lineItems(*)").eq("id", invoiceId).single()).data;
 
   if (
     !canReadInvoice(
@@ -40,51 +37,49 @@ export async function duplicateInvoice(invoiceId: string) {
     throw e;
   }
 
-  const invoice = await supabaseAdmin.from("invoices").insert({
-    data: {
-      type: source.type,
-      status: "DRAFT",
-      createdBy: user.id,
-      accountId: source.accountId,
-      seriesId: source.seriesId,
-      currency: source.currency,
-      dueDate: source.dueDate,
-      publicNotes: source.publicNotes,
-      internalNotes: source.internalNotes,
-      bankName: source.bankName,
-      bankAccount: source.bankAccount,
-      iban: source.iban,
-      swift: source.swift,
-      variableSymbol: source.variableSymbol,
-      originalInvoiceId: source.id,
-      subtotal: source.subtotal,
-      discountTotal: source.discountTotal,
-      vatTotal: source.vatTotal,
-      grandTotal: source.grandTotal,
-      balanceDue: source.grandTotal,
-      lineItems: {
-        create: source.lineItems.map((li) => ({
-          position: li.position,
-          productId: li.productId,
-          description: li.description,
-          quantity: li.quantity,
-          unitPrice: li.unitPrice,
-          discountPercent: li.discountPercent,
-          taxRateId: li.taxRateId,
-          lineSubtotal: li.lineSubtotal,
-          lineVat: li.lineVat,
-          lineTotal: li.lineTotal,
-        })),
-      },
-      activity: {
-        create: {
-          actorId: user.id,
-          action: "DUPLICATED",
-          meta: { sourceInvoiceId: invoiceId },
+  const invoice = (await supabaseAdmin.from("invoices").insert({
+        type: source.type,
+        status: "DRAFT",
+        createdBy: user.id,
+        accountId: source.accountId,
+        seriesId: source.seriesId,
+        currency: source.currency,
+        dueDate: source.dueDate,
+        publicNotes: source.publicNotes,
+        internalNotes: source.internalNotes,
+        bankName: source.bankName,
+        bankAccount: source.bankAccount,
+        iban: source.iban,
+        swift: source.swift,
+        variableSymbol: source.variableSymbol,
+        originalInvoiceId: source.id,
+        subtotal: source.subtotal,
+        discountTotal: source.discountTotal,
+        vatTotal: source.vatTotal,
+        grandTotal: source.grandTotal,
+        balanceDue: source.grandTotal,
+        lineItems: {
+          create: source.lineItems.map((li) => ({
+            position: li.position,
+            productId: li.productId,
+            description: li.description,
+            quantity: li.quantity,
+            unitPrice: li.unitPrice,
+            discountPercent: li.discountPercent,
+            taxRateId: li.taxRateId,
+            lineSubtotal: li.lineSubtotal,
+            lineVat: li.lineVat,
+            lineTotal: li.lineTotal,
+          })),
         },
-      },
-    },
-  });
+        activity: {
+          create: {
+            actorId: user.id,
+            action: "DUPLICATED",
+            meta: { sourceInvoiceId: invoiceId },
+          },
+        },
+      }).select("*").single()).data;
 
   return serializeDecimals(invoice);
 }

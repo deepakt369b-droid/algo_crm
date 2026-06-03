@@ -77,22 +77,22 @@ export const crmProductTools = [
       userId: string
     ) {
       const product = (await supabaseAdmin.from("crm_Products").insert({
-                name: args.name,
-                description: args.description,
-                sku: args.sku,
-                type: args.type as any,
-                status: "DRAFT",
-                unit_price: args.unit_price,
-                unit_cost: args.unit_cost,
-                currency: args.currency,
-                tax_rate: args.tax_rate,
-                unit: args.unit,
-                is_recurring: args.is_recurring ?? false,
-                billing_period: args.billing_period as any,
-                categoryId: args.categoryId,
-                createdBy: userId,
-                updatedBy: userId,
-              }).select("*").single()).data;
+                      name: args.name,
+                      description: args.description,
+                      sku: args.sku,
+                      type: args.type as any,
+                      status: "DRAFT",
+                      unit_price: args.unit_price,
+                      unit_cost: args.unit_cost,
+                      currency: args.currency,
+                      tax_rate: args.tax_rate,
+                      unit: args.unit,
+                      is_recurring: args.is_recurring ?? false,
+                      billing_period: args.billing_period as any,
+                      categoryId: args.categoryId,
+                      createdBy: userId,
+                      updatedBy: userId,
+                    }).select("*").single()).data;
       return itemResponse(product);
     },
   },
@@ -119,7 +119,7 @@ export const crmProductTools = [
       const existing = (await supabaseAdmin.from("crm_Products").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Product");
       const { id, ...updateData } = args;
-      const product = (await supabaseAdmin.from("crm_Products").update({ ...updateData, updatedBy: userId }).eq("id", id).select("*").single()).data;
+      const product = (await supabaseAdmin.from("crm_Products").update({ ...updateData, updatedBy: userId }).select("*").single().eq("id", id).select("*").single()).data;
       return itemResponse(product);
     },
   },
@@ -130,7 +130,7 @@ export const crmProductTools = [
     async handler(args: { id: string }, userId: string) {
       const existing = (await supabaseAdmin.from("crm_Products").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Product");
-      const product = (await supabaseAdmin.from("crm_Products").update({ deletedAt: new Date(), deletedBy: userId, status: "ARCHIVED" as any }).eq("id", args.id).select("*").single()).data;
+      const product = (await supabaseAdmin.from("crm_Products").update({ deletedAt: new Date(), deletedBy: userId, status: "ARCHIVED" as any }).select("*").single().eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: product.id, status: "ARCHIVED" });
     },
   },

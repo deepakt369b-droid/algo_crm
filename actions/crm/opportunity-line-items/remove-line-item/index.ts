@@ -18,12 +18,12 @@ export const removeOpportunityLineItem = async (id: string) => {
       return { error: "Line item not found" };
     }
 
-    (await supabaseAdmin.from("crm_OpportunityLineItems").delete().eq("id", id).select("*").single()).data;
+    (await supabaseAdmin.from("crm_OpportunityLineItems").delete().select("*").single().eq("id", id).select("*").single()).data;
 
     const remaining = (await supabaseAdmin.from("crm_OpportunityLineItems").select("*").eq("opportunityId", lineItem.opportunityId)).data;
     if (remaining.length > 0) {
       const newTotal = sumLineTotals(remaining);
-      (await supabaseAdmin.from("crm_Opportunities").update({ expected_revenue: newTotal }).eq("id", lineItem.opportunityId).select("*").single()).data;
+      (await supabaseAdmin.from("crm_Opportunities").update({ expected_revenue: newTotal }).select("*").single().eq("id", lineItem.opportunityId).select("*").single()).data;
     }
 
     await writeAuditLog({

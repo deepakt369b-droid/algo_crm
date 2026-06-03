@@ -21,9 +21,9 @@ export const assignDocumentToCrmTask = async (data: {
     if (!task) return { error: "CRM task not found" };
 
     (await supabaseAdmin.from("documentsToCrmAccountsTasks").insert({
-              document_id: documentId,
-              crm_accounts_task_id: taskId,
-            }).select("*").single()).data;
+                  document_id: documentId,
+                  crm_accounts_task_id: taskId,
+                }).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/crm", "page");
     return { success: true };

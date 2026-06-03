@@ -23,7 +23,7 @@ export const updateProfile = async (data: {
   }
 
   try {
-    const user = (await supabaseAdmin.from("users").update({ name, username, account_name }).eq("id", userId).select("*").single()).data;
+    const user = (await supabaseAdmin.from("users").update({ name, username, account_name }).select("*").single().eq("id", userId).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/profile", "page");
     return { data: user };
   } catch (error) {

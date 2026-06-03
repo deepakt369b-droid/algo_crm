@@ -29,11 +29,11 @@ export async function PATCH(
 
   const body = await request.json();
   const taxRate = (await supabaseAdmin.from("invoice_TaxRates").update({
-        ...(body.name !== undefined && { name: body.name }),
-        ...(body.rate !== undefined && { rate: body.rate }),
-        ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
-        ...(body.active !== undefined && { active: body.active }),
-      }).eq("id", id).select("*").single()).data;
+          ...(body.name !== undefined && { name: body.name }),
+          ...(body.rate !== undefined && { rate: body.rate }),
+          ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
+          ...(body.active !== undefined && { active: body.active }),
+        }).select("*").single().eq("id", id).select("*").single()).data;
 
   return NextResponse.json({ data: taxRate });
 }
@@ -46,6 +46,6 @@ export async function DELETE(
   const denied = await ensureAdmin();
   if (denied) return denied;
 
-  (await supabaseAdmin.from("invoice_TaxRates").delete().eq("id", id).select("*").single()).data;
+  (await supabaseAdmin.from("invoice_TaxRates").delete().select("*").single().eq("id", id).select("*").single()).data;
   return NextResponse.json({ success: true });
 }

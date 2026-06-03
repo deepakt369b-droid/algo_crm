@@ -1,5 +1,6 @@
 "use server";
 import { getSession } from "@/lib/auth-server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 import Papa from "papaparse";
 
@@ -73,7 +74,7 @@ export async function importTargets(
   });
 
   if (valid.length > 0) {
-    await supabaseAdmin.from("crm_Targets").insertMany({ data: valid, skipDuplicates: true });
+    await supabaseAdmin.from("crm_Targets").insert(valid);
   }
 
   return { imported: valid.length, skipped: errors.length, errors };

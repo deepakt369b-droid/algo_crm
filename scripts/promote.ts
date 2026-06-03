@@ -10,10 +10,10 @@ async function main() {
   const { prismadb } = await import("../lib/prisma");
 
   const result = (await supabaseAdmin.from("users").update({
-        userStatus: "ACTIVE",
-        role: "admin",
-        isSuperAdmin: true,
-      }).eq("email", "deepakt369b@gmail.com").select("*").single()).data;
+          userStatus: "ACTIVE",
+          role: "admin",
+          isSuperAdmin: true,
+        }).select("*").single().eq("email", "deepakt369b@gmail.com").select("*").single()).data;
   console.log("Success! Updated user to Admin:", result.email);
 }
 

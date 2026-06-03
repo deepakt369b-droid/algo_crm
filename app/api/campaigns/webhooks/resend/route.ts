@@ -33,23 +33,23 @@ export async function POST(req: NextRequest) {
   switch (event.type) {
     case "email.delivered":
       if (send.status === "sent") {
-        (await supabaseAdmin.from("crm_campaign_sends").update({ status: "delivered" }).eq("id", send.id).select("*").single()).data;
+        (await supabaseAdmin.from("crm_campaign_sends").update({ status: "delivered" }).select("*").single().eq("id", send.id).select("*").single()).data;
       }
       break;
 
     case "email.bounced":
-      (await supabaseAdmin.from("crm_campaign_sends").update({ status: "bounced", error_message: "Bounced" }).eq("id", send.id).select("*").single()).data;
+      (await supabaseAdmin.from("crm_campaign_sends").update({ status: "bounced", error_message: "Bounced" }).select("*").single().eq("id", send.id).select("*").single()).data;
       break;
 
     case "email.opened":
       if (!send.opened_at) {
-        (await supabaseAdmin.from("crm_campaign_sends").update({ opened_at: new Date() }).eq("id", send.id).select("*").single()).data;
+        (await supabaseAdmin.from("crm_campaign_sends").update({ opened_at: new Date() }).select("*").single().eq("id", send.id).select("*").single()).data;
       }
       break;
 
     case "email.clicked":
       if (!send.clicked_at) {
-        (await supabaseAdmin.from("crm_campaign_sends").update({ clicked_at: new Date() }).eq("id", send.id).select("*").single()).data;
+        (await supabaseAdmin.from("crm_campaign_sends").update({ clicked_at: new Date() }).select("*").single().eq("id", send.id).select("*").single()).data;
       }
       break;
   }

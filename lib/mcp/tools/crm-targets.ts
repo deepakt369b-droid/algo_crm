@@ -118,7 +118,7 @@ export const crmTargetTools = [
       const existing = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Target");
       const { id, ...updateData } = args;
-      const target = (await supabaseAdmin.from("crm_Targets").update({ ...updateData, updatedBy: userId }).eq("id", id).select("*").single()).data;
+      const target = (await supabaseAdmin.from("crm_Targets").update({ ...updateData, updatedBy: userId }).select("*").single().eq("id", id).select("*").single()).data;
       return itemResponse(target);
     },
   },
@@ -129,10 +129,7 @@ export const crmTargetTools = [
     async handler(args: { id: string }, userId: string) {
       const existing = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Target");
-      const target = await supabaseAdmin.from("crm_Targets").update({
-        where: { id: args.id },
-        data: softDeleteData(userId),
-      });
+      const target = (await supabaseAdmin.from("crm_Targets").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: target.id, deletedAt: target.deletedAt });
     },
   },

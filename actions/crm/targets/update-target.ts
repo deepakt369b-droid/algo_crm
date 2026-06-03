@@ -36,7 +36,7 @@ export const updateTarget = async (data: {
   if (!id) return { error: "id is required" };
 
   try {
-    const target = (await supabaseAdmin.from("crm_Targets").update({ ...rest, updatedBy: (session.user as any).id }).eq("id", id).select("*").single()).data;
+    const target = (await supabaseAdmin.from("crm_Targets").update({ ...rest, updatedBy: (session.user as any).id }).select("*").single().eq("id", id).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/crm/targets", "page");
     return { data: target };
   } catch (error) {

@@ -11,7 +11,7 @@ export const deleteTarget = async (targetId: string) => {
   if (!targetId) return { error: "targetId is required" };
 
   try {
-    (await supabaseAdmin.from("crm_Targets").update({ deletedAt: new Date(), deletedBy: session.user.id }).eq("id", targetId).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Targets").update({ deletedAt: new Date(), deletedBy: session.user.id }).select("*").single().eq("id", targetId).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/crm/targets", "page");
     return { success: true };
   } catch (error) {

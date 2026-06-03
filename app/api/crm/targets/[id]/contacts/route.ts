@@ -39,14 +39,14 @@ export async function POST(
   }
 
   const contact = (await supabaseAdmin.from("crm_Target_Contact").insert({
-        targetId,
-        name: name ?? null,
-        email: email ?? null,
-        phone: phone || null,
-        linkedinUrl: linkedinUrl || null,
-        source: "manual",
-        enrichStatus: "PENDING",
-      }).select("*").single()).data;
+          targetId,
+          name: name ?? null,
+          email: email ?? null,
+          phone: phone || null,
+          linkedinUrl: linkedinUrl || null,
+          source: "manual",
+          enrichStatus: "PENDING",
+        }).select("*").single()).data;
 
   return NextResponse.json(contact);
 }

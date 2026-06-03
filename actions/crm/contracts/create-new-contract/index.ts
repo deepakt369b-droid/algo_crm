@@ -53,21 +53,21 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       ? await getSnapshotRate(currency, defaultCurrency)
       : null;
     const result = (await supabaseAdmin.from("crm_Contracts").insert({
-            v: 0,
-            title,
-            value: parseFloat(value),
-            startDate,
-            endDate,
-            renewalReminderDate,
-            customerSignedDate,
-            companySignedDate,
-            description,
-            account: account || undefined,
-            assigned_to: assigned_to || undefined,
-            createdBy: user.id,
-            currency: currency || undefined,
-            snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
-          }).select("*").single()).data;
+                v: 0,
+                title,
+                value: parseFloat(value),
+                startDate,
+                endDate,
+                renewalReminderDate,
+                customerSignedDate,
+                companySignedDate,
+                description,
+                account: account || undefined,
+                assigned_to: assigned_to || undefined,
+                createdBy: user.id,
+                currency: currency || undefined,
+                snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
+              }).select("*").single()).data;
     await writeAuditLog({
       entityType: "contract",
       entityId: result.id,

@@ -21,7 +21,7 @@ export const setUserRole = async (userId: string, role: AppRole) => {
   }
 
   try {
-    const user = (await supabaseAdmin.from("users").update({ role }).eq("id", userId).select("*").single()).data;
+    const user = (await supabaseAdmin.from("users").update({ role }).select("*").single().eq("id", userId).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/admin", "page");
     return { data: user };
   } catch (error) {

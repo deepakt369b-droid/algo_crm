@@ -60,10 +60,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       updateData.deliveredDate = new Date();
     }
 
-    const updated = await supabaseAdmin.from("purchaseOrders").update({
-      where: { id },
-      data: updateData,
-    });
+    const updated = (await supabaseAdmin.from("purchaseOrders").update(updateData).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "purchase_order",

@@ -88,11 +88,11 @@ export async function upsertUserApiKey(
       where: { scope: "USER", provider, userId },
     }),
     (await supabaseAdmin.from("apiKeys").insert({
-              scope: "USER",
-              provider,
-              userId,
-              encryptedKey,
-            }).select("*").single()).data,
+                  scope: "USER",
+                  provider,
+                  userId,
+                  encryptedKey,
+                }).select("*").single()).data,
   ]);
 
   revalidatePath("/(en)/profile");

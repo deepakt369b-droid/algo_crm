@@ -26,19 +26,16 @@ export const scheduleCampaign = async (id: string, scheduledAt: Date) => {
     throw e;
   }
 
-  const campaign = await supabaseAdmin.from("crm_campaigns").update({
-    where: { id },
-    data: {
-      status: "scheduled",
-      scheduled_at: scheduledAt,
-      steps: {
-        updateMany: {
-          where: { order: 0 },
-          data: { scheduled_at: scheduledAt },
+  const campaign = (await supabaseAdmin.from("crm_campaigns").update({
+        status: "scheduled",
+        scheduled_at: scheduledAt,
+        steps: {
+          updateMany: {
+            where: { order: 0 },
+            data: { scheduled_at: scheduledAt },
+          },
         },
-      },
-    },
-  });
+      }).select("*").single()).data;
 
   await inngest.send({
     name: "campaigns/schedule",

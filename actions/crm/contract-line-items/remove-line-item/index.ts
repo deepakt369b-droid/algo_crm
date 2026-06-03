@@ -18,12 +18,12 @@ export const removeContractLineItem = async (id: string) => {
       return { error: "Line item not found" };
     }
 
-    (await supabaseAdmin.from("crm_ContractLineItems").delete().eq("id", id).select("*").single()).data;
+    (await supabaseAdmin.from("crm_ContractLineItems").delete().select("*").single().eq("id", id).select("*").single()).data;
 
     const remaining = (await supabaseAdmin.from("crm_ContractLineItems").select("*").eq("contractId", lineItem.contractId)).data;
     if (remaining.length > 0) {
       const newTotal = sumLineTotals(remaining);
-      (await supabaseAdmin.from("crm_Contracts").update({ value: newTotal }).eq("id", lineItem.contractId).select("*").single()).data;
+      (await supabaseAdmin.from("crm_Contracts").update({ value: newTotal }).select("*").single().eq("id", lineItem.contractId).select("*").single()).data;
     }
 
     await writeAuditLog({

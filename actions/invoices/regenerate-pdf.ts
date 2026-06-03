@@ -25,16 +25,7 @@ export async function regenerateInvoicePdf(
   }
 
   try {
-    const invoice = await supabaseAdmin.from("invoices").findUniqueOrThrow({
-      where: { id: invoiceId },
-      include: {
-        lineItems: {
-          include: { taxRate: true },
-          orderBy: { position: "asc" },
-        },
-        account: true,
-      },
-    });
+    const invoice = (await supabaseAdmin.from("invoices").select("*, lineItems(*, taxRate(*)), account(*)").eq("id", invoiceId).single()).data;
 
     // Permission: manager/admin OR the creator of the invoice
     if (

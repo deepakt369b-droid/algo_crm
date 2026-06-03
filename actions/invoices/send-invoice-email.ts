@@ -19,17 +19,7 @@ interface SendInvoiceEmailInput {
 export async function sendInvoiceEmail(input: SendInvoiceEmailInput) {
   const user = await getUser();
 
-  const invoice = await supabaseAdmin.from("invoices").findUniqueOrThrow({
-    where: { id: input.invoiceId },
-    select: {
-      id: true,
-      number: true,
-      status: true,
-      createdBy: true,
-      pdfStorageKey: true,
-      account: { select: { name: true } },
-    },
-  });
+  const invoice = (await supabaseAdmin.from("invoices").select("id, number, status, createdBy, pdfStorageKey, account(name)").eq("id", input.invoiceId).single()).data;
 
   if (
     !canReadInvoice(
@@ -88,29 +78,24 @@ export async function sendInvoiceEmail(input: SendInvoiceEmailInput) {
 
   // Update status to SENT only if currently ISSUED
   if (invoice.status === "ISSUED") {
-    await supabaseAdmin.from("invoices").update({
-      where: { id: invoice.id },
-      data: {
-        status: "SENT",
-        activity: {
-          create: {
-            actorId: user.id,
-            action: "SENT",
-            meta: { to: input.to, subject },
-          },
-        },
-      },
-    });
+    (await supabaseAdmin.from("invoices").update({
+              status: "SENT",
+              activity: {
+                create: {
+                  actorId: user.id,
+                  action: "SENT",
+                  meta: { to: input.to, subject },
+                },
+              },
+            }).eq("id", invoice.id).select("*").single()).data;
   } else {
     // Log activity even if we don't change status
-    await supabaseAdmin.from("invoice_Activity").insert({
-      data: {
-        invoiceId: invoice.id,
-        actorId: user.id,
-        action: "EMAIL_SENT",
-        meta: { to: input.to, subject },
-      },
-    });
+    (await supabaseAdmin.from("invoice_Activity").insert({
+              invoiceId: invoice.id,
+              actorId: user.id,
+              action: "EMAIL_SENT",
+              meta: { to: input.to, subject },
+            }).select("*").single()).data;
   }
 
   return { success: true };

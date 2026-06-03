@@ -41,10 +41,10 @@ export const updateAccount = async (data: {
   try {
     const before = (await supabaseAdmin.from("crm_Accounts").select("*").eq("id", id).eq("deletedAt", null).single()).data;
     const account = (await supabaseAdmin.from("crm_Accounts").update({
-            v: 0,
-            updatedBy: session.user.id,
-            ...rest,
-          }).eq("id", id).select("*").single()).data;
+                v: 0,
+                updatedBy: session.user.id,
+                ...rest,
+              }).select("*").single().eq("id", id).select("*").single()).data;
     const changes = before ? diffObjects(
       before as Record<string, unknown>,
       account as Record<string, unknown>

@@ -40,9 +40,9 @@ export const deleteTask = async (data: { id: string; section?: string }) => {
     const currentTask = (await supabaseAdmin.from("tasks").select("*").eq("id", id).single()).data;
 
     // Delete all task comments first (foreign key constraint)
-    (await supabaseAdmin.from("tasksComments").delete().eq("task", id)).data;
+    (await supabaseAdmin.from("tasksComments").delete().select("*").single().eq("task", id)).data;
 
-    (await supabaseAdmin.from("tasks").delete().eq("id", id).select("*").single()).data;
+    (await supabaseAdmin.from("tasks").delete().select("*").single().eq("id", id).select("*").single()).data;
 
     if (currentTask) {
       // Reorder remaining tasks in the section
@@ -51,9 +51,9 @@ export const deleteTask = async (data: { id: string; section?: string }) => {
       for (const key in tasks) {
         const position = parseInt(key);
         (await supabaseAdmin.from("tasks").update({
-                      updatedBy: session.user.id,
-                      position,
-                    }).eq("id", tasks[key].id).select("*").single()).data;
+                              updatedBy: session.user.id,
+                              position,
+                            }).select("*").single().eq("id", tasks[key].id).select("*").single()).data;
       }
     }
 

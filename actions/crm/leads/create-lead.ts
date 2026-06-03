@@ -46,24 +46,24 @@ export const createLead = async (data: {
 
   try {
     const lead = (await supabaseAdmin.from("crm_Leads").insert({
-            v: 1,
-            createdBy: userId,
-            updatedBy: userId,
-            firstName: first_name,
-            lastName: last_name,
-            company,
-            jobTitle,
-            email,
-            phone,
-            description,
-            lead_source_id: lead_source_id || undefined,
-            lead_status_id: lead_status_id || undefined,
-            lead_type_id: lead_type_id || undefined,
-            refered_by: refered_by || undefined,
-            campaign: campaign || undefined,
-            assigned_to: assigned_to || userId,
-            accountsIDs: accountIDs || undefined,
-          }).select("*").single()).data;
+                v: 1,
+                createdBy: userId,
+                updatedBy: userId,
+                firstName: first_name,
+                lastName: last_name,
+                company,
+                jobTitle,
+                email,
+                phone,
+                description,
+                lead_source_id: lead_source_id || undefined,
+                lead_status_id: lead_status_id || undefined,
+                lead_type_id: lead_type_id || undefined,
+                refered_by: refered_by || undefined,
+                campaign: campaign || undefined,
+                assigned_to: assigned_to || userId,
+                accountsIDs: accountIDs || undefined,
+              }).select("*").single()).data;
 
     if (assigned_to && assigned_to !== userId) {
       const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", assigned_to).single()).data;

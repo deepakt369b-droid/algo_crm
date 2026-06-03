@@ -35,7 +35,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   }
 
   try {
-    (await supabaseAdmin.from("crm_Contracts").update({ deletedAt: new Date(), deletedBy: user.id }).eq("id", id).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Contracts").update({ deletedAt: new Date(), deletedBy: user.id }).select("*").single().eq("id", id).select("*").single()).data;
     await writeAuditLog({
       entityType: "contract",
       entityId: id,

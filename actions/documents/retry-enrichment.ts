@@ -26,7 +26,7 @@ export async function retryEnrichment(documentId: string) {
     throw e;
   }
 
-  (await supabaseAdmin.from("documents").update({ processing_status: "PENDING", processing_error: null }).eq("id", documentId).select("*").single()).data;
+  (await supabaseAdmin.from("documents").update({ processing_status: "PENDING", processing_error: null }).select("*").single().eq("id", documentId).select("*").single()).data;
 
   await inngest.send({
     name: "document/uploaded",

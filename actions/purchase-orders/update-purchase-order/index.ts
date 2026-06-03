@@ -37,10 +37,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     if (billingAddress !== undefined) updateData.billingAddress = billingAddress ? JSON.parse(billingAddress) : null;
     updateData.updatedBy = userId;
 
-    const updated = await supabaseAdmin.from("purchaseOrders").update({
-      where: { id },
-      data: updateData,
-    });
+    const updated = (await supabaseAdmin.from("purchaseOrders").update(updateData).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "purchase_order",

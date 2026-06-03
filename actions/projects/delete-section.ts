@@ -31,9 +31,9 @@ export const deleteSection = async (sectionId: string) => {
   }
 
   try {
-    (await supabaseAdmin.from("tasks").delete().eq("section", sectionId)).data;
+    (await supabaseAdmin.from("tasks").delete().select("*").single().eq("section", sectionId)).data;
 
-    (await supabaseAdmin.from("sections").delete().eq("id", sectionId).select("*").single()).data;
+    (await supabaseAdmin.from("sections").delete().select("*").single().eq("id", sectionId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

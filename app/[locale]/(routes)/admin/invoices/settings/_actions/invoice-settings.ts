@@ -94,11 +94,8 @@ export async function saveInvoiceSettings(
   try {
     const existing = (await supabaseAdmin.from("invoice_Settings").select("*").single()).data;
     const settings = existing
-      ? await supabaseAdmin.from("invoice_Settings").update({
-          where: { id: existing.id },
-          data,
-        })
-      : await supabaseAdmin.from("invoice_Settings").insert({ data });
+      ? (await supabaseAdmin.from("invoice_Settings").update(data).eq("id", existing.id).select("*").single()).data
+      : (await supabaseAdmin.from("invoice_Settings").insert(data).select("*").single()).data;
 
     revalidatePath("/admin/invoices/settings");
     return { ok: true, data: settings };

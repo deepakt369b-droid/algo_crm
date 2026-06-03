@@ -11,7 +11,7 @@ export async function updateProfilePhoto(avatar: string) {
 
   if (!avatar) throw new Error("No avatar provided");
 
-  (await supabaseAdmin.from("users").update({ avatar }).eq("id", session.user.id).select("*").single()).data;
+  (await supabaseAdmin.from("users").update({ avatar }).select("*").single().eq("id", session.user.id).select("*").single()).data;
 
   revalidatePath("/[locale]/profile");
 }

@@ -24,7 +24,7 @@ export const pauseCampaign = async (id: string) => {
     throw e;
   }
 
-  return (await supabaseAdmin.from("crm_campaigns").update({ status: "paused" }).eq("id", id).select("*").single()).data;
+  return (await supabaseAdmin.from("crm_campaigns").update({ status: "paused" }).select("*").single().eq("id", id).select("*").single()).data;
   // Note: in-flight Inngest jobs check campaign.status at execution start
   // and exit early when status is "paused" — no Inngest API cancellation needed.
 };

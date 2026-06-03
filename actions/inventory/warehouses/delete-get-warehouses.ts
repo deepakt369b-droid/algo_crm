@@ -18,7 +18,7 @@ export async function deleteWarehouse(id: string): Promise<{ error?: string }> {
       return { error: "Cannot delete warehouse with existing stock. Transfer stock first." };
     }
 
-    (await supabaseAdmin.from("inventoryWarehouse").delete().eq("id", id).select("*").single()).data;
+    (await supabaseAdmin.from("inventoryWarehouse").delete().select("*").single().eq("id", id).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");
     return {};
   } catch (error) {

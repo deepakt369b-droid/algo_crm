@@ -15,17 +15,14 @@ export const createTargetList = async (data: {
   if (!name) return { error: "name is required" };
 
   try {
-    const list = await supabaseAdmin.from("crm_TargetLists").insert({
-      data: {
-        name,
-        description,
-        created_by: (session.user as any).id,
-        targets: {
-          create: targetIds.map((id: string) => ({ target_id: id })),
-        },
-      },
-      include: { targets: true },
-    });
+    const list = (await supabaseAdmin.from("crm_TargetLists").insert({
+            name,
+            description,
+            created_by: (session.user as any).id,
+            targets: {
+              create: targetIds.map((id: string) => ({ target_id: id })),
+            },
+          }).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/crm/target-lists", "page");
     return { data: list };
   } catch (error) {

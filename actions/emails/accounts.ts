@@ -44,32 +44,32 @@ export async function createEmailAccount(input: CreateInput) {
 
   const passwordEncrypted = encrypt(input.password);
   return (await supabaseAdmin.from("emailAccount").insert({
-        userId,
-        label: input.label,
-        imapHost: input.imapHost,
-        imapPort: input.imapPort,
-        imapSsl: input.imapSsl,
-        smtpHost: input.smtpHost,
-        smtpPort: input.smtpPort,
-        smtpSsl: input.smtpSsl,
-        username: input.username,
-        passwordEncrypted,
-        ...(input.sentFolderName && { sentFolderName: input.sentFolderName }),
-      }).select("*").single()).data;
+          userId,
+          label: input.label,
+          imapHost: input.imapHost,
+          imapPort: input.imapPort,
+          imapSsl: input.imapSsl,
+          smtpHost: input.smtpHost,
+          smtpPort: input.smtpPort,
+          smtpSsl: input.smtpSsl,
+          username: input.username,
+          passwordEncrypted,
+          ...(input.sentFolderName && { sentFolderName: input.sentFolderName }),
+        }).select("*").single()).data;
 }
 
 export async function deleteEmailAccount(id: string) {
   const userId = await requireSession();
   const account = (await supabaseAdmin.from("emailAccount").select("*").eq("id", id).eq("userId", userId).single()).data;
   if (!account) throw new Error("Not found");
-  (await supabaseAdmin.from("emailAccount").delete().eq("id", id).select("*").single()).data;
+  (await supabaseAdmin.from("emailAccount").delete().select("*").single().eq("id", id).select("*").single()).data;
 }
 
 export async function setEmailAccountActive(id: string, isActive: boolean) {
   const userId = await requireSession();
   const account = (await supabaseAdmin.from("emailAccount").select("*").eq("id", id).eq("userId", userId).single()).data;
   if (!account) throw new Error("Not found");
-  return (await supabaseAdmin.from("emailAccount").update({ isActive }).eq("id", id).select("*").single()).data;
+  return (await supabaseAdmin.from("emailAccount").update({ isActive }).select("*").single().eq("id", id).select("*").single()).data;
 }
 
 type TestInput = {

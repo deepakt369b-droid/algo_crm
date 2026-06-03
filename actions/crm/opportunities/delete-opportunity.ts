@@ -12,7 +12,7 @@ export const deleteOpportunity = async (opportunityId: string) => {
   if (!opportunityId) return { error: "opportunityId is required" };
 
   try {
-    (await supabaseAdmin.from("crm_Opportunities").update({ deletedAt: new Date(), deletedBy: session.user.id }).eq("id", opportunityId).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Opportunities").update({ deletedAt: new Date(), deletedBy: session.user.id }).select("*").single().eq("id", opportunityId).select("*").single()).data;
     await writeAuditLog({
       entityType: "opportunity",
       entityId: opportunityId,

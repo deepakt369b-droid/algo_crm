@@ -40,11 +40,11 @@ export const crmEnrichmentTools = [
       }
 
       const enrichment = (await supabaseAdmin.from("crm_Contact_Enrichment").insert({
-                contactId: args.contactId,
-                status: "RUNNING",
-                fields: args.fields.map((f) => f.name),
-                triggeredBy: userId,
-              }).select("*").single()).data;
+                      contactId: args.contactId,
+                      status: "RUNNING",
+                      fields: args.fields.map((f) => f.name),
+                      triggeredBy: userId,
+                    }).select("*").single()).data;
 
       await inngest.send({
         name: "enrich/contact.run",
@@ -123,11 +123,11 @@ export const crmEnrichmentTools = [
       }
 
       const enrichment = (await supabaseAdmin.from("crm_Target_Enrichment").insert({
-                targetId: args.targetId,
-                status: "RUNNING",
-                fields: args.fields.map((f) => f.name),
-                triggeredBy: userId,
-              }).select("*").single()).data;
+                      targetId: args.targetId,
+                      status: "RUNNING",
+                      fields: args.fields.map((f) => f.name),
+                      triggeredBy: userId,
+                    }).select("*").single()).data;
 
       await inngest.send({
         name: "enrich/target.run",

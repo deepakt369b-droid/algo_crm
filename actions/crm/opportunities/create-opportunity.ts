@@ -49,25 +49,25 @@ export const createOpportunity = async (data: {
       ? await getSnapshotRate(currency, defaultCurrency)
       : null;
     const opportunity = (await supabaseAdmin.from("crm_Opportunities").insert({
-            account: account || undefined,
-            assigned_to: assigned_to || userId,
-            budget: budget ? parseFloat(budget) : undefined,
-            campaign: campaign || undefined,
-            close_date,
-            contact: contact || undefined,
-            createdBy: userId,
-            last_activity_by: userId,
-            updatedBy: userId,
-            currency: currency || undefined,
-            description: description || undefined,
-            expected_revenue: expected_revenue ? parseFloat(expected_revenue) : undefined,
-            snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
-            name,
-            next_step: next_step || undefined,
-            sales_stage: sales_stage || undefined,
-            status: "ACTIVE",
-            type: type || undefined,
-          }).select("*").single()).data;
+                account: account || undefined,
+                assigned_to: assigned_to || userId,
+                budget: budget ? parseFloat(budget) : undefined,
+                campaign: campaign || undefined,
+                close_date,
+                contact: contact || undefined,
+                createdBy: userId,
+                last_activity_by: userId,
+                updatedBy: userId,
+                currency: currency || undefined,
+                description: description || undefined,
+                expected_revenue: expected_revenue ? parseFloat(expected_revenue) : undefined,
+                snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
+                name,
+                next_step: next_step || undefined,
+                sales_stage: sales_stage || undefined,
+                status: "ACTIVE",
+                type: type || undefined,
+              }).select("*").single()).data;
 
     if (assigned_to && assigned_to !== userId) {
       const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", assigned_to).single()).data;

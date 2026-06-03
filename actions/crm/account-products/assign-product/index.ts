@@ -59,18 +59,18 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const snapshotRate = currency ? await getSnapshotRate(currency, defaultCurrency) : null;
 
     const assignment = (await supabaseAdmin.from("crm_AccountProducts").insert({
-            accountId, productId, quantity,
-            custom_price: custom_price ? parseFloat(custom_price) : undefined,
-            currency,
-            snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
-            status: status || "ACTIVE",
-            start_date,
-            end_date: end_date || undefined,
-            renewal_date: renewal_date || undefined,
-            notes: notes || undefined,
-            createdBy: userId,
-            updatedBy: userId,
-          }).select("*").single()).data;
+                accountId, productId, quantity,
+                custom_price: custom_price ? parseFloat(custom_price) : undefined,
+                currency,
+                snapshot_rate: snapshotRate ? parseFloat(snapshotRate.toString()) : undefined,
+                status: status || "ACTIVE",
+                start_date,
+                end_date: end_date || undefined,
+                renewal_date: renewal_date || undefined,
+                notes: notes || undefined,
+                createdBy: userId,
+                updatedBy: userId,
+              }).select("*").single()).data;
 
     await writeAuditLog({ entityType: "account_product", entityId: assignment.id, action: "created", changes: null, userId });
 

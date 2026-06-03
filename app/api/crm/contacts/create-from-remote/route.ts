@@ -29,16 +29,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    await supabaseAdmin.from("crm_Contacts").insert({
-      data: {
-        first_name: name,
-        last_name: surname,
-        email,
-        mobile_phone: phone,
-        tags: [tag],
-        notes: ["Account: " + company, "Message: " + message],
-      },
-    });
+    (await supabaseAdmin.from("crm_Contacts").insert({
+              first_name: name,
+              last_name: surname,
+              email,
+              mobile_phone: phone,
+              tags: [tag],
+              notes: ["Account: " + company, "Message: " + message],
+            }).select("*").single()).data;
     return NextResponse.json({ message: "Contact created" });
   } catch (error) {
     console.log("Error creating contact:", error);

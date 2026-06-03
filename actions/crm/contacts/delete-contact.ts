@@ -12,7 +12,7 @@ export const deleteContact = async (contactId: string) => {
   if (!contactId) return { error: "contactId is required" };
 
   try {
-    (await supabaseAdmin.from("crm_Contacts").update({ deletedAt: new Date(), deletedBy: session.user.id }).eq("id", contactId).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Contacts").update({ deletedAt: new Date(), deletedBy: session.user.id }).select("*").single().eq("id", contactId).select("*").single()).data;
     await writeAuditLog({
       entityType: "contact",
       entityId: contactId,

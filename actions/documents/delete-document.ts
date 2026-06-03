@@ -33,7 +33,7 @@ export async function deleteDocument(documentId: string) {
 
   if (!document) throw new Error("Document not found");
 
-  (await supabaseAdmin.from("documents").delete().eq("id", documentId).select("*").single()).data;
+  (await supabaseAdmin.from("documents").delete().select("*").single().eq("id", documentId).select("*").single()).data;
 
   if (document.key) {
     await minioClient.send(

@@ -81,16 +81,16 @@ export const crmOpportunityTools = [
     ) {
       const { name, budget, expected_revenue, close_date, ...rest } = args;
       const opp = (await supabaseAdmin.from("crm_Opportunities").insert({
-                v: 0,
-                name,
-                ...rest,
-                ...(budget !== undefined && { budget }),
-                ...(expected_revenue !== undefined && { expected_revenue }),
-                ...(close_date !== undefined && { close_date: new Date(close_date) }),
-                assigned_to: userId,
-                createdBy: userId,
-                updatedBy: userId,
-              }).select("*").single()).data;
+                      v: 0,
+                      name,
+                      ...rest,
+                      ...(budget !== undefined && { budget }),
+                      ...(expected_revenue !== undefined && { expected_revenue }),
+                      ...(close_date !== undefined && { close_date: new Date(close_date) }),
+                      assigned_to: userId,
+                      createdBy: userId,
+                      updatedBy: userId,
+                    }).select("*").single()).data;
       return itemResponse(opp);
     },
   },
@@ -124,13 +124,13 @@ export const crmOpportunityTools = [
       if (!existing) notFound("Opportunity");
       const { id, budget, expected_revenue, close_date, currency, ...rest } = args;
       const opp = (await supabaseAdmin.from("crm_Opportunities").update({
-                ...rest,
-                ...(currency !== undefined && { currency }),
-                ...(budget !== undefined && { budget }),
-                ...(expected_revenue !== undefined && { expected_revenue }),
-                ...(close_date !== undefined && { close_date: new Date(close_date) }),
-                updatedBy: userId,
-              }).eq("id", id).select("*").single()).data;
+                      ...rest,
+                      ...(currency !== undefined && { currency }),
+                      ...(budget !== undefined && { budget }),
+                      ...(expected_revenue !== undefined && { expected_revenue }),
+                      ...(close_date !== undefined && { close_date: new Date(close_date) }),
+                      updatedBy: userId,
+                    }).select("*").single().eq("id", id).select("*").single()).data;
       return itemResponse(opp);
     },
   },
@@ -141,10 +141,7 @@ export const crmOpportunityTools = [
     async handler(args: { id: string }, userId: string) {
       const existing = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
       if (!existing) notFound("Opportunity");
-      const opp = await supabaseAdmin.from("crm_Opportunities").update({
-        where: { id: args.id },
-        data: softDeleteData(userId),
-      });
+      const opp = (await supabaseAdmin.from("crm_Opportunities").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: opp.id, deletedAt: opp.deletedAt });
     },
   },

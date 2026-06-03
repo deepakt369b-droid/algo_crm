@@ -30,16 +30,16 @@ const WorkerMailCard = async () => {
 
     if (!parsed.id) {
       (await supabaseAdmin.from("systemServices").insert({
-                  v: 0,
-                  name: "worker_mailer",
-                  serviceUrl: parsed.mailerUrl,
-                  serviceKey: parsed.apiKey,
-                }).select("*").single()).data;
+                        v: 0,
+                        name: "worker_mailer",
+                        serviceUrl: parsed.mailerUrl,
+                        serviceKey: parsed.apiKey,
+                      }).select("*").single()).data;
     } else {
       (await supabaseAdmin.from("systemServices").update({
-                  serviceUrl: parsed.mailerUrl,
-                  serviceKey: parsed.apiKey,
-                }).eq("id", parsed.id).select("*").single()).data;
+                        serviceUrl: parsed.mailerUrl,
+                        serviceKey: parsed.apiKey,
+                      }).select("*").single().eq("id", parsed.id).select("*").single()).data;
     }
     revalidatePath("/admin/services");
   };
@@ -48,7 +48,7 @@ const WorkerMailCard = async () => {
     "use server";
     const id = formData.get("id") as string;
     if (id) {
-      (await supabaseAdmin.from("systemServices").delete().eq("id", id).select("*").single()).data;
+      (await supabaseAdmin.from("systemServices").delete().select("*").single().eq("id", id).select("*").single()).data;
       revalidatePath("/admin/services");
     }
   };

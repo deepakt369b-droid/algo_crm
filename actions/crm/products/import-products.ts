@@ -147,10 +147,7 @@ export async function importProducts(
   });
 
   if (valid.length > 0) {
-    await supabaseAdmin.from("crm_Products").insertMany({
-      data: valid,
-      skipDuplicates: true,
-    });
+    await supabaseAdmin.from("crm_Products").insert(valid);
 
     await writeAuditLog({
       entityType: "product",

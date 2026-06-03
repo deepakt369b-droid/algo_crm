@@ -50,25 +50,25 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const lineTotal = calculateLineTotal(quantity, snapshotPrice, discount_type, discountVal);
 
     const lineItem = (await supabaseAdmin.from("crm_OpportunityLineItems").insert({
-            opportunityId,
-            productId: productId || undefined,
-            name: snapshotName,
-            sku: snapshotSku || undefined,
-            description: description || undefined,
-            quantity,
-            unit_price: snapshotPrice,
-            discount_type,
-            discount_value: discountVal,
-            line_total: lineTotal,
-            currency: opportunity.currency || "EUR",
-            sort_order,
-            createdBy: userId,
-            updatedBy: userId,
-          }).select("*").single()).data;
+                opportunityId,
+                productId: productId || undefined,
+                name: snapshotName,
+                sku: snapshotSku || undefined,
+                description: description || undefined,
+                quantity,
+                unit_price: snapshotPrice,
+                discount_type,
+                discount_value: discountVal,
+                line_total: lineTotal,
+                currency: opportunity.currency || "EUR",
+                sort_order,
+                createdBy: userId,
+                updatedBy: userId,
+              }).select("*").single()).data;
 
     const allLineItems = (await supabaseAdmin.from("crm_OpportunityLineItems").select("*").eq("opportunityId", opportunityId)).data;
     const newTotal = sumLineTotals(allLineItems);
-    (await supabaseAdmin.from("crm_Opportunities").update({ expected_revenue: newTotal }).eq("id", opportunityId).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Opportunities").update({ expected_revenue: newTotal }).select("*").single().eq("id", opportunityId).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "opportunity_line_item",

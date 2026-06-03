@@ -12,7 +12,7 @@ export const restoreAccount = async (accountId: string) => {
   if (!accountId) return { error: "accountId is required" };
 
   try {
-    (await supabaseAdmin.from("crm_Accounts").update({ deletedAt: null, deletedBy: null }).eq("id", accountId).select("*").single()).data;
+    (await supabaseAdmin.from("crm_Accounts").update({ deletedAt: null, deletedBy: null }).select("*").single().eq("id", accountId).select("*").single()).data;
     await writeAuditLog({
       entityType: "account",
       entityId: accountId,

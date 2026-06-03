@@ -24,5 +24,5 @@ export const deleteTemplate = async (id: string) => {
     throw e;
   }
 
-  return (await supabaseAdmin.from("crm_campaign_templates").update({ deletedAt: new Date(), deletedBy: user.id }).eq("id", id).select("*").single()).data;
+  return (await supabaseAdmin.from("crm_campaign_templates").update({ deletedAt: new Date(), deletedBy: user.id }).select("*").single().eq("id", id).select("*").single()).data;
 };

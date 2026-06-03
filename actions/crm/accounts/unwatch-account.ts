@@ -12,11 +12,11 @@ export const unwatchAccount = async (accountId: string) => {
 
   try {
     (await supabaseAdmin.from("crm_Accounts").update({
-              watchers: junctionTableHelpers.removeAccountWatcher(
-                accountId,
-                session.user.id
-              ),
-            }).eq("id", accountId).select("*").single()).data;
+                  watchers: junctionTableHelpers.removeAccountWatcher(
+                    accountId,
+                    session.user.id
+                  ),
+                }).select("*").single().eq("id", accountId).select("*").single()).data;
     return { success: true };
   } catch (error) {
     console.log("[UNWATCH_ACCOUNT]", error);

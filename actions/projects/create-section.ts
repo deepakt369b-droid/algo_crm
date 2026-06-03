@@ -36,11 +36,11 @@ export const createSection = async (data: {
     const sectionPosition = (await supabaseAdmin.from("sections").select("*", { count: 'exact', head: true }).eq("board", boardId)).count;
 
     const newSection = (await supabaseAdmin.from("sections").insert({
-            v: 0,
-            board: boardId,
-            title,
-            position: sectionPosition > 0 ? sectionPosition : 0,
-          }).select("*").single()).data;
+                v: 0,
+                board: boardId,
+                title,
+                position: sectionPosition > 0 ? sectionPosition : 0,
+              }).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { data: newSection };

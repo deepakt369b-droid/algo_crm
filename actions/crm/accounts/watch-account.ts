@@ -12,8 +12,8 @@ export const watchAccount = async (accountId: string) => {
 
   try {
     (await supabaseAdmin.from("crm_Accounts").update({
-              watchers: junctionTableHelpers.addWatcher(session.user.id),
-            }).eq("id", accountId).select("*").single()).data;
+                  watchers: junctionTableHelpers.addWatcher(session.user.id),
+                }).select("*").single().eq("id", accountId).select("*").single()).data;
     return { success: true };
   } catch (error) {
     console.log("[WATCH_ACCOUNT]", error);
