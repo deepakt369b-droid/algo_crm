@@ -17,23 +17,22 @@
 //      from being needed at all, so Cloudflare Pages never has to upload
 //      a >25 MiB file.
 //
+// IMPORTANT: every `await import(...)` path below is a static string
+// literal. The Workers runtime has no filesystem; modules are served
+// from chunks that esbuild creates at build time, and esbuild only
+// creates a chunk for an import when the path is statically analyzable.
+// A template-literal path (e.g. `./server-functions/${d.fn}/index.mjs`)
+// is silently left as a runtime path that resolves to nothing and the
+// request 404s.
+//
 // The pattern list mirrors the `functions` config in
 // `open-next.config.ts`. Keep them in sync.
 
-import { readFile, unlink, writeFile } from "node:fs/promises";
+import { unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const WORKER_PATH = path.join(".open-next", "worker.js");
 const DEFAULT_HANDLER = path.join(".open-next", "server-functions", "default", "handler.mjs");
-
-// Each entry: a URL prefix served by the split function.
-// The default function handles every other path.
-const DISPATCH = [
-  { prefix: "/api/invoices/", fn: "pdf", match: (p) => /^\/api\/invoices\/[^/]+\/pdf\/?$/.test(p) },
-  { prefix: "/api/mcp", fn: "mcp" },
-  { prefix: "/api/inngest", fn: "inngest" },
-  { prefix: "/api/upload/presigned-url", fn: "upload" },
-];
 
 const TEMPLATE = `//@ts-expect-error: Will be resolved by wrangler build
 import { handleCdnCgiImageRequest, handleImageRequest } from "./cloudflare/images.js";
@@ -49,13 +48,6 @@ export { DOQueueHandler } from "./.build/durable-objects/queue.js";
 export { DOShardedTagCache } from "./.build/durable-objects/sharded-tag-cache.js";
 //@ts-expect-error: Will be resolved by wrangler build
 export { BucketCachePurge } from "./.build/durable-objects/bucket-cache-purge.js";
-
-const dispatch = [
-${DISPATCH.map(
-  (d) =>
-    `  { fn: ${JSON.stringify(d.fn)}, prefix: ${JSON.stringify(d.prefix)}, match: ${d.match ? d.match.toString() : "null"} },`,
-).join("\n")}
-];
 
 export default {
     async fetch(request, env, ctx) {
@@ -79,12 +71,30 @@ export default {
             // Dispatch to a split server-function by URL pattern. The
             // split function's index.mjs is small (no full bundling),
             // so each file stays under the Cloudflare 25 MiB limit.
-            for (const d of dispatch) {
-                if (url.pathname === d.prefix || url.pathname.startsWith(d.prefix) || (d.match && d.match(url.pathname))) {
-                    // @ts-expect-error: resolved by wrangler build
-                    const { handler } = await import(\`./server-functions/\${d.fn}/index.mjs\`);
-                    return handler(reqOrResp, env, ctx, request.signal);
-                }
+            // Each import below uses a STATIC string literal so
+            // esbuild creates a separate code-split chunk for it.
+            // Dynamic imports with non-static paths are not analyzed
+            // by the bundler and fail at runtime in the Workers
+            // runtime (no filesystem).
+            if (/^\\/api\\/invoices\\/[^/]+\\/pdf\\/?$/.test(url.pathname)) {
+                // @ts-expect-error: resolved by wrangler build
+                const { handler } = await import("./server-functions/pdf/index.mjs");
+                return handler(reqOrResp, env, ctx, request.signal);
+            }
+            if (url.pathname.startsWith("/api/mcp")) {
+                // @ts-expect-error: resolved by wrangler build
+                const { handler } = await import("./server-functions/mcp/index.mjs");
+                return handler(reqOrResp, env, ctx, request.signal);
+            }
+            if (url.pathname.startsWith("/api/inngest")) {
+                // @ts-expect-error: resolved by wrangler build
+                const { handler } = await import("./server-functions/inngest/index.mjs");
+                return handler(reqOrResp, env, ctx, request.signal);
+            }
+            if (url.pathname === "/api/upload/presigned-url" || url.pathname.startsWith("/api/upload/presigned-url/")) {
+                // @ts-expect-error: resolved by wrangler build
+                const { handler } = await import("./server-functions/upload/index.mjs");
+                return handler(reqOrResp, env, ctx, request.signal);
             }
             // Fallback: use the default function's unbundled entry point.
             // This avoids the fully-bundled handler.mjs (35 MiB on this
