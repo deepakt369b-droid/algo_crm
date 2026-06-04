@@ -24,6 +24,56 @@ const config: OpenNextConfig = {
       queue: "dummy",
     },
   },
+  functions: {
+    pdf: {
+      routes: ["app/api/invoices/[invoiceId]/pdf/route"],
+      patterns: ["/api/invoices/*/pdf"],
+      override: {
+        wrapper: "cloudflare-node",
+        converter: "edge",
+        proxyExternalRequest: "fetch",
+        incrementalCache: "dummy",
+        tagCache: "dummy",
+        queue: "dummy",
+      },
+    },
+    mcp: {
+      routes: ["app/api/mcp/[transport]/route"],
+      patterns: ["/api/mcp/*"],
+      override: {
+        wrapper: "cloudflare-node",
+        converter: "edge",
+        proxyExternalRequest: "fetch",
+        incrementalCache: "dummy",
+        tagCache: "dummy",
+        queue: "dummy",
+      },
+    },
+    inngest: {
+      routes: ["app/api/inngest/route"],
+      patterns: ["/api/inngest", "/api/inngest/*"],
+      override: {
+        wrapper: "cloudflare-node",
+        converter: "edge",
+        proxyExternalRequest: "fetch",
+        incrementalCache: "dummy",
+        tagCache: "dummy",
+        queue: "dummy",
+      },
+    },
+    upload: {
+      routes: ["app/api/upload/presigned-url/route"],
+      patterns: ["/api/upload/presigned-url"],
+      override: {
+        wrapper: "cloudflare-node",
+        converter: "edge",
+        proxyExternalRequest: "fetch",
+        incrementalCache: "dummy",
+        tagCache: "dummy",
+        queue: "dummy",
+      },
+    },
+  },
 };
 
 export default config;
