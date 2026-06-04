@@ -31,7 +31,7 @@
 import { unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const WORKER_PATH = path.join(".open-next", "worker.js");
+const WORKER_PATH = path.join(".open-next", "_worker.js");
 const DEFAULT_HANDLER = path.join(".open-next", "server-functions", "default", "handler.mjs");
 
 const TEMPLATE = `//@ts-expect-error: Will be resolved by wrangler build
