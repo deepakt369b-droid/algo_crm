@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
-    "build": "pnpm exec opennextjs-cloudflare build && bash scripts/resolve-symlinks.sh",
+    "build": "pnpm exec opennextjs-cloudflare build && node scripts/resolve-symlinks.mjs",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "migrate:mongo-to-postgres": "pnpm exec tsx scripts/migrate-mongo-to-postgres.ts",
