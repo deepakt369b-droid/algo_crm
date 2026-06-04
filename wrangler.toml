@@ -4,15 +4,22 @@ compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
 
 pages_build_output_dir = ".open-next"
 
+# NOTE: Do NOT commit real secrets here. Set SUPABASE_SERVICE_ROLE_KEY,
+# BETTER_AUTH_SECRET, and DATABASE_URL as encrypted env vars in the
+# Cloudflare Pages dashboard (Settings → Environment variables).
+# The values below are placeholders used only during local `wrangler dev`.
+
 [vars]
+# ── Supabase (public — safe to expose to the client) ──────────────────
 NEXT_PUBLIC_SUPABASE_URL = "your-supabase-url"
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "your-supabase-anon-key"
-DATABASE_URL = "your-postgres-database-url"
-STRIPE_SECRET_KEY = "your-stripe-secret"
-STRIPE_WEBHOOK_SECRET = "your-stripe-webhook-secret"
-WORKER_MAILER_URL = "https://worker-mailer.yourdomain.workers.dev"
-WORKER_MAILER_API_KEY = "your-mailer-api-key"
-WHATSAPP_API_URL = "http://your-multiwa-server:3001"
-WHATSAPP_API_KEY = "your-multiwa-api-key"
-BETTER_AUTH_SECRET = "your-random-better-auth-secret-key"
+
+# ── App identity (public) ─────────────────────────────────────────────
+NEXT_PUBLIC_APP_URL = "https://your-cloudflare-pages-domain.pages.dev"
+NEXT_PUBLIC_APP_NAME = "FlowlinePro"
+
+# ── Server-only (set real values in Cloudflare Pages dashboard) ───────
+SUPABASE_SERVICE_ROLE_KEY = "your-supabase-service-role-key"
+DATABASE_URL = "your-supabase-postgres-url"
+BETTER_AUTH_SECRET = "generate-with-openssl-rand-base64-32"
 BETTER_AUTH_URL = "https://your-cloudflare-pages-domain.pages.dev"
