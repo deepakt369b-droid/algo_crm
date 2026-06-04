@@ -76,7 +76,7 @@ export default {
                 return reqOrResp;
             }
             // Dispatch to a split server-function by URL pattern. The
-            // split function's `index.mjs` is small (no full bundling),
+            // split function's index.mjs is small (no full bundling),
             // so each file stays under the Cloudflare 25 MiB limit.
             for (const d of dispatch) {
                 if (url.pathname === d.prefix || url.pathname.startsWith(d.prefix) || (d.match && d.match(url.pathname))) {
@@ -86,10 +86,10 @@ export default {
                 }
             }
             // Fallback: use the default function's unbundled entry point.
-            // This avoids the fully-bundled \`handler.mjs\` (35 MiB on this
+            // This avoids the fully-bundled handler.mjs (35 MiB on this
             // project) which would exceed Cloudflare's 25 MiB per-file
-            // limit. \`index.mjs\` is small and resolves to its own
-            // \`node_modules/\` at runtime.
+            // limit. index.mjs is small and resolves to its own
+            // node_modules/ at runtime.
             // @ts-expect-error: resolved by wrangler build
             const { handler } = await import("./server-functions/default/index.mjs");
             return handler(reqOrResp, env, ctx, request.signal);
