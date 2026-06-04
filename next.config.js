@@ -30,6 +30,11 @@ const nextConfig = {
     "@better-auth/core",
     "canvas",
     "sharp",
+    "@swc/helpers",
+    "critters",
+    "styled-jsx",
+    "@opentelemetry/api",
+    "@next/env",
   ],
   typescript: {
     ignoreBuildErrors: true,
