@@ -156,6 +156,8 @@
     "typescript": "^5.9.3"
   },
   "overrides": {
+    "prettier": "file:./stubs/prettier-stub",
+    "prettier@3.8.3": "file:./stubs/prettier-stub",
     "@types/react": "npm:types-react@19.0.0-rc.1",
     "@types/react-dom": "npm:types-react-dom@19.0.0-rc.1",
     "tar@<=7.5.3": ">=7.5.4",

@@ -1,0 +1,35 @@
+{
+  "name": "prettier",
+  "version": "3.8.3",
+  "description": "Stub for prettier used to slim down the OpenNext/Cloudflare worker bundle",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.mjs"
+    },
+    "./standalone": {
+      "types": "./standalone.d.ts",
+      "default": "./standalone.mjs"
+    },
+    "./plugins/estree": "./plugins/estree.mjs",
+    "./plugins/babel": "./plugins/babel.mjs",
+    "./plugins/flow": "./plugins/flow.mjs",
+    "./plugins/typescript": "./plugins/typescript.mjs",
+    "./plugins/acorn": "./plugins/acorn.mjs",
+    "./plugins/meriyah": "./plugins/meriyah.mjs",
+    "./plugins/angular": "./plugins/angular.mjs",
+    "./plugins/postcss": "./plugins/postcss.mjs",
+    "./plugins/graphql": "./plugins/graphql.mjs",
+    "./plugins/markdown": "./plugins/markdown.mjs",
+    "./plugins/glimmer": "./plugins/glimmer.mjs",
+    "./plugins/html": "./plugins/html.mjs",
+    "./plugins/yaml": "./plugins/yaml.mjs",
+    "./doc": {
+      "types": "./doc.d.ts",
+      "default": "./doc.mjs"
+    }
+  }
+}
