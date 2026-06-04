@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
-    "build": "pnpm exec cloudflare",
+    "build": "pnpm exec opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "migrate:mongo-to-postgres": "pnpm exec tsx scripts/migrate-mongo-to-postgres.ts",
@@ -131,7 +131,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^0.2.0",
+    "@opennextjs/cloudflare": "^1.0.0",
     "@playwright/test": "^1.58.2",
     "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^3.0.0",

@@ -1,10 +1,11 @@
 name = "flowlinepro-app"
-compatibility_date = "2024-09-23"
+compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
 
+pages_build_output_dir = ".open-next"
+
 [build]
-command = "pnpm exec cloudflare"
-upload = { format = "service-worker", dir = ".worker-next" }
+command = "pnpm exec opennextjs-cloudflare build"
 
 [vars]
 NEXT_PUBLIC_SUPABASE_URL = "your-supabase-url"
