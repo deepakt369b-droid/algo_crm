@@ -1,0 +1,369 @@
+{
+  "totalBytes": 37615751,
+  "totalMiB": 35.87,
+  "fileCount": 1378,
+  "topInputs": [
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/next@16.2.6_@babel+core@7.29.7_@opentelemetry+api@1.9.1_@playwright+test@1.60.0_react-d_5094b5d968d6a0f404f2efc450bf7e17/node_modules/next/dist/server/load-manifest.external.js",
+      "miB": 1.87
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/node_modules__pnpm_0xoh~kq._.js",
+      "miB": 1.3
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/node_modules__pnpm_02nxvuk._.js",
+      "miB": 1.3
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/node_modules__pnpm_08qewrv._.js",
+      "miB": 1.3
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/_0uyg80j._.js",
+      "miB": 1.19
+    },
+    {
+      "path": "node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/plugins/typescript.mjs",
+      "miB": 0.85
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/[root-of-the-server]__0ytz.h.._.js",
+      "miB": 0.83
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/brotli@1.3.3/node_modules/brotli/dec/dictionary-data.js",
+      "miB": 0.72
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/next@16.2.6_@babel+core@7.29.7_@opentelemetry+api@1.9.1_@playwright+test@1.60.0_react-d_5094b5d968d6a0f404f2efc450bf7e17/node_modules/next/dist/compiled/@vercel/og/index.edge.js",
+      "miB": 0.7
+    },
+    {
+      "path": "node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/plugins/flow.mjs",
+      "miB": 0.66
+    },
+    {
+      "path": "node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/index.mjs",
+      "miB": 0.6
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/next@16.2.6_@babel+core@7.29.7_@opentelemetry+api@1.9.1_@playwright+test@1.60.0_react-d_5094b5d968d6a0f404f2efc450bf7e17/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js",
+      "miB": 0.58
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/node_modules__pnpm_0siuhe1._.js",
+      "miB": 0.57
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/[root-of-the-server]__03l_eur._.js",
+      "miB": 0.54
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/fontkit@2.0.4/node_modules/fontkit/dist/module.mjs",
+      "miB": 0.52
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/@react-pdf+pdfkit@5.1.1/node_modules/@react-pdf/pdfkit/lib/pdfkit.js",
+      "miB": 0.49
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/_112hr_n._.js",
+      "miB": 0.41
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/_0t4xn5q._.js",
+      "miB": 0.4
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/_0nkkyik._.js",
+      "miB": 0.39
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/_0hf2k1g._.js",
+      "miB": 0.35
+    },
+    {
+      "path": "node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/plugins/babel.mjs",
+      "miB": 0.31
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/0lku_moment_0fcoa_r._.js",
+      "miB": 0.3
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/0lku_moment_05exx.h._.js",
+      "miB": 0.3
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/@react-pdf+reconciler@2.0.0_react@19.2.4/node_modules/@react-pdf/reconciler/lib/reconciler-33.js",
+      "miB": 0.27
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-server.edge.production.js",
+      "miB": 0.26
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/@react-pdf+reconciler@2.0.0_react@19.2.4/node_modules/@react-pdf/reconciler/lib/reconciler-31.js",
+      "miB": 0.24
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/_0w325hx._.js",
+      "miB": 0.24
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/0i9p_next_dist_compiled_0d3fzju._.js",
+      "miB": 0.21
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/[turbopack]_runtime.js",
+      "miB": 0.2
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/[turbopack]_runtime.js",
+      "miB": 0.2
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/_0q0i.bg._.js",
+      "miB": 0.2
+    },
+    {
+      "path": "node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/plugins/estree.mjs",
+      "miB": 0.2
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/_03rs41c._.js",
+      "miB": 0.19
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/_0_mhp1m._.js",
+      "miB": 0.19
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/_08-m958._.js",
+      "miB": 0.19
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/11s5_@supabase_supabase-js_dist_index_mjs_0~qztou._.js",
+      "miB": 0.18
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/11s5_@supabase_supabase-js_dist_index_mjs_0~zawi7._.js",
+      "miB": 0.18
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/0i9p_next_dist_0yz1mzx._.js",
+      "miB": 0.18
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/0rgj_zod_v4_classic_external_0ul1b5r.js",
+      "miB": 0.17
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/[root-of-the-server]__0z8jy1b._.js",
+      "miB": 0.17
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/ssr/0rgj_zod_v4_classic_external_07196la.js",
+      "miB": 0.17
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/next@16.2.6_@babel+core@7.29.7_@opentelemetry+api@1.9.1_@playwright+test@1.60.0_react-d_5094b5d968d6a0f404f2efc450bf7e17/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js",
+      "miB": 0.16
+    },
+    {
+      "path": "node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/plugins/html.mjs",
+      "miB": 0.16
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/plugins/html.mjs",
+      "miB": 0.16
+    },
+    {
+      "path": ".open-next/server-functions/default/.next/server/chunks/0i9p_next_dist_esm_build_templates_app-route_10dyvm8.js",
+      "miB": 0.15
+    },
+    {
+      "path": "node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/plugins/postcss.mjs",
+      "miB": 0.15
+    },
+    {
+      "path": "node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/plugins/acorn.mjs",
+      "miB": 0.15
+    },
+    {
+      "path": "node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/plugins/markdown.mjs",
+      "miB": 0.15
+    },
+    {
+      "path": ".open-next/server-functions/default/node_modules/.pnpm/@aws-sdk+client-s3@3.1054.0/node_modules/@aws-sdk/client-s3/dist-cjs/schemas/schemas_0.js",
+      "miB": 0.14
+    },
+    {
+      "path": "node_modules/.pnpm/prettier@3.8.3/node_modules/prettier/plugins/glimmer.mjs",
+      "miB": 0.13
+    }
+  ],
+  "topPackages": [
+    {
+      "pkg": "(app code)",
+      "miB": 21.99
+    },
+    {
+      "pkg": "next",
+      "miB": 4.73
+    },
+    {
+      "pkg": "prettier",
+      "miB": 4.14
+    },
+    {
+      "pkg": ".pnpm",
+      "miB": 2.58
+    },
+    {
+      "pkg": "brotli",
+      "miB": 0.79
+    },
+    {
+      "pkg": "fontkit",
+      "miB": 0.52
+    },
+    {
+      "pkg": "react-dom",
+      "miB": 0.27
+    },
+    {
+      "pkg": "yoga-layout",
+      "miB": 0.13
+    },
+    {
+      "pkg": "hyphen",
+      "miB": 0.11
+    },
+    {
+      "pkg": "pg",
+      "miB": 0.08
+    },
+    {
+      "pkg": "linebreak",
+      "miB": 0.07
+    },
+    {
+      "pkg": "fast-xml-parser",
+      "miB": 0.05
+    },
+    {
+      "pkg": "bidi-js",
+      "miB": 0.04
+    },
+    {
+      "pkg": "bowser",
+      "miB": 0.04
+    },
+    {
+      "pkg": "restructure",
+      "miB": 0.03
+    },
+    {
+      "pkg": "pg-protocol",
+      "miB": 0.03
+    },
+    {
+      "pkg": "js-md5",
+      "miB": 0.03
+    },
+    {
+      "pkg": "tslib",
+      "miB": 0.02
+    },
+    {
+      "pkg": "unicode-properties",
+      "miB": 0.02
+    },
+    {
+      "pkg": "styled-jsx",
+      "miB": 0.02
+    },
+    {
+      "pkg": "react",
+      "miB": 0.02
+    },
+    {
+      "pkg": "jay-peg",
+      "miB": 0.01
+    },
+    {
+      "pkg": "pg-pool",
+      "miB": 0.01
+    },
+    {
+      "pkg": "pg-types",
+      "miB": 0.01
+    },
+    {
+      "pkg": "png-js",
+      "miB": 0.01
+    },
+    {
+      "pkg": "postcss-value-parser",
+      "miB": 0.01
+    },
+    {
+      "pkg": "scheduler",
+      "miB": 0.01
+    },
+    {
+      "pkg": "tiny-inflate",
+      "miB": 0.01
+    },
+    {
+      "pkg": "base64-js",
+      "miB": 0.01
+    },
+    {
+      "pkg": "clone",
+      "miB": 0.01
+    },
+    {
+      "pkg": "pg-connection-string",
+      "miB": 0.01
+    },
+    {
+      "pkg": "pgpass",
+      "miB": 0.01
+    },
+    {
+      "pkg": "color-string",
+      "miB": 0.01
+    },
+    {
+      "pkg": "unicode-trie",
+      "miB": 0.01
+    },
+    {
+      "pkg": "svg-arc-to-cubic-bezier",
+      "miB": 0.01
+    },
+    {
+      "pkg": "pg-cloudflare",
+      "miB": 0
+    },
+    {
+      "pkg": "media-engine",
+      "miB": 0
+    },
+    {
+      "pkg": "color-name",
+      "miB": 0
+    },
+    {
+      "pkg": "split2",
+      "miB": 0
+    },
+    {
+      "pkg": "postgres-interval",
+      "miB": 0
+    }
+  ]
+}
