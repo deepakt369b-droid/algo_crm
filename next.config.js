@@ -30,11 +30,10 @@ const nextConfig = {
     "@better-auth/core",
     "canvas",
     "sharp",
-    "@swc/helpers",
-    "critters",
-    "styled-jsx",
-    "@opentelemetry/api",
-    "@next/env",
+    // Note: @swc/helpers, critters, styled-jsx, @opentelemetry/api, @next/env
+    // are intentionally NOT externalized. When externalized, OpenNext copies
+    // them to server-functions/*/node_modules/ without transitive deps,
+    // causing 85+ wrangler bundling errors. Let Next.js bundle them instead.
   ],
   typescript: {
     ignoreBuildErrors: true,
