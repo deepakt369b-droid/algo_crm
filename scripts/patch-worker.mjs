@@ -20,10 +20,11 @@
 // The pattern list mirrors the `functions` config in
 // `open-next.config.ts`. Keep them in sync.
 
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const WORKER_PATH = path.join(".open-next", "worker.js");
+const DEFAULT_HANDLER = path.join(".open-next", "server-functions", "default", "handler.mjs");
 
 // Each entry: a URL prefix served by the split function.
 // The default function handles every other path.
@@ -100,3 +101,14 @@ export default {
 
 await writeFile(WORKER_PATH, TEMPLATE, "utf8");
 console.log(`[patch-worker] wrote dispatcher worker to ${WORKER_PATH}`);
+
+try {
+  await unlink(DEFAULT_HANDLER);
+  console.log(`[patch-worker] removed oversized bundled handler at ${DEFAULT_HANDLER}`);
+} catch (err) {
+  if (err && err.code === "ENOENT") {
+    console.log(`[patch-worker] no bundled handler at ${DEFAULT_HANDLER} (already absent)`);
+  } else {
+    throw err;
+  }
+}
