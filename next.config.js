@@ -23,6 +23,11 @@ const nextConfig = {
     "bcrypt",
     "bcryptjs",
     "better-auth",
+    // @better-auth/core must be externalized so OpenNext's `copyWorkerdPackages`
+    // copies it into `.open-next` and esbuild (with `conditions: ["workerd"]`)
+    // can resolve `@better-auth/core/instrumentation` (which has a `workerd`
+    // export pointing to `./dist/instrumentation/pure.index.mjs`).
+    "@better-auth/core",
     "canvas",
     "sharp",
   ],

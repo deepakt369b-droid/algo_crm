@@ -12,7 +12,7 @@ const config: OpenNextConfig = {
       queue: "dummy",
     },
   },
-  edgeExternals: ["node:crypto"],
+  edgeExternals: ["node:crypto", "@better-auth/core/instrumentation"],
   middleware: {
     external: true,
     override: {
