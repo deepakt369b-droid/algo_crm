@@ -9,9 +9,25 @@ const importOptionalModule = async <T = any>(pkg: string): Promise<T | null> => 
   }
 };
 
+function firstEnv(...names: string[]) {
+  for (const name of names) {
+    const value = process.env[name];
+    if (value?.trim()) return value.trim();
+  }
+  return undefined;
+}
+
 function getFromAddress() {
   const appName = process.env.NEXT_PUBLIC_APP_NAME || "Flowline CRM";
-  const from = process.env.EMAIL_FROM || process.env.EMAIL_USERNAME;
+  const from = firstEnv(
+    "EMAIL_FROM",
+    "SMTP_FROM",
+    "GMAIL_FROM",
+    "EMAIL_USERNAME",
+    "SMTP_USER",
+    "SMTP_USERNAME",
+    "GMAIL_USER"
+  );
   return from ? `${appName} <${from}>` : undefined;
 }
 
@@ -33,21 +49,31 @@ function getOtpEmailContent(otp: string) {
 }
 
 async function sendViaSmtp(to: string, subject: string, text: string, html: string) {
-  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
+  const host = firstEnv("EMAIL_HOST", "SMTP_HOST", "GMAIL_SMTP_HOST") || "smtp.gmail.com";
+  const username = firstEnv("EMAIL_USERNAME", "SMTP_USER", "SMTP_USERNAME", "GMAIL_USER");
+  const password = firstEnv(
+    "EMAIL_PASSWORD",
+    "SMTP_PASSWORD",
+    "SMTP_PASS",
+    "GMAIL_APP_PASSWORD",
+    "GMAIL_PASSWORD"
+  );
+
+  if (!username || !password) {
     return false;
   }
 
   const nodemailer = await importOptionalModule<typeof import("nodemailer")>("nodemailer");
   if (!nodemailer) return false;
 
-  const port = Number(process.env.EMAIL_PORT || 465);
+  const port = Number(firstEnv("EMAIL_PORT", "SMTP_PORT", "GMAIL_SMTP_PORT") || 465);
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
+    host,
     port,
     secure: port === 465,
     auth: {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
+      user: username,
+      pass: password,
     },
   });
 
@@ -94,6 +120,6 @@ export async function sendAuthOtpEmail(to: string, otp: string) {
   throw new Error(
     errors.length
       ? `No OTP email provider succeeded: ${errors.join("; ")}`
-      : "No OTP email provider is configured. Configure WORKER_MAILER, RESEND_API_KEY, or EMAIL_HOST/EMAIL_USERNAME/EMAIL_PASSWORD."
+      : "No OTP email provider is configured. Configure either WORKER_MAILER_URL/WORKER_MAILER_API_KEY, RESEND_API_KEY with EMAIL_FROM, or SMTP env vars: EMAIL_USERNAME + EMAIL_PASSWORD (aliases: SMTP_USER/SMTP_PASSWORD or GMAIL_USER/GMAIL_APP_PASSWORD)."
   );
 }
