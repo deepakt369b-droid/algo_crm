@@ -23,6 +23,7 @@ import {
   realpathSync,
   readdirSync,
   readFileSync,
+  rmSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -46,7 +47,6 @@ const LOCAL_HYDRATION_TARGETS = new Set([
   "htmlparser2",
   "nth-check",
   "postcss",
-  "sharp",
 ]);
 
 const MAX_TOP_LEVEL_DEPS_PER_FUNCTION = 2000;
@@ -337,6 +337,39 @@ function writeTurbopackHmrStub(destNm) {
   writeFileSync(join(hmrDir, "hmr-client.ts"), "export {};\n", "utf8");
 }
 
+function removePackage(destNm, relName) {
+  const target = join(destNm, ...relName.split("/"));
+  if (!existsSync(target)) return 0;
+
+  try {
+    rmSync(target, { recursive: true, force: true });
+    return 1;
+  } catch (err) {
+    console.error(`[fix-node-modules] Error removing ${relName}: ${err.message}`);
+    return 0;
+  }
+}
+
+function pruneNativePackages(destNm) {
+  let removed = 0;
+  removed += removePackage(destNm, "sharp");
+  removed += removePackage(destNm, "canvas");
+  removed += removePackage(destNm, "aws-crt");
+  removed += removePackage(destNm, "@aws-sdk/signature-v4-crt");
+
+  const imgScope = join(destNm, "@img");
+  if (existsSync(imgScope)) {
+    try {
+      rmSync(imgScope, { recursive: true, force: true });
+      removed++;
+    } catch (err) {
+      console.error(`[fix-node-modules] Error removing @img packages: ${err.message}`);
+    }
+  }
+
+  return removed;
+}
+
 function removeSourceMaps(dir) {
   if (!existsSync(dir)) return 0;
 
@@ -373,6 +406,7 @@ let topLevelDeps = 0;
 let localDeps = 0;
 let aliased = 0;
 let stubs = 0;
+let pruned = 0;
 
 for (const fnName of fnDirs) {
   const nmDir = join(SERVER_FUNCTIONS_DIR, fnName, "node_modules");
@@ -386,8 +420,6 @@ for (const fnName of fnDirs) {
       replaced++;
     }
   }
-
-  topLevelDeps += hydrateTopLevelDeps(nmDir);
 
   for (const pkgDir of listPackageDirs(nmDir)) {
     const pkgJson = readPkgJson(pkgDir);
@@ -406,6 +438,7 @@ for (const fnName of fnDirs) {
 
   writeTurbopackHmrStub(nmDir);
   stubs++;
+  pruned += pruneNativePackages(nmDir);
 }
 
 const removedMaps = removeSourceMaps(SERVER_FUNCTIONS_DIR);
@@ -419,5 +452,6 @@ if (removedMaps > 0) {
 
 console.log(
   `[fix-node-modules] Replaced ${replaced} packages, copied ${topLevelDeps} top-level deps, ` +
-    `copied ${localDeps} package-local deps, wrote ${stubs} HMR stubs across ${fnDirs.length} server functions.`
+    `copied ${localDeps} package-local deps, pruned ${pruned} native packages, ` +
+    `wrote ${stubs} HMR stubs across ${fnDirs.length} server functions.`
 );
