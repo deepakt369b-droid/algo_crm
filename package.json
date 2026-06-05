@@ -111,7 +111,6 @@
     "primereact": "^10.9.7",
     "react": "19.2.4",
     "react-day-picker": "^9.13.2",
-    "react-doc-viewer": "^0.1.15",
     "react-dom": "19.2.4",
     "react-dropzone": "^15.0.0",
     "react-hook-form": "^7.71.2",
@@ -201,16 +200,5 @@
     "fast-xml-builder@<1.1.7": ">=1.1.7",
     "ip-address@<10.1.1": ">=10.1.1",
     "postcss@<8.5.10": ">=8.5.10"
-  },
-  "onlyBuiltDependencies": [
-    "@parcel/watcher",
-    "@swc/core",
-    "bcrypt",
-    "canvas",
-    "esbuild",
-    "msgpackr-extract",
-    "msw",
-    "unrs-resolver",
-    "workerd"
-  ]
+  }
 }

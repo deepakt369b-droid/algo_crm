@@ -364,6 +364,22 @@ function writeTurbopackHmrStub(destNm) {
   writeFileSync(join(hmrDir, "hmr-client.ts"), "export {};\n", "utf8");
 }
 
+function patchNextRequireHook(destNm) {
+  const file = join(destNm, "next", "dist", "server", "require-hook.js");
+  if (!existsSync(file)) return 0;
+
+  const source = readFileSync(file, "utf8");
+  const unsafe =
+    "let resolve = process.env.NEXT_MINIMAL ? __non_webpack_require__.resolve : require.resolve;";
+  const safe =
+    "let resolve = process.env.NEXT_MINIMAL && typeof __non_webpack_require__ !== \"undefined\" && __non_webpack_require__.resolve ? __non_webpack_require__.resolve : require.resolve || ((id)=>id);";
+
+  if (!source.includes(unsafe) || source.includes(safe)) return 0;
+
+  writeFileSync(file, source.replace(unsafe, safe), "utf8");
+  return 1;
+}
+
 function removePackage(destNm, relName) {
   const target = join(destNm, ...relName.split("/"));
   if (!existsSync(target)) return 0;
@@ -434,6 +450,7 @@ let localDeps = 0;
 let aliased = 0;
 let stubs = 0;
 let pruned = 0;
+let patchedRequireHooks = 0;
 
 for (const fnName of fnDirs) {
   const nmDir = join(SERVER_FUNCTIONS_DIR, fnName, "node_modules");
@@ -467,6 +484,7 @@ for (const fnName of fnDirs) {
 
   writeTurbopackHmrStub(nmDir);
   stubs++;
+  patchedRequireHooks += patchNextRequireHook(nmDir);
   pruned += pruneNativePackages(nmDir);
 }
 
@@ -477,6 +495,9 @@ if (aliased > 0) {
 }
 if (removedMaps > 0) {
   console.log(`[fix-node-modules] Removed ${removedMaps} sourcemap files from server functions.`);
+}
+if (patchedRequireHooks > 0) {
+  console.log(`[fix-node-modules] Patched ${patchedRequireHooks} Next require hook files for Workers.`);
 }
 
 console.log(

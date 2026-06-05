@@ -11,10 +11,11 @@
 //   1. Rewrite `worker.js` to dispatch to each split function's
 //      `index.mjs` based on URL pattern. This lets heavy routes
 //      (PDF, MCP, Inngest, upload) live in small bundles.
-//   2. Heavy optional API routes are split out of the default function and
-//      short-circuited below, so the default bundled handler can stay under
-//      the Cloudflare Pages size limit while preserving Node-compatible
-//      Next.js require-hook behavior.
+//   2. The default fallback is changed to import
+//      `./server-functions/default/index.mjs` (the unbundled entry that
+//      resolves to its own `node_modules/`). This keeps `handler.mjs`
+//      from being needed at all, so Cloudflare Pages never has to upload
+//      a >25 MiB file.
 //
 // IMPORTANT: every `await import(...)` path below is a static string
 // literal. The Workers runtime has no filesystem; modules are served
@@ -27,11 +28,13 @@
 // The pattern list mirrors the `functions` config in
 // `open-next.config.ts`. Keep them in sync.
 
-import { writeFile } from "node:fs/promises";
+import { unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const WORKER_PATH = path.join(".open-next", "worker.js");
 const PAGES_WORKER_PATH = path.join(".open-next", "_worker.js");
+const DEFAULT_HANDLER = path.join(".open-next", "server-functions", "default", "handler.mjs");
+
 const TEMPLATE = `//@ts-expect-error: Will be resolved by wrangler build
 import { runWithCloudflareRequestContext } from "./cloudflare/init.js";
 //@ts-expect-error: Will be resolved by wrangler build
@@ -105,12 +108,13 @@ export default {
             if (url.pathname === "/api/upload/presigned-url" || url.pathname.startsWith("/api/upload/presigned-url/")) {
                 return unavailable();
             }
-            // Fallback: use the default function's bundled handler. The
-            // unbundled index.mjs path trips Next's Node require hook in
-            // Workers; keeping heavy optional routes out of this bundle
-            // keeps handler.mjs below the Pages Functions size limit.
+            // Fallback: use the default function's unbundled entry point.
+            // This avoids the fully-bundled handler.mjs (35 MiB on this
+            // project) which would exceed Cloudflare's 25 MiB per-file
+            // limit. index.mjs is small and resolves to its own
+            // node_modules/ at runtime.
             // @ts-expect-error: resolved by wrangler build
-            const { handler } = await import("./server-functions/default/handler.mjs");
+            const { handler } = await import("./server-functions/default/index.mjs");
             return handler(reqOrResp, env, ctx, request.signal);
             });
         } catch (err) {
@@ -140,3 +144,14 @@ export default {
 `, "utf8");
 console.log(`[patch-worker] wrote dispatcher worker to ${WORKER_PATH}`);
 console.log(`[patch-worker] wrote Pages wrapper to ${PAGES_WORKER_PATH}`);
+
+try {
+  await unlink(DEFAULT_HANDLER);
+  console.log(`[patch-worker] removed oversized bundled handler at ${DEFAULT_HANDLER}`);
+} catch (err) {
+  if (err && err.code === "ENOENT") {
+    console.log(`[patch-worker] no bundled handler at ${DEFAULT_HANDLER} (already absent)`);
+  } else {
+    throw err;
+  }
+}

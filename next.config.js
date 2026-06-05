@@ -28,7 +28,6 @@ const nextConfig = {
     // can resolve `@better-auth/core/instrumentation` (which has a `workerd`
     // export pointing to `./dist/instrumentation/pure.index.mjs`).
     "@better-auth/core",
-    "canvas",
     // Note: @swc/helpers, critters, styled-jsx, @opentelemetry/api, @next/env
     // are intentionally NOT externalized. When externalized, OpenNext copies
     // them to server-functions/*/node_modules/ without transitive deps,
