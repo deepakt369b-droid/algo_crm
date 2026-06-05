@@ -9,11 +9,20 @@ import resendHelper from "@/lib/resend";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const isDemo = process.env.NEXT_PUBLIC_APP_URL === "https://demo.flowlinepro.io";
+const betterAuthSecret =
+  process.env.BETTER_AUTH_SECRET || "build-only-better-auth-secret";
+const betterAuthBaseURL =
+  process.env.CF_PAGES_URL ||
+  process.env.BETTER_AUTH_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  "https://algo-crm.pages.dev";
+const googleClientId = process.env.GOOGLE_ID;
+const googleClientSecret = process.env.GOOGLE_SECRET;
 
 export const auth = betterAuth({
   database: new Pool({ connectionString: process.env.DATABASE_URL || "postgresql://dummy:dummy@localhost:5432/dummy" }),
-  secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+  secret: betterAuthSecret,
+  baseURL: betterAuthBaseURL,
   advanced: {
     database: {
       generateId: "uuid",
@@ -70,12 +79,15 @@ export const auth = betterAuth({
     },
   },
 
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_ID!,
-      clientSecret: process.env.GOOGLE_SECRET!,
-    },
-  },
+  socialProviders:
+    googleClientId && googleClientSecret
+      ? {
+          google: {
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+          },
+        }
+      : {},
 
   emailAndPassword: {
     enabled: true,
