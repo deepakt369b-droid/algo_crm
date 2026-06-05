@@ -2,25 +2,16 @@
 /**
  * Fix incomplete node_modules in OpenNext server-function directories.
  *
- * The OpenNext `copyTracedFiles` function (from @vercel/nft) copies only
- * individual traced files from each package, NOT the complete package
- * directory. This causes:
+ * OpenNext traces individual files into .open-next/server-functions/*, but
+ * Cloudflare Pages still runs an esbuild pass over each function. With pnpm,
+ * traced package folders can be missing package-local dependencies or can
+ * resolve the wrong hoisted version. This script rebuilds only the dependency
+ * shape Wrangler needs:
  *
- *  1. Packages with conditional exports (e.g. @swc/helpers CJS/ESM) to
- *     have their package.json but not the cjs/ directory.
- *  2. Packages whose transitive deps are hoisted (e.g. critters →
- *     css-select) to have their main file but not dependencies.
- *
- * When `patch-worker.mjs` switches the worker entry from `handler.mjs`
- * (fully bundled) to `index.mjs` (unbundled, references node_modules),
- * wrangler's esbuild step encounters these incomplete packages and fails
- * with "Could not resolve" errors.
- *
- * This script:
- *  1. Replaces every package directory inside each server function's
- *     node_modules folder with a complete copy from the project root.
- *  2. Then iterates to find and copy any MISSING transitive dependencies
- *     that are not yet present in the destination.
+ *  1. Replace traced top-level package folders with complete package copies.
+ *  2. Copy missing top-level runtime dependencies without overwriting versions.
+ *  3. Hydrate package-local node_modules only for packages proven to need it.
+ *  4. Add Next/React compiled aliases and a dev-only Turbopack HMR stub.
  *
  * Must run AFTER resolve-symlinks.mjs and BEFORE patch-worker.mjs.
  */
@@ -28,46 +19,64 @@
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   realpathSync,
   readdirSync,
   readFileSync,
   unlinkSync,
+  writeFileSync,
 } from "node:fs";
-import { join, resolve, dirname } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { createRequire } from "node:module";
 
 const PROJECT_ROOT = resolve(process.cwd());
 const OPEN_NEXT_DIR = join(PROJECT_ROOT, ".open-next");
 const SERVER_FUNCTIONS_DIR = join(OPEN_NEXT_DIR, "server-functions");
 const PROJECT_NM = join(PROJECT_ROOT, "node_modules");
+const PNPM_STORE = join(PROJECT_NM, ".pnpm");
 
-// ── Helpers ─────────────────────────────────────────────────────────
+const sourceCache = new Map();
 
-/** List all package directories (including scoped) inside a node_modules dir. */
+const LOCAL_HYDRATION_TARGETS = new Set([
+  "chalk",
+  "css-select",
+  "dom-serializer",
+  "domhandler",
+  "domutils",
+  "htmlparser2",
+  "nth-check",
+  "postcss",
+]);
+
+const MAX_TOP_LEVEL_DEPS_PER_FUNCTION = 2000;
+const MAX_LOCAL_DEPS_PER_PACKAGE = 180;
+
+// -- Helpers ---------------------------------------------------------
+
 function listPackageDirs(nmDir) {
   const dirs = [];
   if (!existsSync(nmDir)) return dirs;
+
   for (const entry of readdirSync(nmDir, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    if (entry.name.startsWith(".")) continue;
+    if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
+
     if (entry.name.startsWith("@")) {
       const scopeDir = join(nmDir, entry.name);
-      for (const se of readdirSync(scopeDir, { withFileTypes: true })) {
-        if (se.isDirectory()) dirs.push(join(scopeDir, se.name));
+      for (const scoped of readdirSync(scopeDir, { withFileTypes: true })) {
+        if (scoped.isDirectory()) dirs.push(join(scopeDir, scoped.name));
       }
     } else {
       dirs.push(join(nmDir, entry.name));
     }
   }
+
   return dirs;
 }
 
-/** Get the relative package name from a full path inside node_modules. */
 function pkgName(fullPath, nmDir) {
-  return fullPath.substring(nmDir.length + 1);
+  return fullPath.substring(nmDir.length + 1).replaceAll("\\", "/");
 }
 
-/** Read a package.json safely, returning null on failure. */
 function readPkgJson(dir) {
   try {
     return JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
@@ -76,7 +85,14 @@ function readPkgJson(dir) {
   }
 }
 
-/** Copy a complete package from project root to destination. */
+function getRuntimeDeps(pkgJson) {
+  if (!pkgJson) return [];
+  return Object.keys({
+    ...pkgJson.dependencies,
+    ...pkgJson.optionalDependencies,
+  });
+}
+
 function findPackageJson(startDir) {
   let current = startDir;
   while (current && current !== dirname(current)) {
@@ -87,17 +103,44 @@ function findPackageJson(startDir) {
   return null;
 }
 
-function resolvePkgSource(relName, fromDir = PROJECT_ROOT) {
-  const direct = join(PROJECT_NM, relName);
-  if (existsSync(direct)) return realpathSync(direct);
+function packageRelNameFromJson(pkgJson, fallback) {
+  return pkgJson?.name || fallback;
+}
 
-  const realFromDir = existsSync(fromDir) ? realpathSync(fromDir) : fromDir;
-  const requireFrom = createRequire(join(realFromDir, "package.json"));
+function resolvePkgSourceByVersion(relName, version) {
+  if (!version || !existsSync(PNPM_STORE)) return null;
+
+  const cacheKey = `${relName}@${version}`;
+  if (sourceCache.has(cacheKey)) return sourceCache.get(cacheKey);
+
+  for (const entry of readdirSync(PNPM_STORE, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+
+    const candidate = join(PNPM_STORE, entry.name, "node_modules", ...relName.split("/"));
+    const pkgJson = readPkgJson(candidate);
+    if (pkgJson?.name === relName && pkgJson.version === version) {
+      const resolved = realpathSync(candidate);
+      sourceCache.set(cacheKey, resolved);
+      return resolved;
+    }
+  }
+
+  sourceCache.set(cacheKey, null);
+  return null;
+}
+
+function resolvePkgSource(relName, fromDir = PROJECT_ROOT, version = null) {
+  const versioned = resolvePkgSourceByVersion(relName, version);
+  if (versioned) return versioned;
+
+  const fromPkgJson = findPackageJson(fromDir) || join(PROJECT_ROOT, "package.json");
+  const requireFrom = createRequire(fromPkgJson);
+
   try {
     return dirname(requireFrom.resolve(`${relName}/package.json`));
   } catch {
-    // Some packages do not export package.json. Resolve the package entry
-    // instead, then walk upward to the package root.
+    // Some packages do not export package.json. Resolve the entry point and
+    // walk upward to the package root instead.
   }
 
   try {
@@ -105,17 +148,33 @@ function resolvePkgSource(relName, fromDir = PROJECT_ROOT) {
     const packageJson = findPackageJson(dirname(entry));
     return packageJson ? dirname(packageJson) : null;
   } catch {
-    return null;
+    // Fall back to the root install for packages that are not in the source
+    // package's local dependency graph.
   }
+
+  const direct = join(PROJECT_NM, ...relName.split("/"));
+  return existsSync(direct) ? realpathSync(direct) : null;
 }
 
-/** Copy a complete package from its pnpm-resolved source to destination. */
-function copyPkg(relName, destNm, fromDir = PROJECT_ROOT) {
-  const src = resolvePkgSource(relName, fromDir);
-  const dst = join(destNm, relName);
+function copyPackageTree(src, dst) {
+  mkdirSync(dirname(dst), { recursive: true });
+  cpSync(src, dst, {
+    recursive: true,
+    force: true,
+    dereference: true,
+    filter: (sourcePath) => {
+      const rel = relative(src, sourcePath).replaceAll("\\", "/");
+      return rel === "" || !rel.split("/").includes("node_modules");
+    },
+  });
+}
+
+function copyPkgFromSource(relName, src, destNm) {
+  const dst = join(destNm, ...relName.split("/"));
   if (!src || !existsSync(src)) return false;
+
   try {
-    cpSync(src, dst, { recursive: true, force: true, dereference: true });
+    copyPackageTree(src, dst);
     return true;
   } catch (err) {
     console.error(`[fix-node-modules] Error copying ${relName}: ${err.message}`);
@@ -123,15 +182,108 @@ function copyPkg(relName, destNm, fromDir = PROJECT_ROOT) {
   }
 }
 
-/** Get dependency names needed at runtime. */
-function getDeps(pkgJson) {
-  if (!pkgJson) return [];
-  const all = {
-    ...pkgJson.dependencies,
-    ...pkgJson.optionalDependencies,
-    ...pkgJson.peerDependencies,
-  };
-  return Object.keys(all);
+function copyPkg(relName, destNm, fromDir = PROJECT_ROOT, version = null) {
+  const src = resolvePkgSource(relName, fromDir, version);
+  return copyPkgFromSource(relName, src, destNm);
+}
+
+function hydrateTopLevelDeps(nmDir) {
+  const queue = listPackageDirs(nmDir);
+  const seen = new Set(queue.map((dir) => pkgName(dir, nmDir)));
+  let copied = 0;
+
+  for (let index = 0; index < queue.length; index++) {
+    if (copied >= MAX_TOP_LEVEL_DEPS_PER_FUNCTION) break;
+
+    const pkgDir = queue[index];
+    const rel = pkgName(pkgDir, nmDir);
+    const pkgJson = readPkgJson(pkgDir);
+    if (!pkgJson) continue;
+
+    const packageName = packageRelNameFromJson(pkgJson, rel);
+    const sourceDir = resolvePkgSource(packageName, PROJECT_ROOT, pkgJson.version);
+    if (!sourceDir) continue;
+
+    const sourcePkgJson = readPkgJson(sourceDir) || pkgJson;
+    for (const dep of getRuntimeDeps(sourcePkgJson)) {
+      if (seen.has(dep)) continue;
+
+      const depDst = join(nmDir, ...dep.split("/"));
+      if (existsSync(depDst)) {
+        seen.add(dep);
+        queue.push(depDst);
+        continue;
+      }
+
+      const depSrc = resolvePkgSource(dep, sourceDir);
+      if (!depSrc) continue;
+
+      if (copyPkgFromSource(dep, depSrc, nmDir)) {
+        copied++;
+        seen.add(dep);
+        queue.push(depDst);
+      }
+    }
+  }
+
+  if (copied >= MAX_TOP_LEVEL_DEPS_PER_FUNCTION) {
+    console.warn(
+      `[fix-node-modules] Hit top-level dependency cap for ${nmDir}; copied ${copied}.`
+    );
+  }
+
+  return copied;
+}
+
+function hydratePackageLocalDeps(pkgDir) {
+  const rootPkgJson = readPkgJson(pkgDir);
+  if (!rootPkgJson?.name) return 0;
+
+  const rootSource = resolvePkgSource(rootPkgJson.name, PROJECT_ROOT, rootPkgJson.version);
+  if (!rootSource) return 0;
+
+  const queue = [{ destDir: pkgDir, sourceDir: rootSource }];
+  const seen = new Set([realpathSync(pkgDir)]);
+  let copied = 0;
+
+  for (let index = 0; index < queue.length; index++) {
+    if (copied >= MAX_LOCAL_DEPS_PER_PACKAGE) break;
+
+    const { destDir, sourceDir } = queue[index];
+    const sourcePkgJson = readPkgJson(sourceDir);
+    if (!sourcePkgJson) continue;
+
+    const nestedNm = join(destDir, "node_modules");
+    mkdirSync(nestedNm, { recursive: true });
+
+    for (const dep of getRuntimeDeps(sourcePkgJson)) {
+      if (copied >= MAX_LOCAL_DEPS_PER_PACKAGE) break;
+
+      const depSrc = resolvePkgSource(dep, sourceDir);
+      if (!depSrc) continue;
+
+      const depDst = join(nestedNm, ...dep.split("/"));
+      if (!existsSync(depDst) && copyPkgFromSource(dep, depSrc, nestedNm)) {
+        copied++;
+      }
+
+      if (existsSync(depDst)) {
+        const depKey = resolve(depDst);
+        if (!seen.has(depKey)) {
+          seen.add(depKey);
+          queue.push({ destDir: depDst, sourceDir: depSrc });
+        }
+      }
+    }
+  }
+
+  if (copied >= MAX_LOCAL_DEPS_PER_PACKAGE) {
+    console.warn(
+      `[fix-node-modules] Hit package-local dependency cap for ${rootPkgJson.name}; copied ${copied}.`
+    );
+  }
+
+  return copied;
 }
 
 function copyNextCompiledPackage(sourceName, aliasName, destNm) {
@@ -139,16 +291,37 @@ function copyNextCompiledPackage(sourceName, aliasName, destNm) {
   if (!nextDir) return false;
 
   const src = join(nextDir, "dist", "compiled", sourceName);
-  const dst = join(destNm, aliasName);
+  const dst = join(destNm, ...aliasName.split("/"));
   if (!existsSync(src)) return false;
 
   try {
-    cpSync(src, dst, { recursive: true, force: true, dereference: true });
+    copyPackageTree(src, dst);
     return true;
   } catch (err) {
     console.error(`[fix-node-modules] Error copying ${aliasName}: ${err.message}`);
     return false;
   }
+}
+
+function writeTurbopackHmrStub(destNm) {
+  const runtimeRoot = join(destNm, "@vercel", "turbopack-ecmascript-runtime");
+  const hmrDir = join(runtimeRoot, "browser", "dev", "hmr-client");
+
+  mkdirSync(hmrDir, { recursive: true });
+  writeFileSync(
+    join(runtimeRoot, "package.json"),
+    JSON.stringify(
+      {
+        name: "@vercel/turbopack-ecmascript-runtime",
+        version: "0.0.0-cloudflare-stub",
+        type: "module",
+      },
+      null,
+      2
+    ) + "\n",
+    "utf8"
+  );
+  writeFileSync(join(hmrDir, "hmr-client.ts"), "export {};\n", "utf8");
 }
 
 function removeSourceMaps(dir) {
@@ -164,75 +337,52 @@ function removeSourceMaps(dir) {
         unlinkSync(fullPath);
         removed++;
       } catch {
-        // Sourcemaps are optional deployment artifacts. Ignore files that
-        // disappear while walking copied package trees.
+        // Sourcemaps are optional deployment artifacts.
       }
     }
   }
   return removed;
 }
 
-// ── Main ────────────────────────────────────────────────────────────
+// -- Main ------------------------------------------------------------
 
 if (!existsSync(SERVER_FUNCTIONS_DIR)) {
-  console.log("[fix-node-modules] No .open-next/server-functions found — skipping.");
+  console.log("[fix-node-modules] No .open-next/server-functions found; skipping.");
   process.exit(0);
 }
 
 const fnDirs = readdirSync(SERVER_FUNCTIONS_DIR, { withFileTypes: true })
-  .filter((d) => d.isDirectory())
-  .map((d) => d.name);
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name);
 
 let replaced = 0;
-
-// Phase 1: Replace incomplete packages with complete copies
-for (const fnName of fnDirs) {
-  const nmDir = join(SERVER_FUNCTIONS_DIR, fnName, "node_modules");
-  for (const pkgDir of listPackageDirs(nmDir)) {
-    const rel = pkgName(pkgDir, nmDir);
-    if (copyPkg(rel, nmDir)) replaced++;
-  }
-}
-
-// Phase 2: Iteratively find and copy MISSING transitive dependencies.
-// We iterate because a newly-copied package may itself have deps that
-// are also missing. We cap iterations to avoid infinite loops.
-const MAX_ITERATIONS = 25;
-for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
-  let added = 0;
-  for (const fnName of fnDirs) {
-    const nmDir = join(SERVER_FUNCTIONS_DIR, fnName, "node_modules");
-    if (!existsSync(nmDir)) continue;
-
-    for (const pkgDir of listPackageDirs(nmDir)) {
-      const rel = pkgName(pkgDir, nmDir);
-      const pkgJson = readPkgJson(pkgDir);
-      if (!pkgJson) continue;
-
-      for (const dep of getDeps(pkgJson)) {
-        const depDir = join(nmDir, dep);
-        if (existsSync(depDir)) continue; // already present
-
-        const sourceDir = resolvePkgSource(rel, PROJECT_ROOT);
-        if (copyPkg(dep, nmDir, sourceDir ?? PROJECT_ROOT)) {
-          added++;
-          replaced++;
-        }
-      }
-    }
-  }
-  if (added === 0) break; // no more missing deps
-  console.log(`[fix-node-modules] Iteration ${iter + 1}: copied ${added} missing transitive deps.`);
-}
-
-// Next ships these React server-dom packages under next/dist/compiled, but
-// some server runtime files still require them by their package names.
-// Provide package aliases inside every split function so Wrangler's esbuild
-// pass can resolve the imports.
+let topLevelDeps = 0;
+let localDeps = 0;
 let aliased = 0;
+let stubs = 0;
+
 for (const fnName of fnDirs) {
   const nmDir = join(SERVER_FUNCTIONS_DIR, fnName, "node_modules");
   if (!existsSync(nmDir)) continue;
+
+  for (const pkgDir of listPackageDirs(nmDir)) {
+    const rel = pkgName(pkgDir, nmDir);
+    const pkgJson = readPkgJson(pkgDir);
+    const packageName = packageRelNameFromJson(pkgJson, rel);
+    if (copyPkg(packageName, nmDir, PROJECT_ROOT, pkgJson?.version)) {
+      replaced++;
+    }
+  }
+
+  topLevelDeps += hydrateTopLevelDeps(nmDir);
+
+  for (const pkgDir of listPackageDirs(nmDir)) {
+    const pkgJson = readPkgJson(pkgDir);
+    const name = pkgJson?.name || pkgName(pkgDir, nmDir);
+    if (LOCAL_HYDRATION_TARGETS.has(name)) {
+      localDeps += hydratePackageLocalDeps(pkgDir);
+    }
+  }
 
   if (copyNextCompiledPackage("react-server-dom-webpack", "react-server-dom-webpack", nmDir)) {
     aliased++;
@@ -240,17 +390,21 @@ for (const fnName of fnDirs) {
   if (copyNextCompiledPackage("react-server-dom-turbopack", "react-server-dom-turbopack", nmDir)) {
     aliased++;
   }
+
+  writeTurbopackHmrStub(nmDir);
+  stubs++;
 }
+
+const removedMaps = removeSourceMaps(SERVER_FUNCTIONS_DIR);
 
 if (aliased > 0) {
   console.log(`[fix-node-modules] Added ${aliased} Next compiled package aliases.`);
 }
-
-const removedMaps = removeSourceMaps(SERVER_FUNCTIONS_DIR);
 if (removedMaps > 0) {
   console.log(`[fix-node-modules] Removed ${removedMaps} sourcemap files from server functions.`);
 }
 
 console.log(
-  `[fix-node-modules] Replaced ${replaced} packages across ${fnDirs.length} server functions.`
+  `[fix-node-modules] Replaced ${replaced} packages, copied ${topLevelDeps} top-level deps, ` +
+    `copied ${localDeps} package-local deps, wrote ${stubs} HMR stubs across ${fnDirs.length} server functions.`
 );
