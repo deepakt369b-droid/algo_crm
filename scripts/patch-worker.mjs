@@ -32,6 +32,7 @@ import { unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const WORKER_PATH = path.join(".open-next", "worker.js");
+const PAGES_WORKER_PATH = path.join(".open-next", "_worker.js");
 const DEFAULT_HANDLER = path.join(".open-next", "server-functions", "default", "handler.mjs");
 
 const TEMPLATE = `//@ts-expect-error: Will be resolved by wrangler build
@@ -110,7 +111,20 @@ export default {
 `;
 
 await writeFile(WORKER_PATH, TEMPLATE, "utf8");
+await writeFile(PAGES_WORKER_PATH, `import app from "./worker.js";
+
+export default {
+    async fetch(request, env, ctx) {
+        const response = await app.fetch(request, env, ctx);
+        if (response.status !== 404 || env?.ASSETS?.fetch === undefined) {
+            return response;
+        }
+        return env.ASSETS.fetch(request);
+    },
+};
+`, "utf8");
 console.log(`[patch-worker] wrote dispatcher worker to ${WORKER_PATH}`);
+console.log(`[patch-worker] wrote Pages wrapper to ${PAGES_WORKER_PATH}`);
 
 try {
   await unlink(DEFAULT_HANDLER);
