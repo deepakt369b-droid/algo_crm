@@ -36,8 +36,6 @@ const PAGES_WORKER_PATH = path.join(".open-next", "_worker.js");
 const DEFAULT_HANDLER = path.join(".open-next", "server-functions", "default", "handler.mjs");
 
 const TEMPLATE = `//@ts-expect-error: Will be resolved by wrangler build
-import { handleCdnCgiImageRequest, handleImageRequest } from "./cloudflare/images.js";
-//@ts-expect-error: Will be resolved by wrangler build
 import { runWithCloudflareRequestContext } from "./cloudflare/init.js";
 //@ts-expect-error: Will be resolved by wrangler build
 import { maybeGetSkewProtectionResponse } from "./cloudflare/skew-protection.js";
@@ -59,11 +57,11 @@ export default {
             }
             const url = new URL(request.url);
             if (url.pathname.startsWith("/cdn-cgi/image/")) {
-                return handleCdnCgiImageRequest(url, env);
+                return env?.ASSETS?.fetch(request) ?? new Response("Not Found", { status: 404 });
             }
             if (url.pathname ===
                 \`\${globalThis.__NEXT_BASE_PATH__}/_next/image\${globalThis.__TRAILING_SLASH__ ? "/" : ""}\`) {
-                return await handleImageRequest(url, request.headers, env);
+                return env?.ASSETS?.fetch(request) ?? new Response("Not Found", { status: 404 });
             }
             const reqOrResp = await middlewareHandler(request, env, ctx);
             if (reqOrResp instanceof Response) {

@@ -29,7 +29,6 @@ const nextConfig = {
     // export pointing to `./dist/instrumentation/pure.index.mjs`).
     "@better-auth/core",
     "canvas",
-    "sharp",
     // Note: @swc/helpers, critters, styled-jsx, @opentelemetry/api, @next/env
     // are intentionally NOT externalized. When externalized, OpenNext copies
     // them to server-functions/*/node_modules/ without transitive deps,
@@ -42,6 +41,7 @@ const nextConfig = {
     root: __dirname,
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "localhost" },
       { protocol: "https", hostname: "res.cloudinary.com" },
@@ -69,4 +69,3 @@ const nextConfig = {
 };
 
 module.exports = withNextIntl(nextConfig);
-
