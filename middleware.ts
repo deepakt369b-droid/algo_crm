@@ -50,7 +50,11 @@ export async function middleware(request: NextRequest) {
 
   // 5. If no session, redirect to sign-in with correct locale
   if (!user) {
-    return NextResponse.redirect(new URL(`/${locale}/sign-in`, request.url));
+    const redirectResponse = NextResponse.redirect(new URL(`/${locale}/sign-in`, request.url));
+    res.headers.forEach((value, key) => {
+      redirectResponse.headers.set(key, value);
+    });
+    return redirectResponse;
   }
 
   // 6. Check superadmin routes (fetch user role from database if needed)

@@ -1,7 +1,7 @@
 import type { OpenNextConfig } from "@opennextjs/cloudflare";
 
 const config: OpenNextConfig = {
-  buildCommand: "next build",
+  buildCommand: "node node_modules/next/dist/bin/next build",
   default: {
     override: {
       wrapper: "cloudflare-node",

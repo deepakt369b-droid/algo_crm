@@ -48,6 +48,8 @@ const nextConfig = {
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
       { protocol: "https", hostname: "minio-cwg0o4ss0scoccgwso8sk004.coolify.cz" },
       { protocol: "http", hostname: "minio" },
+      // Supabase Storage — needed for file/image URLs from Supabase buckets
+      { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
   async redirects() {

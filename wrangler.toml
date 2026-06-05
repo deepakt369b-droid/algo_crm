@@ -1,25 +1,22 @@
-name = "flowlinepro-app"
-compatibility_date = "2025-06-01"
+name = "algo-crm"
+compatibility_date = "2026-06-05"
 compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
 
 pages_build_output_dir = ".open-next"
 
-# NOTE: Do NOT commit real secrets here. Set SUPABASE_SERVICE_ROLE_KEY,
-# BETTER_AUTH_SECRET, and DATABASE_URL as encrypted env vars in the
-# Cloudflare Pages dashboard (Settings → Environment variables).
-# The values below are placeholders used only during local `wrangler dev`.
-
-[vars]
-# ── Supabase (public — safe to expose to the client) ──────────────────
-NEXT_PUBLIC_SUPABASE_URL = "your-supabase-url"
-NEXT_PUBLIC_SUPABASE_ANON_KEY = "your-supabase-anon-key"
-
-# ── App identity (public) ─────────────────────────────────────────────
-NEXT_PUBLIC_APP_URL = "https://your-cloudflare-pages-domain.pages.dev"
-NEXT_PUBLIC_APP_NAME = "FlowlinePro"
-
-# ── Server-only (set real values in Cloudflare Pages dashboard) ───────
-SUPABASE_SERVICE_ROLE_KEY = "your-supabase-service-role-key"
-DATABASE_URL = "your-supabase-postgres-url"
-BETTER_AUTH_SECRET = "generate-with-openssl-rand-base64-32"
-BETTER_AUTH_URL = "https://your-cloudflare-pages-domain.pages.dev"
+# NOTE: All environment variables (including NEXT_PUBLIC_* vars) must be set
+# in the Cloudflare Pages dashboard (Settings → Environment variables).
+# Do NOT put real secrets or placeholder values in this file — it's committed to git.
+# Placeholder values cause runtime crashes (e.g. Supabase middleware fails with invalid URLs → 404).
+#
+# Required env vars to set in Cloudflare dashboard:
+#   NEXT_PUBLIC_SUPABASE_URL      — your Supabase project URL
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY  — Supabase anon/public key
+#   SUPABASE_SERVICE_ROLE_KEY     — Supabase service role key (secret!)
+#   DATABASE_URL                  — Supabase direct PostgreSQL URL
+#   BETTER_AUTH_SECRET            — random 32-byte base64 key
+#   BETTER_AUTH_URL               — https://algo-crm.pages.dev
+#   NEXT_PUBLIC_APP_URL           — https://algo-crm.pages.dev
+#   NEXT_PUBLIC_APP_NAME          — Algo CRM
+#   ENCRYPTION_KEY                — 64 hex chars for email credential encryption
+#   EMAIL_ENCRYPTION_KEY          — 64 hex chars for email crypto
