@@ -2,6 +2,7 @@
 
 import React, { Suspense, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { type EmailOtpType } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +16,6 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { getAuthCallbackUrl } from "@/lib/app-url";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 
@@ -40,6 +40,7 @@ function SignUpPageContent() {
   
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [otpType, setOtpType] = useState<EmailOtpType>("magiclink");
   const [formData, setFormData] = useState({
     workspaceName: "",
     workspaceSlug: "",
@@ -54,20 +55,23 @@ function SignUpPageContent() {
     if (step === 3) {
       // Send OTP
       setIsLoading(true);
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOtp({
-        email: formData.email,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: getAuthCallbackUrl(`/${locale}/setup-password`),
-        }
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          mode: "sign-up",
+          nextPath: `/${locale}/setup-password`,
+        }),
       });
+      const data = await response.json();
       setIsLoading(false);
       
-      if (error) {
-        toast.error(error.message || "Failed to send OTP");
+      if (!response.ok) {
+        toast.error(data.error || "Failed to send OTP");
         return;
       }
+      setOtpType((data.type || "magiclink") as EmailOtpType);
       toast.success("Verification code sent!");
       setStep(4);
     } else {
@@ -90,7 +94,7 @@ function SignUpPageContent() {
     const { error: signInError } = await supabase.auth.verifyOtp({
       email: formData.email,
       token: formData.otp,
-      type: "email",
+      type: otpType,
     });
 
     if (signInError) {

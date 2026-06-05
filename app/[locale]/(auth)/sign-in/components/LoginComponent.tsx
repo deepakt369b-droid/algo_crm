@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
+import { type EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { getAuthCallbackUrl } from "@/lib/app-url";
 
@@ -33,6 +34,7 @@ export function LoginComponent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
+  const [otpType, setOtpType] = useState<EmailOtpType>("magiclink");
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale || "en";
   const dashboardUrl = `/${locale}/dashboard`;
@@ -86,19 +88,23 @@ export function LoginComponent() {
       return;
     }
     setIsLoading(true);
-    const supabase = createClient();
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: getAuthCallbackUrl(dashboardUrl),
-        }
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          mode: "sign-in",
+          nextPath: dashboardUrl,
+        }),
       });
-      if (error) {
-        toast.error(error.message || "Failed to send verification code.");
+
+      const data = await response.json();
+      if (!response.ok) {
+        toast.error(data.error || "Failed to send verification code.");
         return;
       }
+      setOtpType((data.type || "magiclink") as EmailOtpType);
       setStep("otp");
       toast.success("Verification code sent to your email.");
     } catch (error) {
@@ -119,7 +125,7 @@ export function LoginComponent() {
       const { error } = await supabase.auth.verifyOtp({
         email,
         token: otp,
-        type: "email",
+        type: otpType,
       });
       if (error) {
         toast.error(error.message || "Invalid or expired code.");
@@ -249,6 +255,7 @@ export function LoginComponent() {
               onClick={() => {
                 setStep("email");
                 setOtp("");
+                setOtpType("magiclink");
               }}
               disabled={isLoading}
               className="rounded-xl hover:bg-muted"
