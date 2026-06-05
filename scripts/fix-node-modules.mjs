@@ -60,6 +60,10 @@ const REQUIRED_TOP_LEVEL_PACKAGES = [
   "postcss-media-query-parser",
 ];
 
+const REQUIRED_TOP_LEVEL_CONTEXTS = {
+  "client-only": "styled-jsx",
+};
+
 const MAX_TOP_LEVEL_DEPS_PER_FUNCTION = 2000;
 const MAX_LOCAL_DEPS_PER_PACKAGE = 180;
 
@@ -262,7 +266,9 @@ function hydrateTopLevelDeps(nmDir) {
 function copyRequiredTopLevelPackages(nmDir) {
   let copied = 0;
   for (const relName of REQUIRED_TOP_LEVEL_PACKAGES) {
-    if (copyPkg(relName, nmDir)) {
+    const contextPackage = REQUIRED_TOP_LEVEL_CONTEXTS[relName] || "critters";
+    const contextSource = resolvePkgSource(contextPackage) || PROJECT_ROOT;
+    if (copyPkg(relName, nmDir, contextSource)) {
       copied++;
     }
   }
