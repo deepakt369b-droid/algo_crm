@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { ShieldAlert, Package, ShoppingCart } from "lucide-react";
 import {
   Sidebar,
@@ -179,25 +180,19 @@ export function AppSidebar({
             isExpanded ? "gap-x-4" : "justify-center",
           )}
         >
-          {/* "P" Branding Symbol with rotation animation */}
-          <div
-            className={cn(
-              "flex-shrink-0 bg-gradient-to-tr from-primary to-purple-500 dark:to-teal-400 text-primary-foreground font-sans font-black rounded-2xl w-10 h-10 flex items-center justify-center shadow-md shadow-primary/20 transition-transform duration-500",
-              isExpanded && "rotate-[360deg]",
-            )}
-          >
-            P
+          <div className="flex h-10 min-w-10 items-center justify-center overflow-hidden rounded-md bg-white">
+            <Image
+              src={isExpanded ? "/logo.png" : "/icon.png"}
+              alt={process.env.NEXT_PUBLIC_APP_NAME || "Flowline Pro"}
+              width={180}
+              height={90}
+              priority
+              className={cn(
+                "h-8 object-contain transition-all",
+                isExpanded ? "w-36 object-left" : "w-8",
+              )}
+            />
           </div>
-
-          {/* App Name - visible when expanded, hidden when collapsed */}
-          <h1
-            className={cn(
-              "origin-left font-sans font-extrabold tracking-tight text-xl transition-all overflow-hidden whitespace-nowrap bg-gradient-to-r from-primary to-purple-600 dark:to-teal-400 bg-clip-text text-transparent",
-              !isExpanded ? "w-0 opacity-0" : "w-auto opacity-100",
-            )}
-          >
-            {process.env.NEXT_PUBLIC_APP_NAME || "Flowline Pro"}
-          </h1>
         </div>
       </SidebarHeader>
 
