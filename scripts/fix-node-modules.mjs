@@ -17,8 +17,8 @@
  * with "Could not resolve" errors.
  *
  * This script:
- *  1. Replaces every package directory in server-functions/*/node_modules/
- *     with a complete copy from the project root's node_modules/.
+ *  1. Replaces every package directory inside each server function's
+ *     node_modules folder with a complete copy from the project root.
  *  2. Then iterates to find and copy any MISSING transitive dependencies
  *     that are not yet present in the destination.
  *
@@ -48,6 +48,7 @@ function listPackageDirs(nmDir) {
   if (!existsSync(nmDir)) return dirs;
   for (const entry of readdirSync(nmDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
+    if (entry.name.startsWith(".")) continue;
     if (entry.name.startsWith("@")) {
       const scopeDir = join(nmDir, entry.name);
       for (const se of readdirSync(scopeDir, { withFileTypes: true })) {

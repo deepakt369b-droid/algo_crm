@@ -9,7 +9,13 @@ function copyDereferenced(src, dst) {
   for (const entry of readdirSync(src)) {
     const srcPath = join(src, entry);
     const dstPath = join(dst, entry);
-    const stat = lstatSync(srcPath);
+    let stat;
+    try {
+      stat = lstatSync(srcPath);
+    } catch {
+      // Skip entries that disappeared or are otherwise inaccessible.
+      continue;
+    }
     if (stat.isSymbolicLink()) {
       // Resolve the final real target, skipping dangling symlinks
       try {
