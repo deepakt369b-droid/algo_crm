@@ -10,7 +10,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const isDemo = process.env.NEXT_PUBLIC_APP_URL === "https://demo.flowlinepro.io";
 const betterAuthSecret =
-  process.env.BETTER_AUTH_SECRET || "build-only-better-auth-secret";
+  process.env.BETTER_AUTH_SECRET || "build-only-better-auth-secret-please-replace-in-production-2026";
 const betterAuthBaseURL =
   process.env.CF_PAGES_URL ||
   process.env.BETTER_AUTH_URL ||
