@@ -416,17 +416,29 @@ function patchNextBuildId(destNm, fnDir) {
   let source = readFileSync(file, "utf8");
   if (source.includes("cloudflare-static-build-id")) return 0;
 
-  const pattern = /getBuildId\(\) \{[\s\S]*?\n    getEnabledDirectories\(/;
+  const buildIdPattern = /getBuildId\(\) \{[\s\S]*?\n    getEnabledDirectories\(/;
+  const fontManifestPattern =
+    /getNextFontManifest\(\) \{[\s\S]*?\n    \/\/ Used in development only, overloaded in next-dev-server/;
 
-  const replacement = `getBuildId() {
+  const buildIdReplacement = `getBuildId() {
         // cloudflare-static-build-id
         return ${JSON.stringify(buildId)};
     }
     getEnabledDirectories(`;
 
-  if (!pattern.test(source)) return 0;
+  const fontManifestReplacement = `getNextFontManifest() {
+        return {};
+    }
+    // Used in development only, overloaded in next-dev-server`;
 
-  writeFileSync(file, source.replace(pattern, replacement), "utf8");
+  if (!buildIdPattern.test(source)) return 0;
+
+  source = source.replace(buildIdPattern, buildIdReplacement);
+  if (fontManifestPattern.test(source)) {
+    source = source.replace(fontManifestPattern, fontManifestReplacement);
+  }
+
+  writeFileSync(file, source, "utf8");
   return 1;
 }
 
