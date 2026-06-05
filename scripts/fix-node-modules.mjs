@@ -414,11 +414,50 @@ function patchNextBuildId(destNm, fnDir) {
 
   const buildId = readFileSync(buildIdFile, "utf8").trim();
   let source = readFileSync(file, "utf8");
-  if (source.includes("cloudflare-static-build-id")) return 0;
+
+  const readJson = (relPath, fallback) => {
+    const target = join(fnDir, ".next", ...relPath.split("/"));
+    if (!existsSync(target)) return fallback;
+    try {
+      return JSON.parse(readFileSync(target, "utf8"));
+    } catch {
+      return fallback;
+    }
+  };
+
+  const pagesManifest = readJson("server/pages-manifest.json", {});
+  const appPathsManifest = readJson("server/app-paths-manifest.json", {});
+  const fontManifest = readJson("server/next-font-manifest.json", {});
+  const prerenderManifest = readJson("prerender-manifest.json", {
+    version: 4,
+    routes: {},
+    dynamicRoutes: {},
+    notFoundRoutes: [],
+    preview: {
+      previewModeId: "",
+      previewModeSigningKey: "",
+      previewModeEncryptionKey: "",
+    },
+  });
+  const routesManifest = readJson("routes-manifest.json", {
+    version: 3,
+    pages404: true,
+    basePath: "",
+    redirects: [],
+    rewrites: { beforeFiles: [], afterFiles: [], fallback: [] },
+    headers: [],
+    dynamicRoutes: [],
+    staticRoutes: [],
+    dataRoutes: [],
+  });
 
   const buildIdPattern = /getBuildId\(\) \{[\s\S]*?\n    getEnabledDirectories\(/;
+  const pagesManifestPattern = /getPagesManifest\(\) \{[\s\S]*?\n    getAppPathsManifest\(/;
+  const appPathsManifestPattern = /getAppPathsManifest\(\) \{[\s\S]*?\n    getinterceptionRoutePatterns\(/;
   const fontManifestPattern =
     /getNextFontManifest\(\) \{[\s\S]*?\n    \/\/ Used in development only, overloaded in next-dev-server/;
+  const prerenderManifestPattern = /getPrerenderManifest\(\) \{[\s\S]*?\n    getPrefetchHints\(/;
+  const routesManifestPattern = /getRoutesManifest\(\) \{[\s\S]*?\n    attachRequestMeta\(/;
 
   const buildIdReplacement = `getBuildId() {
         // cloudflare-static-build-id
@@ -426,17 +465,60 @@ function patchNextBuildId(destNm, fnDir) {
     }
     getEnabledDirectories(`;
 
+  const pagesManifestReplacement = `getPagesManifest() {
+        return ${JSON.stringify(pagesManifest)};
+    }
+    getAppPathsManifest(`;
+
+  const appPathsManifestReplacement = `getAppPathsManifest() {
+        if (!this.enabledDirectories.app) return undefined;
+        return ${JSON.stringify(appPathsManifest)};
+    }
+    getinterceptionRoutePatterns(`;
+
   const fontManifestReplacement = `getNextFontManifest() {
-        return {};
+        return ${JSON.stringify(fontManifest)};
     }
     // Used in development only, overloaded in next-dev-server`;
 
-  if (!buildIdPattern.test(source)) return 0;
+  const prerenderManifestReplacement = `getPrerenderManifest() {
+        this._cachedPreviewManifest = ${JSON.stringify(prerenderManifest)};
+        return this._cachedPreviewManifest;
+    }
+    getPrefetchHints(`;
 
-  source = source.replace(buildIdPattern, buildIdReplacement);
+  const routesManifestReplacement = `getRoutesManifest() {
+        return ${JSON.stringify(routesManifest)};
+    }
+    attachRequestMeta(`;
+
+  let patched = 0;
+  if (buildIdPattern.test(source)) {
+    source = source.replace(buildIdPattern, buildIdReplacement);
+    patched++;
+  }
+  if (pagesManifestPattern.test(source)) {
+    source = source.replace(pagesManifestPattern, pagesManifestReplacement);
+    patched++;
+  }
+  if (appPathsManifestPattern.test(source)) {
+    source = source.replace(appPathsManifestPattern, appPathsManifestReplacement);
+    patched++;
+  }
   if (fontManifestPattern.test(source)) {
     source = source.replace(fontManifestPattern, fontManifestReplacement);
+    patched++;
   }
+  if (prerenderManifestPattern.test(source)) {
+    source = source.replace(prerenderManifestPattern, prerenderManifestReplacement);
+    patched++;
+  }
+  if (routesManifestPattern.test(source)) {
+    source = source.replace(routesManifestPattern, routesManifestReplacement);
+    patched++;
+  }
+
+  if (patched === 0) return 0;
 
   writeFileSync(file, source, "utf8");
   return 1;
