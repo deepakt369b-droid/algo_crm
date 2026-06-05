@@ -369,14 +369,26 @@ function patchNextRequireHook(destNm) {
   if (!existsSync(file)) return 0;
 
   const source = readFileSync(file, "utf8");
-  const safe =
-    "let resolve = process.env.NEXT_MINIMAL && typeof __non_webpack_require__ !== \"undefined\" && __non_webpack_require__.resolve ? __non_webpack_require__.resolve : require.resolve || ((id)=>id);";
-  const unsafePattern =
-    /let\s+resolve\s*=\s*process\.env\.NEXT_MINIMAL\s*\?\s*__non_webpack_require__\.resolve\s*:\s*require\.resolve\s*;/;
+  if (source.includes("cloudflare-noop-require-hook")) return 0;
 
-  if (!unsafePattern.test(source) || source.includes(safe)) return 0;
-
-  writeFileSync(file, source.replace(unsafePattern, safe), "utf8");
+  writeFileSync(
+    file,
+    `"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const hookPropertyMap = new Map();
+const defaultOverrides = {};
+function addHookAliases(aliases = []) {
+  for (const [key, value] of aliases) {
+    hookPropertyMap.set(key, value);
+  }
+}
+exports.addHookAliases = addHookAliases;
+exports.defaultOverrides = defaultOverrides;
+exports.hookPropertyMap = hookPropertyMap;
+// cloudflare-noop-require-hook
+`,
+    "utf8"
+  );
   return 1;
 }
 
