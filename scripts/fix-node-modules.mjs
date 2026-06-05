@@ -409,6 +409,7 @@ function patchOpenNextRequireResolve(fnDir) {
 
 function patchNextBuildId(destNm, fnDir) {
   const file = join(destNm, "next", "dist", "server", "next-server.js");
+  const manifestLoaderFile = join(destNm, "next", "dist", "server", "load-manifest.external.js");
   const buildIdFile = join(fnDir, ".next", "BUILD_ID");
   if (!existsSync(file) || !existsSync(buildIdFile)) return 0;
 
@@ -450,6 +451,28 @@ function patchNextBuildId(destNm, fnDir) {
     staticRoutes: [],
     dataRoutes: [],
   });
+  const buildManifest = readJson("build-manifest.json", {});
+  const appBuildManifest = readJson("app-build-manifest.json", {});
+  const reactLoadableManifest = readJson("react-loadable-manifest.json", {});
+  const serverReferenceManifest = readJson("server/server-reference-manifest.json", {});
+  const middlewareManifest = readJson("server/middleware-manifest.json", {
+    version: 3,
+    middleware: {},
+    functions: {},
+    sortedMiddleware: [],
+  });
+  const manifestByFile = {
+    "pages-manifest.json": pagesManifest,
+    "app-paths-manifest.json": appPathsManifest,
+    "next-font-manifest.json": fontManifest,
+    "prerender-manifest.json": prerenderManifest,
+    "routes-manifest.json": routesManifest,
+    "build-manifest.json": buildManifest,
+    "app-build-manifest.json": appBuildManifest,
+    "react-loadable-manifest.json": reactLoadableManifest,
+    "server-reference-manifest.json": serverReferenceManifest,
+    "middleware-manifest.json": middlewareManifest,
+  };
 
   const buildIdPattern = /getBuildId\(\) \{[\s\S]*?\n    getEnabledDirectories\(/;
   const pagesManifestPattern = /getPagesManifest\(\) \{[\s\S]*?\n    getAppPathsManifest\(/;
@@ -521,6 +544,44 @@ function patchNextBuildId(destNm, fnDir) {
   if (patched === 0) return 0;
 
   writeFileSync(file, source, "utf8");
+  if (existsSync(manifestLoaderFile)) {
+    writeFileSync(
+      manifestLoaderFile,
+      `"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const manifests = ${JSON.stringify(manifestByFile)};
+const sharedCache = new Map();
+function manifestName(path) {
+  return String(path).replaceAll("\\\\", "/").split("/").pop();
+}
+function clone(value) {
+  return value == null ? {} : JSON.parse(JSON.stringify(value));
+}
+function loadManifest(path, shouldCache = true, cache = sharedCache) {
+  const cached = shouldCache && cache.get(path);
+  if (cached) return cached;
+  const result = clone(manifests[manifestName(path)]);
+  if (shouldCache) cache.set(path, result);
+  return result;
+}
+function evalManifest(path, shouldCache = true, cache = sharedCache) {
+  return { __rewrites: loadManifest(path, shouldCache, cache) };
+}
+function loadManifestFromRelativePath({ projectDir, distDir, manifest, shouldCache, cache }) {
+  return loadManifest([projectDir, distDir, manifest].filter(Boolean).join("/"), shouldCache, cache);
+}
+function clearManifestCache(path, cache = sharedCache) {
+  return cache.delete(path);
+}
+exports.clearManifestCache = clearManifestCache;
+exports.evalManifest = evalManifest;
+exports.loadManifest = loadManifest;
+exports.loadManifestFromRelativePath = loadManifestFromRelativePath;
+// cloudflare-inline-manifest-loader
+`,
+      "utf8"
+    );
+  }
   return 1;
 }
 
