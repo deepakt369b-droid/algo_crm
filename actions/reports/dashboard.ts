@@ -69,8 +69,8 @@ export async function getDashboardKPIs(
     (await supabaseAdmin.from("crm_Contacts").select("*", { count: 'exact', head: true })).count,
     (await supabaseAdmin.from("crm_Contacts").select("*", { count: 'exact', head: true })).count,
     // activeUsers (status = ACTIVE, not date-filtered) - global; manager/admin only typically read this KPI
-    (await supabaseAdmin.from("users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE")).count,
-    (await supabaseAdmin.from("users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE").lte("created_on", prev.dateTo)).count,
+    (await supabaseAdmin.from("Users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE")).count,
+    (await supabaseAdmin.from("Users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE").lte("created_on", prev.dateTo)).count,
     // tasks total
     (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true })).count,
     (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true })).count,

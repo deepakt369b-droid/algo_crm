@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth.api.getSession({
-      headers: headers(),
-    });
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (!session || !session.user) {
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!user.email) {
+      return NextResponse.json({ error: "Authenticated user email is missing" }, { status: 400 });
     }
 
     const body = await req.json();
@@ -20,17 +22,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Workspace name and slug are required" }, { status: 400 });
     }
 
-    // Check if slug is taken in prismadb.Tenants? Wait, we don't have Tenants in Prisma.
-    // Instead we just update the user in Prisma for now. The Convex sync or convex mutation will handle tenant creation if needed.
-    // Actually, in the simulated signup it didn't create a Convex Tenant either.
-    
-    // Let's update the user
-    (await supabaseAdmin.from("users").update({
-                  name: `${firstName} ${lastName}`.trim(),
-                  // Assign a mock tenantId for now
-                  tenantId: workspaceSlug,
-                  role: "admin",
-                }).select("*").single().eq("id", session.user.id).select("*").single()).data;
+    const { count } = await supabaseAdmin
+      .from("Users")
+      .select("id", { count: "exact", head: true });
+
+    const isFirstUser = (count ?? 0) === 0;
+    const { error: upsertError } = await supabaseAdmin
+      .from("Users")
+      .upsert(
+        {
+          id: user.id,
+          email: user.email,
+          emailVerified: true,
+          name: `${firstName} ${lastName}`.trim() || user.email,
+          tenantId: workspaceSlug,
+          role: isFirstUser ? "superadmin" : "admin",
+          userStatus: "ACTIVE",
+          isSuperAdmin: isFirstUser,
+        },
+        { onConflict: "id" }
+      );
+
+    if (upsertError) {
+      console.error("[SETUP_WORKSPACE_UPSERT_ERROR]", upsertError);
+      return NextResponse.json({ error: "Failed to setup workspace" }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true, workspaceSlug });
   } catch (error: any) {

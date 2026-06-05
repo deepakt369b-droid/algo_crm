@@ -28,8 +28,8 @@ export async function searchUsers({
   };
 
   const [users, total] = await Promise.all([
-    (await supabaseAdmin.from("users").select("id, name, avatar").order("name", { ascending: true }).limit(safeTake).range(safeSkip, safeSkip + (safeTake - 1))).data,
-    (await supabaseAdmin.from("users").select("*", { count: 'exact', head: true })).count,
+    (await supabaseAdmin.from("Users").select("id, name, avatar").order("name", { ascending: true }).limit(safeTake).range(safeSkip, safeSkip + (safeTake - 1))).data,
+    (await supabaseAdmin.from("Users").select("*", { count: 'exact', head: true })).count,
   ]);
 
   return { users, total, hasMore: safeSkip + safeTake < total };

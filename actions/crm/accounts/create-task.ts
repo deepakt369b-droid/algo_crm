@@ -48,7 +48,7 @@ export const createTask = async (data: {
     // Notification to user who is not a task creator
     if (user !== session.user.id) {
       try {
-        const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", user).single()).data;
+        const notifyRecipient = (await supabaseAdmin.from("Users").select("*").eq("id", user).single()).data;
 
         await resend.emails.send({
           from:

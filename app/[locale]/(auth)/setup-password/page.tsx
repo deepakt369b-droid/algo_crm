@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ import { setupPassword } from "@/actions/setup-password";
 
 export default function SetupPasswordPage() {
   const router = useRouter();
+  const params = useParams<{ locale?: string }>();
+  const locale = params?.locale || "en";
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -38,8 +40,7 @@ export default function SetupPasswordPage() {
     }
 
     toast.success("Password set successfully!");
-    // Redirect to dashboard based on role/tenant logic
-    router.push("/admin");
+    router.push(`/${locale}/dashboard`);
   };
 
   return (

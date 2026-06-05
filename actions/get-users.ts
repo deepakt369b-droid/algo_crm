@@ -2,19 +2,19 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 //Get all users  for admin module
 export const getUsers = async () => {
-  const data = (await supabaseAdmin.from("users").select("*").order("created_on", { ascending: false })).data;
+  const data = (await supabaseAdmin.from("Users").select("*").order("created_on", { ascending: false })).data;
   return data;
 };
 
 //Get active users for Selects in app etc
 export const getActiveUsers = async () => {
-  const data = (await supabaseAdmin.from("users").select("id, name, avatar").eq("userStatus", "ACTIVE").order("name", { ascending: true })).data;
+  const data = (await supabaseAdmin.from("Users").select("id, name, avatar").eq("userStatus", "ACTIVE").order("name", { ascending: true })).data;
   return data;
 };
 
 //Get new users by month for chart
 export const getUsersByMonthAndYear = async (year: number) => {
-  const users = (await supabaseAdmin.from("users").select("created_on")).data;
+  const users = (await supabaseAdmin.from("Users").select("created_on")).data;
 
   if (!users) {
     return {};
@@ -45,7 +45,7 @@ export const getUsersByMonthAndYear = async (year: number) => {
 
 //Get new users by month for chart
 export const getUsersByMonth = async () => {
-  const users = (await supabaseAdmin.from("users").select("created_on")).data;
+  const users = (await supabaseAdmin.from("Users").select("created_on")).data;
 
   if (!users) {
     return {};
@@ -72,7 +72,7 @@ export const getUsersByMonth = async () => {
 };
 
 export const getUsersCountOverall = async () => {
-  const users = (await supabaseAdmin.from("users").select("created_on")).data;
+  const users = (await supabaseAdmin.from("Users").select("created_on")).data;
 
   if (!users) {
     return {};

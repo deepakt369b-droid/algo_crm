@@ -14,7 +14,7 @@ export async function requireAuthenticated(): Promise<AuthzUser> {
   const userId = session?.user?.id;
   if (!userId) throw new AuthenticationError();
 
-  const dbUser = (await supabaseAdmin.from("users").select("id, role").eq("id", userId).single()).data;
+  const dbUser = (await supabaseAdmin.from("Users").select("id, role").eq("id", userId).single()).data;
   if (!dbUser) throw new AuthenticationError();
 
   return { id: dbUser.id, role: mapLegacyRole(dbUser.role) };

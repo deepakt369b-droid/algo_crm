@@ -15,7 +15,7 @@ interface AccessPageProps {
 export default async function UserAccessPage({ params }: AccessPageProps) {
   const { userId } = await params;
   
-  const user = (await supabaseAdmin.from("users").select("id, name, email, accessibleTabs").eq("id", userId).single()).data;
+  const user = (await supabaseAdmin.from("Users").select("id, name, email, accessibleTabs").eq("id", userId).single()).data;
 
   if (!user) {
     return notFound();

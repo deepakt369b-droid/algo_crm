@@ -25,7 +25,7 @@ export const inviteUser = async (data: {
     throw e;
   }
 
-  const inviter = (await supabaseAdmin.from("users").select("name").eq("id", actor.id).single()).data;
+  const inviter = (await supabaseAdmin.from("Users").select("name").eq("id", actor.id).single()).data;
 
   const { name, email, language } = data;
 
@@ -40,14 +40,14 @@ export const inviteUser = async (data: {
     return { error: error?.message || "Resend API key is not configured" };
   }
 
-  const checkexisting = (await supabaseAdmin.from("users").select("*").eq("email", email).single()).data;
+  const checkexisting = (await supabaseAdmin.from("Users").select("*").eq("email", email).single()).data;
 
   if (checkexisting) {
     return { error: "User already exists!" };
   }
 
   try {
-    const user = (await supabaseAdmin.from("users").insert({
+    const user = (await supabaseAdmin.from("Users").insert({
                 name,
                 email,
                 userStatus: "ACTIVE",

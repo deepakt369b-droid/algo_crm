@@ -84,7 +84,7 @@ export const addCommentToTask = async (data: {
 
           // Also add task creator if different from commenter
           if (task.createdBy) {
-            const taskCreator = (await supabaseAdmin.from("users").select("*").eq("id", task.createdBy).single()).data;
+            const taskCreator = (await supabaseAdmin.from("Users").select("*").eq("id", task.createdBy).single()).data;
             if (taskCreator && taskCreator.id !== session.user.id) {
               emailRecipients.push(taskCreator);
             }

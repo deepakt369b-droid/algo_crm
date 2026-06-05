@@ -49,7 +49,7 @@ const TaskPage = async (props: TaskPageProps) => {
     getBoards(user?.id!),
   ]);
   const creatorUser = task?.createdBy
-    ? (await supabaseAdmin.from("users").select("name").eq("id", task.createdBy).single()).data
+    ? (await supabaseAdmin.from("Users").select("name").eq("id", task.createdBy).single()).data
     : null;
 
   //console.log(taskDocuments, "taskDocuments");

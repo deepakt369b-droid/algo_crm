@@ -12,7 +12,7 @@ export async function updateUserAccess(userId: string, accessibleTabs: string[])
     throw new Error("Unauthorized");
   }
 
-  (await supabaseAdmin.from("users").update({
+  (await supabaseAdmin.from("Users").update({
             accessibleTabs,
           }).select("*").single().eq("id", userId).select("*").single()).data;
 

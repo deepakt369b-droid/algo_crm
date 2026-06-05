@@ -59,7 +59,7 @@ export async function middleware(request: NextRequest) {
 
   // 6. Check superadmin routes (fetch user role from database if needed)
   if (cleanPathname.startsWith("/superadmin")) {
-    const { data: dbUser } = await supabase.from('User').select('isSuperAdmin, role').eq('id', user.id).single();
+    const { data: dbUser } = await supabase.from('Users').select('isSuperAdmin, role').eq('id', user.id).single();
     if (!dbUser?.isSuperAdmin && dbUser?.role !== "superadmin") {
       return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
     }

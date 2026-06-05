@@ -4,7 +4,7 @@ import sendEmail from "./sendmail";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function newUserNotify(newUser: Users) {
-  const admins = (await supabaseAdmin.from("users").select("*").eq("role", "admin")).data || [];
+  const admins = (await supabaseAdmin.from("Users").select("*").eq("role", "admin")).data || [];
 
   admins.forEach(async (admin) => {
     await sendEmail({

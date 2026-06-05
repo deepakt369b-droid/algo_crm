@@ -23,7 +23,7 @@ export const setLanguage = async (data: {
   }
 
   try {
-    (await supabaseAdmin.from("users").update({ userLanguage: language as Language }).select("*").single().eq("id", userId).select("*").single()).data;
+    (await supabaseAdmin.from("Users").update({ userLanguage: language as Language }).select("*").single().eq("id", userId).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/profile", "page");
     return { language };
   } catch (error) {

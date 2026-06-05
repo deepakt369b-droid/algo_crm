@@ -103,7 +103,7 @@ export const createTaskInBoard = async (data: {
         }
 
         if (resend) {
-          const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", user).single()).data;
+          const notifyRecipient = (await supabaseAdmin.from("Users").select("*").eq("id", user).single()).data;
 
           const boardData = (await supabaseAdmin.from("boards").select("*").eq("id", boardId).single()).data;
 

@@ -15,7 +15,7 @@ async function ensureManagerOrAdmin() {
 
 export async function getActiveUsersByYear(): Promise<ChartDataPoint[]> {
   await ensureManagerOrAdmin();
-  const users = (await supabaseAdmin.from("users").select("created_on").eq("userStatus", "ACTIVE")).data;
+  const users = (await supabaseAdmin.from("Users").select("created_on").eq("userStatus", "ACTIVE")).data;
   const grouped: Record<string, number> = {};
   for (const u of users) {
     const year = String(new Date(u.created_on).getFullYear());
@@ -26,12 +26,12 @@ export async function getActiveUsersByYear(): Promise<ChartDataPoint[]> {
 
 export async function getActiveUsersLifetime(): Promise<number> {
   await ensureManagerOrAdmin();
-  return (await supabaseAdmin.from("users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE")).count;
+  return (await supabaseAdmin.from("Users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE")).count;
 }
 
 export async function getUserGrowth(filters: ReportFilters): Promise<ChartDataPoint[]> {
   await ensureManagerOrAdmin();
-  const users = (await supabaseAdmin.from("users").select("created_on")).data;
+  const users = (await supabaseAdmin.from("Users").select("created_on")).data;
   const grouped: Record<string, number> = {};
   for (const u of users) {
     const d = new Date(u.created_on);
@@ -43,7 +43,7 @@ export async function getUserGrowth(filters: ReportFilters): Promise<ChartDataPo
 
 export async function getUsersByRole(filters: ReportFilters): Promise<ChartDataPoint[]> {
   await ensureManagerOrAdmin();
-  const users = (await supabaseAdmin.from("users").select("role")).data;
+  const users = (await supabaseAdmin.from("Users").select("role")).data;
   const roleCounts: Record<string, number> = {};
   for (const u of users) {
     const role = u.role ?? "user";

@@ -3,14 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 export async function getSession() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user: authUser }, error } = await supabase.auth.getUser();
   
-  if (!session) return null;
+  if (!session || error || !authUser) return null;
   
-  // Fetch user data from User table
   const { data: user } = await supabase
-    .from('User')
+    .from('Users')
     .select('*')
-    .eq('id', session.user.id)
+    .eq('id', authUser.id)
     .single();
     
   if (!user) return null;

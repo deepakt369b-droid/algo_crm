@@ -40,7 +40,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   }
 
   try {
-    const users = (await supabaseAdmin.from("users").select("*")).data;
+    const users = (await supabaseAdmin.from("Users").select("*")).data;
     //console.log(users.length, "user.length");
 
     //For each user, send mail

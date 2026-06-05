@@ -37,7 +37,7 @@ interface OppsViewProps {
 
 export async function BasicView({ data }: OppsViewProps) {
   //console.log(data, "data");
-  const users = (await supabaseAdmin.from("users").select("*")).data;
+  const users = (await supabaseAdmin.from("Users").select("*")).data;
   if (!data) return <div>Opportunity not found</div>;
   return (
     <div className="pb-3 space-y-5">

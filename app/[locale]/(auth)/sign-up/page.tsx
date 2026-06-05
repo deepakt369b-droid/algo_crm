@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,8 @@ export default function SignUpPage() {
 
 function SignUpPageContent() {
   const router = useRouter();
+  const params = useParams<{ locale?: string }>();
+  const locale = params?.locale || "en";
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan") || "free";
   
@@ -56,6 +58,7 @@ function SignUpPageContent() {
         email: formData.email,
         options: {
           shouldCreateUser: true,
+          emailRedirectTo: `${window.location.origin}/${locale}/setup-password`,
         }
       });
       setIsLoading(false);
@@ -113,7 +116,7 @@ function SignUpPageContent() {
       if (!response.ok) throw new Error(data.error || "Failed to setup workspace");
       
       toast.success("Workspace created successfully!");
-      router.push("/setup-password");
+      router.push(`/${locale}/setup-password`);
     } catch (err: any) {
       toast.error(err.message);
       setIsLoading(false);
@@ -365,12 +368,11 @@ function SignUpPageContent() {
       {/* Muted Login Helper */}
       <div className="text-center mt-6">
         <span className="text-xs text-muted-foreground">Already have a workspace? </span>
-        <Link href="/sign-in" className="text-xs font-bold text-primary hover:underline hover:text-primary-foreground transition-colors ml-0.5">
+        <Link href={`/${locale}/sign-in`} className="text-xs font-bold text-primary hover:underline hover:text-primary-foreground transition-colors ml-0.5">
           Sign In
         </Link>
       </div>
     </div>
   );
 }
-
 

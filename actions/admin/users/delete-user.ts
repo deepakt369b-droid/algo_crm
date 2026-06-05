@@ -20,7 +20,7 @@ export const deleteUser = async (userId: string) => {
   if (!userId) return { error: "userId is required" };
 
   try {
-    const user = (await supabaseAdmin.from("users").delete().select("*").single().eq("id", userId).select("id, name, email, username, account_name, avatar, role, userLanguage, userStatus, lastLoginAt").single()).data;
+    const user = (await supabaseAdmin.from("Users").delete().select("*").single().eq("id", userId).select("id, name, email, username, account_name, avatar, role, userLanguage, userStatus, lastLoginAt").single()).data;
     revalidatePath("/[locale]/(routes)/admin", "page");
     return { data: user };
   } catch (error) {

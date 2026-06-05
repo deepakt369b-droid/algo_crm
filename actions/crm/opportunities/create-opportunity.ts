@@ -70,7 +70,7 @@ export const createOpportunity = async (data: {
               }).select("*").single()).data;
 
     if (assigned_to && assigned_to !== userId) {
-      const notifyRecipient = (await supabaseAdmin.from("users").select("*").eq("id", assigned_to).single()).data;
+      const notifyRecipient = (await supabaseAdmin.from("Users").select("*").eq("id", assigned_to).single()).data;
 
       if (notifyRecipient) {
         await sendEmail({

@@ -141,12 +141,12 @@ export const auth = betterAuth({
   callbacks: {
     async onUserCreated(user: { id: string }) {
       // Check if this is the first user — make them admin
-      const count = (await supabaseAdmin.from("users").select("*", { count: 'exact', head: true })).count;
+      const count = (await supabaseAdmin.from("Users").select("*", { count: 'exact', head: true })).count;
       if (count === 1) {
-        (await supabaseAdmin.from("users").update({ role: "superadmin", isSuperAdmin: true, userStatus: "ACTIVE" }).select("*").single().eq("id", user.id).select("*").single()).data;
+        (await supabaseAdmin.from("Users").update({ role: "superadmin", isSuperAdmin: true, userStatus: "ACTIVE" }).select("*").single().eq("id", user.id).select("*").single()).data;
       } else if (!isDemo) {
         // Notify admins about new pending user
-        const dbUser = (await supabaseAdmin.from("users").select("*").eq("id", user.id).single()).data;
+        const dbUser = (await supabaseAdmin.from("Users").select("*").eq("id", user.id).single()).data;
         if (dbUser) {
           await newUserNotify(dbUser);
         }

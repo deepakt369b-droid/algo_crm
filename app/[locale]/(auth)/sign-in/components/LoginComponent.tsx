@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 import { Icons } from "@/components/ui/icons";
@@ -31,6 +32,9 @@ export function LoginComponent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
+  const params = useParams<{ locale?: string }>();
+  const locale = params?.locale || "en";
+  const dashboardUrl = `/${locale}/dashboard`;
 
   const loginWithGoogle = async () => {
     setIsLoading(true);
@@ -39,7 +43,7 @@ export function LoginComponent() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}${dashboardUrl}`,
         },
       });
       if (error) throw error;
@@ -67,7 +71,7 @@ export function LoginComponent() {
         return;
       }
       toast.success("Login successful.");
-      window.location.href = "/";
+      window.location.href = dashboardUrl;
     } catch (error) {
       toast.error("Login failed.");
     } finally {
@@ -86,7 +90,8 @@ export function LoginComponent() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          shouldCreateUser: true,
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}${dashboardUrl}`,
         }
       });
       if (error) {
@@ -120,7 +125,7 @@ export function LoginComponent() {
         return;
       }
       toast.success("Login successful.");
-      window.location.href = "/";
+      window.location.href = dashboardUrl;
     } catch (error) {
       toast.error("Verification failed.");
     } finally {

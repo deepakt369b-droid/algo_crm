@@ -142,7 +142,7 @@ export async function unifiedSearch(
                   },
                 ]).limit(10)).data,
       scope.allowUserDirectory
-        ? (await supabaseAdmin.from("users").select("id, name, email").eq("OR", [
+        ? (await supabaseAdmin.from("Users").select("id, name, email").eq("OR", [
                           { name: { contains: query, mode: "insensitive" } },
                           { email: { contains: query, mode: "insensitive" } },
                           { username: { contains: query, mode: "insensitive" } },

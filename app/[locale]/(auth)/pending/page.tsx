@@ -8,7 +8,7 @@ import { Users } from "@/lib/prisma-types";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const PendingPage = async () => {
-  const adminUsers: Users[] = (await supabaseAdmin.from("users").select("*").eq("role", "admin").eq("userStatus", "ACTIVE")).data;
+  const adminUsers: Users[] = (await supabaseAdmin.from("Users").select("*").eq("role", "admin").eq("userStatus", "ACTIVE")).data;
 
   const session = await getSession();
 

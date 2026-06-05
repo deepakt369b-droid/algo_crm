@@ -40,7 +40,7 @@ const statusLabel: Record<string, string> = {
 };
 
 export async function BasicView({ data }: BasicViewProps) {
-  const users = (await supabaseAdmin.from("users").select("*")).data;
+  const users = (await supabaseAdmin.from("Users").select("*")).data;
 
   if (!data) return <div>Contract not found</div>;
 

@@ -39,7 +39,7 @@ interface OppsViewProps {
 
 export async function BasicView({ data }: OppsViewProps) {
   //console.log(data, "data");
-  const users = (await supabaseAdmin.from("users").select("*")).data;
+  const users = (await supabaseAdmin.from("Users").select("*")).data;
   const crmData = await getAllCrmData();
   const { leadSources, leadStatuses, leadTypes } = crmData;
   if (!data) return <div>Opportunity not found</div>;

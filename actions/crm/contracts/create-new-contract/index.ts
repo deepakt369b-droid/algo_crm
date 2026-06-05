@@ -19,7 +19,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     };
   }
 
-  const user = (await supabaseAdmin.from("users").select("*").eq("email", session?.user?.email).single()).data;
+  const user = (await supabaseAdmin.from("Users").select("*").eq("email", session?.user?.email).single()).data;
 
   if (!user) {
     return {
