@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthCallbackUrl } from "@/lib/app-url";
 
 import { Icons } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ export function LoginComponent() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(dashboardUrl)}`,
+          redirectTo: getAuthCallbackUrl(dashboardUrl),
         },
       });
       if (error) throw error;
@@ -91,6 +92,7 @@ export function LoginComponent() {
         email,
         options: {
           shouldCreateUser: false,
+          emailRedirectTo: getAuthCallbackUrl(dashboardUrl),
         }
       });
       if (error) {

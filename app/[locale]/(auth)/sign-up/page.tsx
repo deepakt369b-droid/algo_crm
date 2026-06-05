@@ -15,6 +15,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthCallbackUrl } from "@/lib/app-url";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 
@@ -58,6 +59,7 @@ function SignUpPageContent() {
         email: formData.email,
         options: {
           shouldCreateUser: true,
+          emailRedirectTo: getAuthCallbackUrl(`/${locale}/setup-password`),
         }
       });
       setIsLoading(false);
