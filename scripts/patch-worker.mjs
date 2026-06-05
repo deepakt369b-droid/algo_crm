@@ -67,6 +67,11 @@ export default {
             if (reqOrResp instanceof Response) {
                 return reqOrResp;
             }
+            const unavailable = () =>
+                Response.json(
+                    { error: "This optional server feature is not enabled on the Cloudflare Pages deployment." },
+                    { status: 503 }
+                );
             // Dispatch to a split server-function by URL pattern. The
             // split function's index.mjs is small (no full bundling),
             // so each file stays under the Cloudflare 25 MiB limit.
@@ -75,25 +80,32 @@ export default {
             // Dynamic imports with non-static paths are not analyzed
             // by the bundler and fail at runtime in the Workers
             // runtime (no filesystem).
+            if (
+                /^\\/api\\/campaigns\\/targets\\/[^/]+\\/enrich\\/?$/.test(url.pathname) ||
+                url.pathname === "/api/campaigns/targets/enrich" ||
+                url.pathname === "/api/campaigns/targets/enrich-bulk" ||
+                url.pathname === "/api/crm/contacts/enrich" ||
+                url.pathname === "/api/crm/contacts/enrich-bulk" ||
+                /^\\/api\\/crm\\/targets\\/[^/]+\\/contacts\\/[^/]+\\/enrich\\/?$/.test(url.pathname) ||
+                /^\\/api\\/crm\\/targets\\/[^/]+\\/enrich\\/?$/.test(url.pathname) ||
+                url.pathname === "/api/crm/targets/enrich" ||
+                url.pathname === "/api/crm/targets/enrich-bulk" ||
+                url.pathname === "/api/reports/export" ||
+                url.pathname === "/api/webhooks/stripe"
+            ) {
+                return unavailable();
+            }
             if (/^\\/api\\/invoices\\/[^/]+\\/pdf\\/?$/.test(url.pathname)) {
-                // @ts-expect-error: resolved by wrangler build
-                const { handler } = await import("./server-functions/pdf/index.mjs");
-                return handler(reqOrResp, env, ctx, request.signal);
+                return unavailable();
             }
             if (url.pathname.startsWith("/api/mcp")) {
-                // @ts-expect-error: resolved by wrangler build
-                const { handler } = await import("./server-functions/mcp/index.mjs");
-                return handler(reqOrResp, env, ctx, request.signal);
+                return unavailable();
             }
             if (url.pathname.startsWith("/api/inngest")) {
-                // @ts-expect-error: resolved by wrangler build
-                const { handler } = await import("./server-functions/inngest/index.mjs");
-                return handler(reqOrResp, env, ctx, request.signal);
+                return unavailable();
             }
             if (url.pathname === "/api/upload/presigned-url" || url.pathname.startsWith("/api/upload/presigned-url/")) {
-                // @ts-expect-error: resolved by wrangler build
-                const { handler } = await import("./server-functions/upload/index.mjs");
-                return handler(reqOrResp, env, ctx, request.signal);
+                return unavailable();
             }
             // Fallback: use the default function's unbundled entry point.
             // This avoids the fully-bundled handler.mjs (35 MiB on this
