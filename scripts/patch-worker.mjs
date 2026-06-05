@@ -50,7 +50,8 @@ export { BucketCachePurge } from "./.build/durable-objects/bucket-cache-purge.js
 
 export default {
     async fetch(request, env, ctx) {
-        return runWithCloudflareRequestContext(request, env, ctx, async () => {
+        try {
+            return await runWithCloudflareRequestContext(request, env, ctx, async () => {
             const response = maybeGetSkewProtectionResponse(request);
             if (response) {
                 return response;
@@ -115,7 +116,15 @@ export default {
             // @ts-expect-error: resolved by wrangler build
             const { handler } = await import("./server-functions/default/index.mjs");
             return handler(reqOrResp, env, ctx, request.signal);
-        });
+            });
+        } catch (err) {
+            console.error(err);
+            const message = err instanceof Error ? err.stack || err.message : String(err);
+            return new Response("Cloudflare runtime error\\n\\n" + message, {
+                status: 500,
+                headers: { "content-type": "text/plain; charset=utf-8" },
+            });
+        }
     },
 };
 `;
