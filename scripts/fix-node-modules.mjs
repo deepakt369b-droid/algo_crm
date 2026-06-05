@@ -392,6 +392,21 @@ exports.hookPropertyMap = hookPropertyMap;
   return 1;
 }
 
+function patchOpenNextRequireResolve(fnDir) {
+  const file = join(fnDir, "index.mjs");
+  if (!existsSync(file)) return 0;
+
+  let source = readFileSync(file, "utf8");
+  const patched = source
+    .replaceAll('__require.resolve("./cache.cjs")', '"./cache.cjs"')
+    .replaceAll('__require.resolve("./composable-cache.cjs")', '"./composable-cache.cjs"');
+
+  if (patched === source) return 0;
+
+  writeFileSync(file, patched, "utf8");
+  return 1;
+}
+
 function removePackage(destNm, relName) {
   const target = join(destNm, ...relName.split("/"));
   if (!existsSync(target)) return 0;
@@ -463,8 +478,10 @@ let aliased = 0;
 let stubs = 0;
 let pruned = 0;
 let patchedRequireHooks = 0;
+let patchedRequireResolve = 0;
 
 for (const fnName of fnDirs) {
+  const fnDir = join(SERVER_FUNCTIONS_DIR, fnName);
   const nmDir = join(SERVER_FUNCTIONS_DIR, fnName, "node_modules");
   if (!existsSync(nmDir)) continue;
 
@@ -497,6 +514,7 @@ for (const fnName of fnDirs) {
   writeTurbopackHmrStub(nmDir);
   stubs++;
   patchedRequireHooks += patchNextRequireHook(nmDir);
+  patchedRequireResolve += patchOpenNextRequireResolve(fnDir);
   pruned += pruneNativePackages(nmDir);
 }
 
@@ -510,6 +528,9 @@ if (removedMaps > 0) {
 }
 if (patchedRequireHooks > 0) {
   console.log(`[fix-node-modules] Patched ${patchedRequireHooks} Next require hook files for Workers.`);
+}
+if (patchedRequireResolve > 0) {
+  console.log(`[fix-node-modules] Patched ${patchedRequireResolve} OpenNext require.resolve call sites.`);
 }
 
 console.log(
