@@ -407,6 +407,29 @@ function patchOpenNextRequireResolve(fnDir) {
   return 1;
 }
 
+function patchNextBuildId(destNm, fnDir) {
+  const file = join(destNm, "next", "dist", "server", "next-server.js");
+  const buildIdFile = join(fnDir, ".next", "BUILD_ID");
+  if (!existsSync(file) || !existsSync(buildIdFile)) return 0;
+
+  const buildId = readFileSync(buildIdFile, "utf8").trim();
+  let source = readFileSync(file, "utf8");
+  if (source.includes("cloudflare-static-build-id")) return 0;
+
+  const pattern = /getBuildId\(\) \{[\s\S]*?\n    getEnabledDirectories\(/;
+
+  const replacement = `getBuildId() {
+        // cloudflare-static-build-id
+        return ${JSON.stringify(buildId)};
+    }
+    getEnabledDirectories(`;
+
+  if (!pattern.test(source)) return 0;
+
+  writeFileSync(file, source.replace(pattern, replacement), "utf8");
+  return 1;
+}
+
 function removePackage(destNm, relName) {
   const target = join(destNm, ...relName.split("/"));
   if (!existsSync(target)) return 0;
@@ -479,6 +502,7 @@ let stubs = 0;
 let pruned = 0;
 let patchedRequireHooks = 0;
 let patchedRequireResolve = 0;
+let patchedBuildIds = 0;
 
 for (const fnName of fnDirs) {
   const fnDir = join(SERVER_FUNCTIONS_DIR, fnName);
@@ -515,6 +539,7 @@ for (const fnName of fnDirs) {
   stubs++;
   patchedRequireHooks += patchNextRequireHook(nmDir);
   patchedRequireResolve += patchOpenNextRequireResolve(fnDir);
+  patchedBuildIds += patchNextBuildId(nmDir, fnDir);
   pruned += pruneNativePackages(nmDir);
 }
 
@@ -531,6 +556,9 @@ if (patchedRequireHooks > 0) {
 }
 if (patchedRequireResolve > 0) {
   console.log(`[fix-node-modules] Patched ${patchedRequireResolve} OpenNext require.resolve call sites.`);
+}
+if (patchedBuildIds > 0) {
+  console.log(`[fix-node-modules] Patched ${patchedBuildIds} Next build id readers for Workers.`);
 }
 
 console.log(
