@@ -28,12 +28,13 @@
 import {
   cpSync,
   existsSync,
+  realpathSync,
   readdirSync,
   readFileSync,
-  lstatSync,
-  readlinkSync,
+  unlinkSync,
 } from "node:fs";
 import { join, resolve, dirname } from "node:path";
+import { createRequire } from "node:module";
 
 const PROJECT_ROOT = resolve(process.cwd());
 const OPEN_NEXT_DIR = join(PROJECT_ROOT, ".open-next");
@@ -76,10 +77,43 @@ function readPkgJson(dir) {
 }
 
 /** Copy a complete package from project root to destination. */
-function copyPkg(relName, destNm) {
-  const src = join(PROJECT_NM, relName);
+function findPackageJson(startDir) {
+  let current = startDir;
+  while (current && current !== dirname(current)) {
+    const candidate = join(current, "package.json");
+    if (existsSync(candidate)) return candidate;
+    current = dirname(current);
+  }
+  return null;
+}
+
+function resolvePkgSource(relName, fromDir = PROJECT_ROOT) {
+  const direct = join(PROJECT_NM, relName);
+  if (existsSync(direct)) return realpathSync(direct);
+
+  const realFromDir = existsSync(fromDir) ? realpathSync(fromDir) : fromDir;
+  const requireFrom = createRequire(join(realFromDir, "package.json"));
+  try {
+    return dirname(requireFrom.resolve(`${relName}/package.json`));
+  } catch {
+    // Some packages do not export package.json. Resolve the package entry
+    // instead, then walk upward to the package root.
+  }
+
+  try {
+    const entry = requireFrom.resolve(relName);
+    const packageJson = findPackageJson(dirname(entry));
+    return packageJson ? dirname(packageJson) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Copy a complete package from its pnpm-resolved source to destination. */
+function copyPkg(relName, destNm, fromDir = PROJECT_ROOT) {
+  const src = resolvePkgSource(relName, fromDir);
   const dst = join(destNm, relName);
-  if (!existsSync(src)) return false;
+  if (!src || !existsSync(src)) return false;
   try {
     cpSync(src, dst, { recursive: true, force: true, dereference: true });
     return true;
@@ -89,15 +123,53 @@ function copyPkg(relName, destNm) {
   }
 }
 
-/** Get all dependency names from a package.json (deps + devDeps + peerDeps). */
+/** Get dependency names needed at runtime. */
 function getDeps(pkgJson) {
   if (!pkgJson) return [];
   const all = {
     ...pkgJson.dependencies,
-    ...pkgJson.devDependencies,
+    ...pkgJson.optionalDependencies,
     ...pkgJson.peerDependencies,
   };
   return Object.keys(all);
+}
+
+function copyNextCompiledPackage(sourceName, aliasName, destNm) {
+  const nextDir = resolvePkgSource("next");
+  if (!nextDir) return false;
+
+  const src = join(nextDir, "dist", "compiled", sourceName);
+  const dst = join(destNm, aliasName);
+  if (!existsSync(src)) return false;
+
+  try {
+    cpSync(src, dst, { recursive: true, force: true, dereference: true });
+    return true;
+  } catch (err) {
+    console.error(`[fix-node-modules] Error copying ${aliasName}: ${err.message}`);
+    return false;
+  }
+}
+
+function removeSourceMaps(dir) {
+  if (!existsSync(dir)) return 0;
+
+  let removed = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      removed += removeSourceMaps(fullPath);
+    } else if (entry.isFile() && entry.name.endsWith(".map")) {
+      try {
+        unlinkSync(fullPath);
+        removed++;
+      } catch {
+        // Sourcemaps are optional deployment artifacts. Ignore files that
+        // disappear while walking copied package trees.
+      }
+    }
+  }
+  return removed;
 }
 
 // ── Main ────────────────────────────────────────────────────────────
@@ -125,7 +197,7 @@ for (const fnName of fnDirs) {
 // Phase 2: Iteratively find and copy MISSING transitive dependencies.
 // We iterate because a newly-copied package may itself have deps that
 // are also missing. We cap iterations to avoid infinite loops.
-const MAX_ITERATIONS = 5;
+const MAX_ITERATIONS = 25;
 for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
   let added = 0;
   for (const fnName of fnDirs) {
@@ -133,6 +205,7 @@ for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
     if (!existsSync(nmDir)) continue;
 
     for (const pkgDir of listPackageDirs(nmDir)) {
+      const rel = pkgName(pkgDir, nmDir);
       const pkgJson = readPkgJson(pkgDir);
       if (!pkgJson) continue;
 
@@ -140,11 +213,8 @@ for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
         const depDir = join(nmDir, dep);
         if (existsSync(depDir)) continue; // already present
 
-        // Check if it exists in project root
-        const srcPkg = join(PROJECT_NM, dep);
-        if (!existsSync(srcPkg)) continue;
-
-        if (copyPkg(dep, nmDir)) {
+        const sourceDir = resolvePkgSource(rel, PROJECT_ROOT);
+        if (copyPkg(dep, nmDir, sourceDir ?? PROJECT_ROOT)) {
           added++;
           replaced++;
         }
@@ -153,6 +223,32 @@ for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
   }
   if (added === 0) break; // no more missing deps
   console.log(`[fix-node-modules] Iteration ${iter + 1}: copied ${added} missing transitive deps.`);
+}
+
+// Next ships these React server-dom packages under next/dist/compiled, but
+// some server runtime files still require them by their package names.
+// Provide package aliases inside every split function so Wrangler's esbuild
+// pass can resolve the imports.
+let aliased = 0;
+for (const fnName of fnDirs) {
+  const nmDir = join(SERVER_FUNCTIONS_DIR, fnName, "node_modules");
+  if (!existsSync(nmDir)) continue;
+
+  if (copyNextCompiledPackage("react-server-dom-webpack", "react-server-dom-webpack", nmDir)) {
+    aliased++;
+  }
+  if (copyNextCompiledPackage("react-server-dom-turbopack", "react-server-dom-turbopack", nmDir)) {
+    aliased++;
+  }
+}
+
+if (aliased > 0) {
+  console.log(`[fix-node-modules] Added ${aliased} Next compiled package aliases.`);
+}
+
+const removedMaps = removeSourceMaps(SERVER_FUNCTIONS_DIR);
+if (removedMaps > 0) {
+  console.log(`[fix-node-modules] Removed ${removedMaps} sourcemap files from server functions.`);
 }
 
 console.log(
