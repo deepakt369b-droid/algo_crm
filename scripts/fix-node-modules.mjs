@@ -46,6 +46,7 @@ const LOCAL_HYDRATION_TARGETS = new Set([
   "htmlparser2",
   "nth-check",
   "postcss",
+  "sharp",
 ]);
 
 const MAX_TOP_LEVEL_DEPS_PER_FUNCTION = 2000;
@@ -209,14 +210,26 @@ function hydrateTopLevelDeps(nmDir) {
       if (seen.has(dep)) continue;
 
       const depDst = join(nmDir, ...dep.split("/"));
+      const depSrc = resolvePkgSource(dep, sourceDir);
+      if (!depSrc) continue;
+
       if (existsSync(depDst)) {
+        const depDstPkgJson = readPkgJson(depDst);
+        const depSrcPkgJson = readPkgJson(depSrc);
+        const canSafelyRefresh =
+          !depDstPkgJson ||
+          (depSrcPkgJson &&
+            depDstPkgJson.name === depSrcPkgJson.name &&
+            depDstPkgJson.version === depSrcPkgJson.version);
+
+        if (canSafelyRefresh && copyPkgFromSource(dep, depSrc, nmDir)) {
+          copied++;
+        }
+
         seen.add(dep);
         queue.push(depDst);
         continue;
       }
-
-      const depSrc = resolvePkgSource(dep, sourceDir);
-      if (!depSrc) continue;
 
       if (copyPkgFromSource(dep, depSrc, nmDir)) {
         copied++;
