@@ -47,7 +47,18 @@ const LOCAL_HYDRATION_TARGETS = new Set([
   "htmlparser2",
   "nth-check",
   "postcss",
+  "postcss-media-query-parser",
 ]);
+
+const REQUIRED_TOP_LEVEL_PACKAGES = [
+  "chalk",
+  "client-only",
+  "css-select",
+  "dom-serializer",
+  "domhandler",
+  "htmlparser2",
+  "postcss-media-query-parser",
+];
 
 const MAX_TOP_LEVEL_DEPS_PER_FUNCTION = 2000;
 const MAX_LOCAL_DEPS_PER_PACKAGE = 180;
@@ -248,6 +259,16 @@ function hydrateTopLevelDeps(nmDir) {
   return copied;
 }
 
+function copyRequiredTopLevelPackages(nmDir) {
+  let copied = 0;
+  for (const relName of REQUIRED_TOP_LEVEL_PACKAGES) {
+    if (copyPkg(relName, nmDir)) {
+      copied++;
+    }
+  }
+  return copied;
+}
+
 function hydratePackageLocalDeps(pkgDir) {
   const rootPkgJson = readPkgJson(pkgDir);
   if (!rootPkgJson?.name) return 0;
@@ -411,6 +432,8 @@ let pruned = 0;
 for (const fnName of fnDirs) {
   const nmDir = join(SERVER_FUNCTIONS_DIR, fnName, "node_modules");
   if (!existsSync(nmDir)) continue;
+
+  topLevelDeps += copyRequiredTopLevelPackages(nmDir);
 
   for (const pkgDir of listPackageDirs(nmDir)) {
     const rel = pkgName(pkgDir, nmDir);
