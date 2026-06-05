@@ -369,14 +369,14 @@ function patchNextRequireHook(destNm) {
   if (!existsSync(file)) return 0;
 
   const source = readFileSync(file, "utf8");
-  const unsafe =
-    "let resolve = process.env.NEXT_MINIMAL ? __non_webpack_require__.resolve : require.resolve;";
   const safe =
     "let resolve = process.env.NEXT_MINIMAL && typeof __non_webpack_require__ !== \"undefined\" && __non_webpack_require__.resolve ? __non_webpack_require__.resolve : require.resolve || ((id)=>id);";
+  const unsafePattern =
+    /let\s+resolve\s*=\s*process\.env\.NEXT_MINIMAL\s*\?\s*__non_webpack_require__\.resolve\s*:\s*require\.resolve\s*;/;
 
-  if (!source.includes(unsafe) || source.includes(safe)) return 0;
+  if (!unsafePattern.test(source) || source.includes(safe)) return 0;
 
-  writeFileSync(file, source.replace(unsafe, safe), "utf8");
+  writeFileSync(file, source.replace(unsafePattern, safe), "utf8");
   return 1;
 }
 
