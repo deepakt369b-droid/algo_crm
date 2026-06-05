@@ -36,6 +36,12 @@ export function LoginComponent() {
   const locale = params?.locale || "en";
   const dashboardUrl = `/${locale}/dashboard`;
 
+  const getAuthCallbackUrl = (nextPath: string) => {
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    callbackUrl.searchParams.set("next", nextPath);
+    return callbackUrl.toString();
+  };
+
   const loginWithGoogle = async () => {
     setIsLoading(true);
     const supabase = createClient();
@@ -43,7 +49,7 @@ export function LoginComponent() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}${dashboardUrl}`,
+          redirectTo: getAuthCallbackUrl(dashboardUrl),
         },
       });
       if (error) throw error;
@@ -91,7 +97,7 @@ export function LoginComponent() {
         email,
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}${dashboardUrl}`,
+          emailRedirectTo: getAuthCallbackUrl(dashboardUrl),
         }
       });
       if (error) {

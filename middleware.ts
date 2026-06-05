@@ -31,6 +31,10 @@ export async function middleware(request: NextRequest) {
   // 2. Parse locale and normalized pathname
   const { locale, cleanPathname } = getLocaleAndPathname(pathname);
 
+  if (cleanPathname.startsWith("/auth/callback")) {
+    return NextResponse.next();
+  }
+
   // 3. Skip auth checks for public pages
   const isPublicPage = 
     cleanPathname === "/" ||

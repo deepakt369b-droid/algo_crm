@@ -49,6 +49,12 @@ function SignUpPageContent() {
     templateId: null as string | null,
   });
 
+  const getAuthCallbackUrl = (nextPath: string) => {
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    callbackUrl.searchParams.set("next", nextPath);
+    return callbackUrl.toString();
+  };
+
   const handleNext = async () => {
     if (step === 3) {
       // Send OTP
@@ -58,7 +64,7 @@ function SignUpPageContent() {
         email: formData.email,
         options: {
           shouldCreateUser: true,
-          emailRedirectTo: `${window.location.origin}/${locale}/setup-password`,
+          emailRedirectTo: getAuthCallbackUrl(`/${locale}/setup-password`),
         }
       });
       setIsLoading(false);
@@ -375,4 +381,3 @@ function SignUpPageContent() {
     </div>
   );
 }
-
