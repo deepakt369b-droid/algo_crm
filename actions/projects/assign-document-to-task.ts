@@ -44,16 +44,16 @@ export const assignDocumentToTask = async (data: {
   }
 
   try {
-    const task = (await supabaseAdmin.from("tasks").select("*").eq("id", taskId).single()).data;
+    const task = (await supabaseAdmin.from("Tasks").select("*").eq("id", taskId).single()).data;
 
     if (!task) return { error: "Task not found" };
 
-    (await supabaseAdmin.from("documentsToTasks").insert({
+    (await supabaseAdmin.from("DocumentsToTasks").insert({
                   document_id: documentId,
                   task_id: taskId,
                 }).select("*").single()).data;
 
-    (await supabaseAdmin.from("tasks").update({ updatedBy: session.user.id }).select("*").single().eq("id", taskId).select("*").single()).data;
+    (await supabaseAdmin.from("Tasks").update({ updatedBy: session.user.id }).select("*").single().eq("id", taskId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };
@@ -75,13 +75,13 @@ export const disconnectDocumentFromTask = async (data: {
   if (!taskId) return { error: "Missing task ID" };
 
   try {
-    const task = (await supabaseAdmin.from("tasks").select("*").eq("id", taskId).single()).data;
+    const task = (await supabaseAdmin.from("Tasks").select("*").eq("id", taskId).single()).data;
 
     if (!task) return { error: "Task not found" };
 
-    (await supabaseAdmin.from("documentsToTasks").delete().select("*").single()).data;
+    (await supabaseAdmin.from("DocumentsToTasks").delete().select("*").single()).data;
 
-    const updatedTask = (await supabaseAdmin.from("tasks").update({ updatedBy: session.user.id }).select("*").single().eq("id", taskId).select("*").single()).data;
+    const updatedTask = (await supabaseAdmin.from("Tasks").update({ updatedBy: session.user.id }).select("*").single().eq("id", taskId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { data: updatedTask };

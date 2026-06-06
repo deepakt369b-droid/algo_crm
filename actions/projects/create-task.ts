@@ -46,13 +46,13 @@ export const createTask = async (data: {
   }
 
   try {
-    const sectionId = (await supabaseAdmin.from("sections").select("*").eq("board", board).order("position", { ascending: true }).single()).data;
+    const sectionId = (await supabaseAdmin.from("Sections").select("*").eq("board", board).order("position", { ascending: true }).single()).data;
 
     if (!sectionId) return { error: "No section found" };
 
-    const tasksCount = (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("section", sectionId.id)).count;
+    const tasksCount = (await supabaseAdmin.from("Tasks").select("*", { count: 'exact', head: true }).eq("section", sectionId.id)).count;
 
-    const task = (await supabaseAdmin.from("tasks").insert({
+    const task = (await supabaseAdmin.from("Tasks").insert({
                 v: 0,
                 priority,
                 title,
@@ -66,7 +66,7 @@ export const createTask = async (data: {
                 taskStatus: "ACTIVE",
               }).select("*").single()).data;
 
-    (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).select("*").single().eq("id", board).select("*").single()).data;
+    (await supabaseAdmin.from("Boards").update({ updatedAt: new Date() }).select("*").single().eq("id", board).select("*").single()).data;
 
     // Send email notification if assigning to a different user
     if (user !== session.user.id) {
@@ -81,7 +81,7 @@ export const createTask = async (data: {
         if (resend) {
           const notifyRecipient = (await supabaseAdmin.from("Users").select("*").eq("id", user).single()).data;
 
-          const boardData = (await supabaseAdmin.from("boards").select("*").eq("id", board).single()).data;
+          const boardData = (await supabaseAdmin.from("Boards").select("*").eq("id", board).single()).data;
 
           if (notifyRecipient?.email) {
             await resend.emails.send({

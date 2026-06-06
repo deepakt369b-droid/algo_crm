@@ -4,7 +4,7 @@ import { SeriesTable } from "./_components/SeriesTable";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export default async function InvoiceSeriesPage() {
-  const series = (await supabaseAdmin.from("invoice_Series").select("*").order("createdAt", { ascending: false })).data;
+  const series = (await supabaseAdmin.from("Invoice_Series").select("*").order("createdAt", { ascending: false })).data;
 
   return (
     <div className="space-y-6">

@@ -16,7 +16,7 @@ export interface PurchaseOrderListItem {
 }
 
 export async function getPurchaseOrders(): Promise<PurchaseOrderListItem[]> {
-  const orders = (await supabaseAdmin.from("purchaseOrders").select("*, vendor(id, name), requestedByUser(id, name), lineItems(id)").is("deletedAt", null).order("createdAt", { ascending: false })).data;
+  const orders = (await supabaseAdmin.from("PurchaseOrders").select("*, vendor(id, name), requestedByUser(id, name), lineItems(id)").is("deletedAt", null).order("createdAt", { ascending: false })).data;
 
   return orders.map((order) => ({
     id: order.id,

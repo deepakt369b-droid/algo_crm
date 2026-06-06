@@ -11,7 +11,7 @@ export async function deleteReorderThreshold(id: string): Promise<{ error?: stri
   }
 
   try {
-    (await supabaseAdmin.from("reorderThreshold").delete().select("*").single().eq("id", id).select("*").single()).data;
+    (await supabaseAdmin.from("ReorderThreshold").delete().select("*").single().eq("id", id).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");
     return {};
   } catch (error) {
@@ -36,7 +36,7 @@ export interface ReorderThresholdItem {
 }
 
 export async function getReorderThresholds(): Promise<ReorderThresholdItem[]> {
-  const thresholds = (await supabaseAdmin.from("reorderThreshold").select("*, product(id, name, sku), warehouse(id, name)").order("product", { ascending: false }).order("warehouse", { ascending: false })).data || [];
+  const thresholds = (await supabaseAdmin.from("ReorderThreshold").select("*, product(id, name, sku), warehouse(id, name)").order("product", { ascending: false }).order("warehouse", { ascending: false })).data || [];
 
   // Get current stock for each threshold
   const stockKeys = thresholds.map((t: any) => ({
@@ -46,7 +46,7 @@ export async function getReorderThresholds(): Promise<ReorderThresholdItem[]> {
 
   const stockRecords = await Promise.all(
     stockKeys.map(async (k) =>
-      (await supabaseAdmin.from("inventoryStock").select("*").eq("productId", k.productId).eq("warehouseId", k.warehouseId).single()).data
+      (await supabaseAdmin.from("InventoryStock").select("*").eq("productId", k.productId).eq("warehouseId", k.warehouseId).single()).data
     )
   );
 

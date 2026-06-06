@@ -25,7 +25,7 @@ export async function checkDuplicate(contentHash: string): Promise<DuplicateResu
     throw e;
   }
 
-  const existing = (await supabaseAdmin.from("documents").select("id, document_name, createdAt, accounts(account(name))").eq("content_hash", contentHash).single()).data;
+  const existing = (await supabaseAdmin.from("Documents").select("id, document_name, createdAt, accounts(account(name))").eq("content_hash", contentHash).single()).data;
 
   if (!existing) return { isDuplicate: false };
 

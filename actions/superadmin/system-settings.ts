@@ -14,9 +14,9 @@ export async function getSystemSettings() {
   const settings = (await supabaseAdmin.from("crm_SystemSettings").select("*")).data;
   const settingsMap = new Map(settings.map(s => [s.key, s.value]));
 
-  const openaiKeyRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", "OPENAI").single()).data;
+  const openaiKeyRow = (await supabaseAdmin.from("ApiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", "OPENAI").single()).data;
 
-  const anthropicKeyRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", "ANTHROPIC").single()).data;
+  const anthropicKeyRow = (await supabaseAdmin.from("ApiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", "ANTHROPIC").single()).data;
   
   let maskedOpenaiApiKey = "";
   if (process.env.OPENAI_API_KEY) {
@@ -91,10 +91,10 @@ export async function saveSystemSettings(data: Record<string, string>) {
     if (data.openaiApiKey && !data.openaiApiKey.includes("••••")) {
       const encryptedKey = encrypt(data.openaiApiKey);
       operations.push(
-        (await supabaseAdmin.from("apiKeys").delete().select("*").single().eq("scope", "SYSTEM").eq("provider", "OPENAI")).data
+        (await supabaseAdmin.from("ApiKeys").delete().select("*").single().eq("scope", "SYSTEM").eq("provider", "OPENAI")).data
       );
       operations.push(
-        (await supabaseAdmin.from("apiKeys").insert({
+        (await supabaseAdmin.from("ApiKeys").insert({
                                 scope: "SYSTEM",
                                 provider: "OPENAI",
                                 encryptedKey,
@@ -106,10 +106,10 @@ export async function saveSystemSettings(data: Record<string, string>) {
     if (data.anthropicApiKey && !data.anthropicApiKey.includes("••••")) {
       const encryptedKey = encrypt(data.anthropicApiKey);
       operations.push(
-        (await supabaseAdmin.from("apiKeys").delete().select("*").single().eq("scope", "SYSTEM").eq("provider", "ANTHROPIC")).data
+        (await supabaseAdmin.from("ApiKeys").delete().select("*").single().eq("scope", "SYSTEM").eq("provider", "ANTHROPIC")).data
       );
       operations.push(
-        (await supabaseAdmin.from("apiKeys").insert({
+        (await supabaseAdmin.from("ApiKeys").insert({
                                 scope: "SYSTEM",
                                 provider: "ANTHROPIC",
                                 encryptedKey,

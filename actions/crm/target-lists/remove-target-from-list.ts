@@ -11,7 +11,7 @@ export const removeTargetFromList = async (targetListId: string, targetId: strin
   if (!targetId) return { error: "targetId is required" };
 
   try {
-    (await supabaseAdmin.from("targetsToTargetLists").delete().select("*").single()).data;
+    (await supabaseAdmin.from("TargetsToTargetLists").delete().select("*").single()).data;
     revalidatePath("/[locale]/(routes)/crm/target-lists", "page");
     return { success: true };
   } catch (error) {

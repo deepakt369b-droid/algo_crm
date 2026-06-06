@@ -56,7 +56,7 @@ export const updateKanbanPosition = async (data: {
     if (resourceSectionId !== destinationSectionId) {
       for (let key = 0; key < resourceListReverse.length; key++) {
         const task = resourceListReverse[key];
-        (await supabaseAdmin.from("tasks").update({
+        (await supabaseAdmin.from("Tasks").update({
                               section: resourceSectionId,
                               position: key,
                               updatedBy: session.user.id,
@@ -66,7 +66,7 @@ export const updateKanbanPosition = async (data: {
 
     for (let key = 0; key < destinationListReverse.length; key++) {
       const task = destinationListReverse[key];
-      (await supabaseAdmin.from("tasks").update({
+      (await supabaseAdmin.from("Tasks").update({
                         section: destinationSectionId,
                         position: key,
                         updatedBy: session.user.id,

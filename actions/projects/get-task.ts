@@ -24,6 +24,6 @@ export const getTask = async (taskId: string) => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("tasks").select("*, assigned_user(id, name), documents(*, document(id, document_name, document_file_url)), comments(id, comment, createdAt, assigned_user(id, name, avatar))").eq("id", taskId).single()).data;
+  const data = (await supabaseAdmin.from("Tasks").select("*, assigned_user(id, name), documents(*, document(id, document_name, document_file_url)), comments(id, comment, createdAt, assigned_user(id, name, avatar))").eq("id", taskId).single()).data;
   return data;
 };

@@ -12,7 +12,7 @@ export const addTargetsToList = async (targetListId: string, targetIds: string[]
   }
 
   try {
-    const result = await supabaseAdmin.from("targetsToTargetLists").insert(
+    const result = await supabaseAdmin.from("TargetsToTargetLists").insert(
       targetIds.map((id: string) => ({
         target_id: id,
         target_list_id: targetListId,

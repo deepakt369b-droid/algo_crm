@@ -20,7 +20,7 @@ export async function issueInvoice(raw: unknown) {
   const input = issueInvoiceSchema.parse(raw);
 
   // Read invoice and settings outside the transaction to avoid holding locks during network calls
-  const invoice = (await supabaseAdmin.from("invoices").select("*, lineItems(*, taxRate(*)), account(*)").eq("id", input.invoiceId).single()).data;
+  const invoice = (await supabaseAdmin.from("Invoices").select("*, lineItems(*, taxRate(*)), account(*)").eq("id", input.invoiceId).single()).data;
 
   if (
     !canIssueInvoice(
@@ -35,7 +35,7 @@ export async function issueInvoice(raw: unknown) {
     throw new Error("Invoice must have at least one line item");
   }
 
-  const settings = (await supabaseAdmin.from("invoice_Settings").select("*").single()).data;
+  const settings = (await supabaseAdmin.from("Invoice_Settings").select("*").single()).data;
   if (!settings) {
     throw new Error("Invoice settings not configured. Please configure in Admin > Invoices.");
   }
@@ -136,7 +136,7 @@ export async function issueInvoice(raw: unknown) {
     };
 
     // Supplier info — use company details from Invoice_Settings (fallback to app name)
-    const settings = (await supabaseAdmin.from("invoice_Settings").select("*").single()).data;
+    const settings = (await supabaseAdmin.from("Invoice_Settings").select("*").single()).data;
     const supplier: PdfParty = {
       name:
         settings?.companyName ??
@@ -192,7 +192,7 @@ export async function issueInvoice(raw: unknown) {
     const pdfBuffer = await renderInvoicePdf(pdfData);
     const storageKey = await uploadInvoicePdf(result.id, pdfBuffer);
 
-    (await supabaseAdmin.from("invoices").update({ pdfStorageKey: storageKey, pdfGeneratedAt: new Date() }).eq("id", result.id).select("*").single()).data;
+    (await supabaseAdmin.from("Invoices").update({ pdfStorageKey: storageKey, pdfGeneratedAt: new Date() }).eq("id", result.id).select("*").single()).data;
   } catch (err) {
     console.error("[ISSUE_INVOICE] PDF generation failed:", err);
     // Do NOT fail — invoice is legally issued

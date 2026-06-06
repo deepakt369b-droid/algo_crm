@@ -24,6 +24,6 @@ export const getTaskDocuments = async (taskId: string) => {
   }
 
   // Query documents through DocumentsToTasks junction table
-  const data = (await supabaseAdmin.from("documents").select("*")).data;
+  const data = (await supabaseAdmin.from("Documents").select("*")).data;
   return data;
 };

@@ -27,7 +27,7 @@ export async function bulkDeleteDocuments(documentIds: string[]) {
     throw new Error("Forbidden");
   }
 
-  const documents = (await supabaseAdmin.from("documents").select("id, key").in("id", documentIds)).data;
+  const documents = (await supabaseAdmin.from("Documents").select("id, key").in("id", documentIds)).data;
 
   // Delete from MinIO
   await Promise.allSettled(
@@ -39,7 +39,7 @@ export async function bulkDeleteDocuments(documentIds: string[]) {
   );
 
   // Delete from DB (cascade handles chunks, embeddings, junction tables)
-  (await supabaseAdmin.from("documents").delete().select("*").single().in("id", documentIds)).data;
+  (await supabaseAdmin.from("Documents").delete().select("*").single().in("id", documentIds)).data;
 
   revalidatePath("/[locale]/(routes)/documents");
 }

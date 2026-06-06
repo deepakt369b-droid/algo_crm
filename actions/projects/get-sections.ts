@@ -15,7 +15,7 @@ export const getSections = async () => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("sections").select("*").eq("board_relation", boardReadScopeWhere(user))).data;
+  const data = (await supabaseAdmin.from("Sections").select("*").eq("board_relation", boardReadScopeWhere(user))).data;
 
   return data;
 };

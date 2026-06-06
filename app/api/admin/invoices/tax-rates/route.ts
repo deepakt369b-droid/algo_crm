@@ -23,7 +23,7 @@ export async function GET() {
   const denied = await ensureAdmin();
   if (denied) return denied;
 
-  const taxRates = (await supabaseAdmin.from("invoice_TaxRates").select("*").order("name", { ascending: true })).data;
+  const taxRates = (await supabaseAdmin.from("Invoice_TaxRates").select("*").order("name", { ascending: true })).data;
 
   return NextResponse.json({ data: taxRates });
 }
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "name and rate are required" }, { status: 400 });
   }
 
-  const taxRate = (await supabaseAdmin.from("invoice_TaxRates").insert({
+  const taxRate = (await supabaseAdmin.from("Invoice_TaxRates").insert({
           name,
           rate,
           isDefault: isDefault ?? false,

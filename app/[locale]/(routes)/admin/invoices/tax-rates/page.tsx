@@ -4,7 +4,7 @@ import { TaxRatesTable } from "./_components/TaxRatesTable";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export default async function TaxRatesPage() {
-  const rates = (await supabaseAdmin.from("invoice_TaxRates").select("*").order("rate", { ascending: false })).data;
+  const rates = (await supabaseAdmin.from("Invoice_TaxRates").select("*").order("rate", { ascending: false })).data;
 
   return (
     <div className="space-y-6">

@@ -15,13 +15,13 @@ export const getTasks = async () => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("tasks").select("*").order("createdAt", { ascending: false })).data;
+  const data = (await supabaseAdmin.from("Tasks").select("*").order("createdAt", { ascending: false })).data;
   return data;
 };
 
 //get tasks by month for chart
 export const getTasksByMonth = async () => {
-  const tasks = (await supabaseAdmin.from("tasks").select("createdAt")).data;
+  const tasks = (await supabaseAdmin.from("Tasks").select("createdAt")).data;
 
   if (!tasks) {
     return {};

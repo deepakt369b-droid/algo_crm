@@ -37,7 +37,7 @@ export async function importProducts(
 
   const [categories, currencies, existingSkus] = await Promise.all([
     (await supabaseAdmin.from("crm_ProductCategories").select("*").eq("isActive", true)).data,
-    (await supabaseAdmin.from("currency").select("*").eq("isEnabled", true)).data,
+    (await supabaseAdmin.from("Currency").select("*").eq("isEnabled", true)).data,
     (await supabaseAdmin.from("crm_Products").select("sku")).data,
   ]);
 

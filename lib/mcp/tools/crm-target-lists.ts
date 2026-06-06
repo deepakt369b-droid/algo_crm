@@ -95,7 +95,7 @@ export const crmTargetListTools = [
     ) {
       const tl = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.target_list_id).is("deletedAt", null).single()).data;
       if (!tl) notFound("TargetList");
-      await supabaseAdmin.from("targetsToTargetLists").insert(
+      await supabaseAdmin.from("TargetsToTargetLists").insert(
         args.target_ids.map((tid) => ({
           target_id: tid,
           target_list_id: args.target_list_id,
@@ -118,7 +118,7 @@ export const crmTargetListTools = [
       args: { target_list_id: string; target_ids: string[] },
       _userId: string
     ) {
-      (await supabaseAdmin.from("targetsToTargetLists").delete().select("*").single().eq("target_list_id", args.target_list_id).in("target_id", args.target_ids)).data;
+      (await supabaseAdmin.from("TargetsToTargetLists").delete().select("*").single().eq("target_list_id", args.target_list_id).in("target_id", args.target_ids)).data;
       return itemResponse({
         target_list_id: args.target_list_id,
         removed: args.target_ids.length,

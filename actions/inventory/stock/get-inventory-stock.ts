@@ -38,11 +38,11 @@ export async function getInventoryStock(filters?: InventoryStockFilter): Promise
   const where: Record<string, unknown> = {};
   if (filters?.warehouseId) where.warehouseId = filters.warehouseId;
 
-  const stock = (await supabaseAdmin.from("inventoryStock").select("*, product(id, name, sku, unit_price, currency, type), warehouse(id, name, code)").order("warehouse", { ascending: false }).order("product", { ascending: false })).data;
+  const stock = (await supabaseAdmin.from("InventoryStock").select("*, product(id, name, sku, unit_price, currency, type), warehouse(id, name, code)").order("warehouse", { ascending: false }).order("product", { ascending: false })).data;
 
   // Get all reorder thresholds for these product-warehouse combinations
   const thresholdKeys = stock.map((s) => ({ productId: s.productId, warehouseId: s.warehouseId }));
-  const thresholds = (await supabaseAdmin.from("reorderThreshold").select("*").eq("OR", thresholdKeys.map((k) => ({ productId: k.productId, warehouseId: k.warehouseId })))).data;
+  const thresholds = (await supabaseAdmin.from("ReorderThreshold").select("*").eq("OR", thresholdKeys.map((k) => ({ productId: k.productId, warehouseId: k.warehouseId })))).data;
 
   const thresholdMap = new Map(
     thresholds.map((t) => [`${t.productId}:${t.warehouseId}`, t]),

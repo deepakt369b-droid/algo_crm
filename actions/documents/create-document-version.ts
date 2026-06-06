@@ -35,13 +35,13 @@ export async function createDocumentVersion(input: CreateVersionInput) {
     throw e;
   }
 
-  const parent = (await supabaseAdmin.from("documents").select("id, document_name, version, accounts(account_id)").eq("id", input.parentDocumentId).single()).data;
+  const parent = (await supabaseAdmin.from("Documents").select("id, document_name, version, accounts(account_id)").eq("id", input.parentDocumentId).single()).data;
   if (!parent) throw new Error("Parent document not found");
 
   const newVersion = parent.version + 1;
 
   const [newDoc] = await Promise.all([
-    (await supabaseAdmin.from("documents").insert({
+    (await supabaseAdmin.from("Documents").insert({
                     v: 0,
                     document_name: parent.document_name,
                     description: `Version ${newVersion}`,
@@ -56,7 +56,7 @@ export async function createDocumentVersion(input: CreateVersionInput) {
                     createdBy: user.id,
                     assigned_user: user.id,
                   }).select("*").single()).data,
-    (await supabaseAdmin.from("documents").update({
+    (await supabaseAdmin.from("Documents").update({
                   document_file_url: input.url,
                   key: input.key,
                   size: input.size,

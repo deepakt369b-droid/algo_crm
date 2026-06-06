@@ -17,7 +17,7 @@ export const unlinkOpportunity = async (data: {
   if (!opportunityId) return { error: "opportunityId is required" };
 
   try {
-    (await supabaseAdmin.from("contactsToOpportunities").delete().select("*").single()).data;
+    (await supabaseAdmin.from("ContactsToOpportunities").delete().select("*").single()).data;
     revalidatePath("/[locale]/(routes)/crm/contacts", "page");
     return { success: true };
   } catch (error) {

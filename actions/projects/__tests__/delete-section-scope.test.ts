@@ -36,7 +36,7 @@ describe("deleteSection scope", () => {
     const res = await deleteSection("s1");
     expect(res).toEqual({ error: "Forbidden" });
     expect(prismadb.sections.delete).not.toHaveBeenCalled();
-    (await supabaseAdmin.from("tasks").delete()).data.not.toHaveBeenCalled();
+    (await supabaseAdmin.from("Tasks").delete()).data.not.toHaveBeenCalled();
   });
 
   it("in-scope owner deletes section and its tasks", async () => {
@@ -47,7 +47,7 @@ describe("deleteSection scope", () => {
     (prismadb.sections.delete as jest.Mock).mockResolvedValue({ id: "s1" });
     const res = await deleteSection("s1");
     expect(res).toEqual({ success: true });
-    (await supabaseAdmin.from("tasks").delete()).data.toHaveBeenCalledWith({ where: { section: "s1" } });
+    (await supabaseAdmin.from("Tasks").delete()).data.toHaveBeenCalledWith({ where: { section: "s1" } });
     expect(prismadb.sections.delete).toHaveBeenCalledWith({ where: { id: "s1" } });
   });
 

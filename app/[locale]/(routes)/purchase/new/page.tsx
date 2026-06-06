@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 export default async function NewPurchaseOrderPage() {
   const [vendors, currencies] = await Promise.all([
     (await supabaseAdmin.from("crm_Accounts").select("id, name, email, website").is("deletedAt", null).order("name", { ascending: true })).data,
-    (await supabaseAdmin.from("currency").select("code, name, symbol").eq("isEnabled", true)).data,
+    (await supabaseAdmin.from("Currency").select("code, name, symbol").eq("isEnabled", true)).data,
   ]);
 
   return (

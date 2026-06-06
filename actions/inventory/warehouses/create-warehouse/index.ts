@@ -17,12 +17,12 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
   try {
     // Check for duplicate code
-    const existing = (await supabaseAdmin.from("inventoryWarehouse").select("*").eq("code", code).single()).data;
+    const existing = (await supabaseAdmin.from("InventoryWarehouse").select("*").eq("code", code).single()).data;
     if (existing) {
       return { error: "A warehouse with this code already exists" };
     }
 
-    const warehouse = (await supabaseAdmin.from("inventoryWarehouse").insert({
+    const warehouse = (await supabaseAdmin.from("InventoryWarehouse").insert({
                 name,
                 code: code.toUpperCase(),
                 description: description || undefined,

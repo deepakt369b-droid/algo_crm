@@ -28,7 +28,7 @@ export const deleteProject = async (projectId: string) => {
   }
 
   try {
-    (await supabaseAdmin.from("boards").update({ deletedAt: new Date(), deletedBy: user.id }).select("*").single().eq("id", projectId).select("*").single()).data;
+    (await supabaseAdmin.from("Boards").update({ deletedAt: new Date(), deletedBy: user.id }).select("*").single().eq("id", projectId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

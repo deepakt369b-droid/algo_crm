@@ -19,7 +19,7 @@ interface SendInvoiceEmailInput {
 export async function sendInvoiceEmail(input: SendInvoiceEmailInput) {
   const user = await getUser();
 
-  const invoice = (await supabaseAdmin.from("invoices").select("id, number, status, createdBy, pdfStorageKey, account(name)").eq("id", input.invoiceId).single()).data;
+  const invoice = (await supabaseAdmin.from("Invoices").select("id, number, status, createdBy, pdfStorageKey, account(name)").eq("id", input.invoiceId).single()).data;
 
   if (
     !canReadInvoice(
@@ -78,7 +78,7 @@ export async function sendInvoiceEmail(input: SendInvoiceEmailInput) {
 
   // Update status to SENT only if currently ISSUED
   if (invoice.status === "ISSUED") {
-    (await supabaseAdmin.from("invoices").update({
+    (await supabaseAdmin.from("Invoices").update({
               status: "SENT",
               activity: {
                 create: {
@@ -90,7 +90,7 @@ export async function sendInvoiceEmail(input: SendInvoiceEmailInput) {
             }).eq("id", invoice.id).select("*").single()).data;
   } else {
     // Log activity even if we don't change status
-    (await supabaseAdmin.from("invoice_Activity").insert({
+    (await supabaseAdmin.from("Invoice_Activity").insert({
               invoiceId: invoice.id,
               actorId: user.id,
               action: "EMAIL_SENT",

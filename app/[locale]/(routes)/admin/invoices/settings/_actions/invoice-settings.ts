@@ -92,10 +92,10 @@ export async function saveInvoiceSettings(
   const data = parsed.data;
 
   try {
-    const existing = (await supabaseAdmin.from("invoice_Settings").select("*").single()).data;
+    const existing = (await supabaseAdmin.from("Invoice_Settings").select("*").single()).data;
     const settings = existing
-      ? (await supabaseAdmin.from("invoice_Settings").update(data).eq("id", existing.id).select("*").single()).data
-      : (await supabaseAdmin.from("invoice_Settings").insert(data).select("*").single()).data;
+      ? (await supabaseAdmin.from("Invoice_Settings").update(data).eq("id", existing.id).select("*").single()).data
+      : (await supabaseAdmin.from("Invoice_Settings").insert(data).select("*").single()).data;
 
     revalidatePath("/admin/invoices/settings");
     return { ok: true, data: settings };

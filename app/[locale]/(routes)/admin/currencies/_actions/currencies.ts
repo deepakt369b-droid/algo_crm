@@ -50,7 +50,7 @@ const rateSchema = z.object({
 export async function getCurrencies(): Promise<CurrencyValue[]> {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
-  const currencies = (await supabaseAdmin.from("currency").select("*").order("code", { ascending: true })).data;
+  const currencies = (await supabaseAdmin.from("Currency").select("*").order("code", { ascending: true })).data;
   return currencies.map((c) => ({
     code: c.code,
     name: c.name,
@@ -63,7 +63,7 @@ export async function getCurrencies(): Promise<CurrencyValue[]> {
 export async function getExchangeRatesAdmin(): Promise<ExchangeRateValue[]> {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
-  const rates = (await supabaseAdmin.from("exchangeRate").select("*").order("fromCurrency", { ascending: true }).order("toCurrency", { ascending: true })).data;
+  const rates = (await supabaseAdmin.from("ExchangeRate").select("*").order("fromCurrency", { ascending: true }).order("toCurrency", { ascending: true })).data;
   return rates.map((r) => ({
     id: r.id,
     fromCurrency: r.fromCurrency,
@@ -79,14 +79,14 @@ export async function createCurrency(data: { code: string; name: string; symbol:
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
   const parsed = currencySchema.parse(data);
-  (await supabaseAdmin.from("currency").insert({ ...parsed, isEnabled: true, isDefault: false }).select("*").single()).data;
+  (await supabaseAdmin.from("Currency").insert({ ...parsed, isEnabled: true, isDefault: false }).select("*").single()).data;
   revalidatePath("/", "layout");
 }
 
 export async function toggleCurrency(code: string, isEnabled: boolean) {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
-  (await supabaseAdmin.from("currency").update({ isEnabled }).select("*").single().eq("code", code).select("*").single()).data;
+  (await supabaseAdmin.from("Currency").update({ isEnabled }).select("*").single().eq("code", code).select("*").single()).data;
   revalidatePath("/", "layout");
 }
 
@@ -94,7 +94,7 @@ export async function setDefaultCurrency(code: string) {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
   await Promise.all([
-    ((await supabaseAdmin.from("currency").update({ isDefault: false }).select("*").single()).data).data,
+    ((await supabaseAdmin.from("Currency").update({ isDefault: false }).select("*").single()).data).data,
     supabaseAdmin.from("crm_SystemSettings").upsert({ key: "default_currency", value: code }, { onConflict: "key" }),
   ]);
   revalidatePath("/", "layout");
@@ -108,7 +108,7 @@ export async function updateExchangeRate(data: {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
   const parsed = rateSchema.parse(data);
-  await supabaseAdmin.from("exchangeRate").upsert({
+  await supabaseAdmin.from("ExchangeRate").upsert({
     fromCurrency: parsed.fromCurrency,
     toCurrency: parsed.toCurrency,
     rate: parseFloat(parsed.rate),

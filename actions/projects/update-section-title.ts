@@ -24,7 +24,7 @@ export const updateSectionTitle = async (data: {
   const { sectionId, newTitle } = data;
   if (!sectionId) return { error: "Missing section ID" };
 
-  const existing = (await supabaseAdmin.from("sections").select("board").eq("id", sectionId).single()).data;
+  const existing = (await supabaseAdmin.from("Sections").select("board").eq("id", sectionId).single()).data;
   if (!existing) return { error: "Not found" };
 
   try {
@@ -35,7 +35,7 @@ export const updateSectionTitle = async (data: {
   }
 
   try {
-    (await supabaseAdmin.from("sections").update({ title: newTitle }).select("*").single().eq("id", sectionId).select("*").single()).data;
+    (await supabaseAdmin.from("Sections").update({ title: newTitle }).select("*").single().eq("id", sectionId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

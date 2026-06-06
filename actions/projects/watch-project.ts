@@ -29,7 +29,7 @@ export const watchProject = async (projectId: string) => {
   }
 
   try {
-    (await supabaseAdmin.from("boards").update({
+    (await supabaseAdmin.from("Boards").update({
                   watchers: junctionTableHelpers.addWatcher(user.id),
                 }).select("*").single().eq("id", projectId).select("*").single()).data;
 
@@ -60,7 +60,7 @@ export const unwatchProject = async (projectId: string) => {
   }
 
   try {
-    (await supabaseAdmin.from("boards").update({
+    (await supabaseAdmin.from("Boards").update({
                   watchers: junctionTableHelpers.removeBoardWatcher(
                     projectId,
                     user.id

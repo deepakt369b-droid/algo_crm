@@ -23,10 +23,10 @@ export const getKanbanData = async (boardId: string) => {
     throw e;
   }
 
-  const board = (await supabaseAdmin.from("boards").select("*").eq("id", boardId).single()).data;
+  const board = (await supabaseAdmin.from("Boards").select("*").eq("id", boardId).single()).data;
 
   //Select sections from board with boardId, tasks are included
-  let sections = (await supabaseAdmin.from("sections").select("*").eq("board", boardId).order("position", { ascending: true })).data;
+  let sections = (await supabaseAdmin.from("Sections").select("*").eq("board", boardId).order("position", { ascending: true })).data;
 
   const data = {
     board,

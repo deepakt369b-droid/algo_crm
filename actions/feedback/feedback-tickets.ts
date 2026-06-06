@@ -31,7 +31,7 @@ export async function createFeedbackTicket(data: CreateTicketInput) {
 
   try {
     // 1. Create ticket in the database
-    const ticket = (await supabaseAdmin.from("feedbackTicket").insert({
+    const ticket = (await supabaseAdmin.from("FeedbackTicket").insert({
             userId: session.user.id,
             subject: subject || "No Subject",
             message,
@@ -90,7 +90,7 @@ export async function getSuperadminFeedbackTickets() {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // Hard delete tickets older than 30 days to keep the log only for one month
-    await supabaseAdmin.from("feedbackTicket").deleteMany({
+    await supabaseAdmin.from("FeedbackTicket").deleteMany({
       where: {
         createdAt: {
           lt: thirtyDaysAgo,
@@ -98,7 +98,7 @@ export async function getSuperadminFeedbackTickets() {
       },
     });
 
-    return (await supabaseAdmin.from("feedbackTicket").select("*, user(id, name, email, avatar), responder(id, name, email)").order("createdAt", { ascending: false })).data;
+    return (await supabaseAdmin.from("FeedbackTicket").select("*, user(id, name, email, avatar), responder(id, name, email)").order("createdAt", { ascending: false })).data;
   } catch (error) {
     console.error("[FEEDBACK_FETCH_ALL_ERROR]", error);
     throw new Error("Failed to retrieve feedback tickets.");
@@ -126,7 +126,7 @@ export async function updateTicketStatus(
       updateData.respondedAt = new Date();
     }
 
-    const ticket = (await supabaseAdmin.from("feedbackTicket").update(updateData).eq("id", ticketId).select("*").single()).data;
+    const ticket = (await supabaseAdmin.from("FeedbackTicket").update(updateData).eq("id", ticketId).select("*").single()).data;
 
     revalidatePath("/superadmin/feedback");
     return { success: true, ticket };

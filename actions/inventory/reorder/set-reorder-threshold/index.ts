@@ -20,12 +20,12 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return { error: "Product not found" };
     }
 
-    const warehouse = (await supabaseAdmin.from("inventoryWarehouse").select("*").eq("id", warehouseId).single()).data;
+    const warehouse = (await supabaseAdmin.from("InventoryWarehouse").select("*").eq("id", warehouseId).single()).data;
     if (!warehouse) {
       return { error: "Warehouse not found" };
     }
 
-    const thresholdResp = await supabaseAdmin.from("reorderThreshold").upsert({
+    const thresholdResp = await supabaseAdmin.from("ReorderThreshold").upsert({
       productId,
       warehouseId,
       minQuantity,

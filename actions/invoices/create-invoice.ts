@@ -30,7 +30,7 @@ export async function createInvoice(raw: unknown) {
     throw e;
   }
 
-  const taxRates = (await supabaseAdmin.from("invoice_TaxRates").select("*").in("id", input.lineItems
+  const taxRates = (await supabaseAdmin.from("Invoice_TaxRates").select("*").in("id", input.lineItems
             .map((l) => l.taxRateId)
             .filter(Boolean) as string[])).data;
   const rateMap = new Map(
@@ -47,7 +47,7 @@ export async function createInvoice(raw: unknown) {
   }));
   const totals = computeInvoiceTotals(lineInputs);
 
-  const invoice = (await supabaseAdmin.from("invoices").insert({
+  const invoice = (await supabaseAdmin.from("Invoices").insert({
         type: input.type,
         status: "DRAFT",
         createdBy: user.id,

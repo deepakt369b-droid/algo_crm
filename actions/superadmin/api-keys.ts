@@ -48,7 +48,7 @@ export async function getSystemApiKeys(): Promise<ProviderStatus[]> {
         };
       }
 
-      const row = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", provider).single()).data;
+      const row = (await supabaseAdmin.from("ApiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", provider).single()).data;
 
       if (row) {
         const plaintext = decrypt(row.encryptedKey);
@@ -73,10 +73,10 @@ export async function upsertSystemApiKey(
   const encryptedKey = encrypt(key);
 
   await Promise.all([
-    supabaseAdmin.from("apiKeys").deleteMany({
+    supabaseAdmin.from("ApiKeys").deleteMany({
       where: { scope: "SYSTEM", provider },
     }),
-    (await supabaseAdmin.from("apiKeys").insert({
+    (await supabaseAdmin.from("ApiKeys").insert({
                   scope: "SYSTEM",
                   provider,
                   encryptedKey,
@@ -89,7 +89,7 @@ export async function upsertSystemApiKey(
 export async function deleteSystemApiKey(provider: ApiKeyProvider): Promise<void> {
   await ensureSuperAdmin();
 
-  await supabaseAdmin.from("apiKeys").deleteMany({
+  await supabaseAdmin.from("ApiKeys").deleteMany({
     where: { scope: "SYSTEM", provider },
   });
 

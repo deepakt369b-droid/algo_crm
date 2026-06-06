@@ -16,20 +16,20 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const { id, code, ...fields } = data;
 
   try {
-    const existing = (await supabaseAdmin.from("inventoryWarehouse").select("*").eq("id", id).single()).data;
+    const existing = (await supabaseAdmin.from("InventoryWarehouse").select("*").eq("id", id).single()).data;
     if (!existing) {
       return { error: "Warehouse not found" };
     }
 
     // Check code uniqueness if changed
     if (code && code !== existing.code) {
-      const duplicate = (await supabaseAdmin.from("inventoryWarehouse").select("*").eq("code", code).single()).data;
+      const duplicate = (await supabaseAdmin.from("InventoryWarehouse").select("*").eq("code", code).single()).data;
       if (duplicate) {
         return { error: "A warehouse with this code already exists" };
       }
     }
 
-    const warehouse = (await supabaseAdmin.from("inventoryWarehouse").update({
+    const warehouse = (await supabaseAdmin.from("InventoryWarehouse").update({
                 ...fields,
                 ...(code ? { code: code.toUpperCase() } : {}),
                 updatedBy: session.user.id,

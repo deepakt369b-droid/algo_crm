@@ -19,7 +19,7 @@ export const getUserTasks = async (userId: string) => {
     return [];
   }
 
-  const data = (await supabaseAdmin.from("tasks").select("*, assigned_user(id, name)").eq("user", userId).order("createdAt", { ascending: false })).data;
+  const data = (await supabaseAdmin.from("Tasks").select("*, assigned_user(id, name)").eq("user", userId).order("createdAt", { ascending: false })).data;
 
   return data;
 };

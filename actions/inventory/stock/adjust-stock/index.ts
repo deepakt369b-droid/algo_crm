@@ -20,25 +20,25 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return { error: "Product not found" };
     }
 
-    const warehouse = (await supabaseAdmin.from("inventoryWarehouse").select("*").eq("id", warehouseId).single()).data;
+    const warehouse = (await supabaseAdmin.from("InventoryWarehouse").select("*").eq("id", warehouseId).single()).data;
     if (!warehouse) {
       return { error: "Warehouse not found" };
     }
 
     // Get current stock
-    const existingStock = (await supabaseAdmin.from("inventoryStock").select("*").eq("productId", productId).eq("warehouseId", warehouseId).single()).data;
+    const existingStock = (await supabaseAdmin.from("InventoryStock").select("*").eq("productId", productId).eq("warehouseId", warehouseId).single()).data;
 
     const currentQuantity = existingStock ? Number(existingStock.quantity) : 0;
     const quantityDiff = newQuantity - currentQuantity;
 
     // Upsert stock record
-    await supabaseAdmin.from("inventoryStock").upsert({
+    await supabaseAdmin.from("InventoryStock").upsert({
       productId, warehouseId, quantity: newQuantity
     }, { onConflict: "productId,warehouseId" });
 
     // Record movement if quantity changed
     if (quantityDiff !== 0) {
-      (await supabaseAdmin.from("inventoryMovement").insert({
+      (await supabaseAdmin.from("InventoryMovement").insert({
                         productId,
                         warehouseId,
                         type: "ADJUSTMENT",

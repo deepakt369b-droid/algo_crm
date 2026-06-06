@@ -14,7 +14,7 @@ export async function generateApiToken(
   name: string,
   expiresAt?: Date
 ): Promise<{ rawToken: string; tokenId: string }> {
-  const activeCount = (await supabaseAdmin.from("apiToken").select("*", { count: 'exact', head: true }).eq("userId", userId).is("revokedAt", null).eq("OR", [{ expiresAt: null }, { expiresAt: { gt: new Date() } }])).count;
+  const activeCount = (await supabaseAdmin.from("ApiToken").select("*", { count: 'exact', head: true }).eq("userId", userId).is("revokedAt", null).eq("OR", [{ expiresAt: null }, { expiresAt: { gt: new Date() } }])).count;
 
   if (activeCount >= MAX_TOKENS_PER_USER) {
     throw new Error("Maximum 10 active tokens allowed per user");
@@ -25,7 +25,7 @@ export async function generateApiToken(
   const tokenHash = hashToken(rawToken);
   const tokenPrefix = rawSuffix.slice(0, 8);
 
-  const created = (await supabaseAdmin.from("apiToken").insert({
+  const created = (await supabaseAdmin.from("ApiToken").insert({
           name,
           tokenHash,
           tokenPrefix,
@@ -40,7 +40,7 @@ export async function validateApiToken(rawToken: string): Promise<string> {
   if (!rawToken.startsWith("nxtc__")) throw new Error("Invalid token");
   const tokenHash = hashToken(rawToken);
 
-  const token = (await supabaseAdmin.from("apiToken").select("*").eq("tokenHash", tokenHash).single()).data;
+  const token = (await supabaseAdmin.from("ApiToken").select("*").eq("tokenHash", tokenHash).single()).data;
 
   if (!token) throw new Error("Invalid token");
   if (token.revokedAt) throw new Error("Invalid token");
@@ -48,7 +48,7 @@ export async function validateApiToken(rawToken: string): Promise<string> {
 
   // Fire-and-forget lastUsedAt update — failures are intentionally silenced
   void Promise.resolve(
-    (await supabaseAdmin.from("apiToken").update({ lastUsedAt: new Date() }).select("*").single().eq("id", token.id).select("*").single()).data
+    (await supabaseAdmin.from("ApiToken").update({ lastUsedAt: new Date() }).select("*").single().eq("id", token.id).select("*").single()).data
   ).catch(() => {});
 
   return token.userId;
@@ -58,12 +58,12 @@ export async function revokeApiToken(
   tokenId: string,
   userId: string
 ): Promise<void> {
-  const token = (await supabaseAdmin.from("apiToken").select("*").eq("id", tokenId).single()).data;
+  const token = (await supabaseAdmin.from("ApiToken").select("*").eq("id", tokenId).single()).data;
   if (!token || token.userId !== userId) throw new Error("Not found");
 
-  (await supabaseAdmin.from("apiToken").update({ revokedAt: new Date() }).select("*").single().eq("id", tokenId).select("*").single()).data;
+  (await supabaseAdmin.from("ApiToken").update({ revokedAt: new Date() }).select("*").single().eq("id", tokenId).select("*").single()).data;
 }
 
 export async function listApiTokens(userId: string) {
-  return (await supabaseAdmin.from("apiToken").select("id, name, tokenPrefix, expiresAt, revokedAt, createdAt, lastUsedAt").eq("userId", userId).order("createdAt", { ascending: false })).data;
+  return (await supabaseAdmin.from("ApiToken").select("id, name, tokenPrefix, expiresAt, revokedAt, createdAt, lastUsedAt").eq("userId", userId).order("createdAt", { ascending: false })).data;
 }

@@ -12,12 +12,12 @@ export async function removePurchaseOrderLineItem(lineItemId: string): Promise<{
   }
 
   try {
-    const lineItem = (await supabaseAdmin.from("purchaseOrderLineItems").select("*").eq("id", lineItemId).single()).data;
+    const lineItem = (await supabaseAdmin.from("PurchaseOrderLineItems").select("*").eq("id", lineItemId).single()).data;
     if (!lineItem) {
       return { error: "Line item not found" };
     }
 
-    const po = (await supabaseAdmin.from("purchaseOrders").select("*").eq("id", lineItem.purchaseOrderId).single()).data;
+    const po = (await supabaseAdmin.from("PurchaseOrders").select("*").eq("id", lineItem.purchaseOrderId).single()).data;
     if (!po || po.deletedAt) {
       return { error: "Purchase order not found" };
     }
@@ -25,10 +25,10 @@ export async function removePurchaseOrderLineItem(lineItemId: string): Promise<{
       return { error: "Can only remove line items from draft purchase orders" };
     }
 
-    (await supabaseAdmin.from("purchaseOrderLineItems").delete().select("*").single().eq("id", lineItemId).select("*").single()).data;
+    (await supabaseAdmin.from("PurchaseOrderLineItems").delete().select("*").single().eq("id", lineItemId).select("*").single()).data;
 
     // Recalculate totals
-    const allItems = (await supabaseAdmin.from("purchaseOrderLineItems").select("*").eq("purchaseOrderId", lineItem.purchaseOrderId)).data;
+    const allItems = (await supabaseAdmin.from("PurchaseOrderLineItems").select("*").eq("purchaseOrderId", lineItem.purchaseOrderId)).data;
     const subtotal = allItems.reduce((sum, li) => sum + Number(li.lineTotal), 0);
     const taxTotal = allItems.reduce((sum, li) => {
       if (li.taxRate) {
@@ -38,7 +38,7 @@ export async function removePurchaseOrderLineItem(lineItemId: string): Promise<{
     }, 0);
     const grandTotal = subtotal + taxTotal;
 
-    (await supabaseAdmin.from("purchaseOrders").update({
+    (await supabaseAdmin.from("PurchaseOrders").update({
                   subtotal,
                   taxTotal,
                   grandTotal,

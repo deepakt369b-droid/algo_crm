@@ -29,11 +29,11 @@ export async function deleteDocument(documentId: string) {
     throw e;
   }
 
-  const document = (await supabaseAdmin.from("documents").select("*").eq("id", documentId).single()).data;
+  const document = (await supabaseAdmin.from("Documents").select("*").eq("id", documentId).single()).data;
 
   if (!document) throw new Error("Document not found");
 
-  (await supabaseAdmin.from("documents").delete().select("*").single().eq("id", documentId).select("*").single()).data;
+  (await supabaseAdmin.from("Documents").delete().select("*").single().eq("id", documentId).select("*").single()).data;
 
   if (document.key) {
     await minioClient.send(

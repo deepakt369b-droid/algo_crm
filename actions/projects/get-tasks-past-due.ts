@@ -20,7 +20,7 @@ export const getTasksPastDue = async () => {
   const userScope =
     user.role === "user" ? [{ user: user.id }] : [];
 
-  const getTaskPastDue = (await supabaseAdmin.from("tasks").select("*, comments(id, comment, createdAt, assigned_user(id, name, avatar))").eq("AND", [
+  const getTaskPastDue = (await supabaseAdmin.from("Tasks").select("*, comments(id, comment, createdAt, assigned_user(id, name, avatar))").eq("AND", [
           ...userScope,
           {
             dueDateAt: {
@@ -34,7 +34,7 @@ export const getTasksPastDue = async () => {
           },
         ])).data;
 
-  const getTaskPastDueInSevenDays = (await supabaseAdmin.from("tasks").select("*, comments(id, comment, createdAt, assigned_user(id, name, avatar))").eq("AND", [
+  const getTaskPastDueInSevenDays = (await supabaseAdmin.from("Tasks").select("*, comments(id, comment, createdAt, assigned_user(id, name, avatar))").eq("AND", [
           ...userScope,
           {
             dueDateAt: {

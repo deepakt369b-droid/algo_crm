@@ -28,7 +28,7 @@ export async function PATCH(
   if (denied) return denied;
 
   const body = await request.json();
-  const series = (await supabaseAdmin.from("invoice_Series").update({
+  const series = (await supabaseAdmin.from("Invoice_Series").update({
           ...(body.name !== undefined && { name: body.name }),
           ...(body.prefixTemplate !== undefined && { prefixTemplate: body.prefixTemplate }),
           ...(body.resetPolicy !== undefined && { resetPolicy: body.resetPolicy }),
@@ -47,6 +47,6 @@ export async function DELETE(
   const denied = await ensureAdmin();
   if (denied) return denied;
 
-  (await supabaseAdmin.from("invoice_Series").delete().select("*").single().eq("id", id).select("*").single()).data;
+  (await supabaseAdmin.from("Invoice_Series").delete().select("*").single().eq("id", id).select("*").single()).data;
   return NextResponse.json({ success: true });
 }

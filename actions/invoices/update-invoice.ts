@@ -18,7 +18,7 @@ export async function updateInvoice(invoiceId: string, raw: unknown) {
   const user = await getUser();
   const input = updateInvoiceSchema.parse(raw);
 
-  const existing = (await supabaseAdmin.from("invoices").select("status, createdBy, paidTotal").eq("id", invoiceId).single()).data;
+  const existing = (await supabaseAdmin.from("Invoices").select("status, createdBy, paidTotal").eq("id", invoiceId).single()).data;
 
   if (
     !canEditInvoice(
@@ -43,7 +43,7 @@ export async function updateInvoice(invoiceId: string, raw: unknown) {
 
   // If lineItems provided, recompute totals
   if (input.lineItems) {
-    const taxRates = (await supabaseAdmin.from("invoice_TaxRates").select("*").in("id", input.lineItems
+    const taxRates = (await supabaseAdmin.from("Invoice_TaxRates").select("*").in("id", input.lineItems
                 .map((l) => l.taxRateId)
                 .filter(Boolean) as string[])).data;
     const rateMap = new Map(
@@ -104,7 +104,7 @@ export async function updateInvoice(invoiceId: string, raw: unknown) {
   }
 
   // No line items change — simple field update
-  const updated = (await supabaseAdmin.from("invoices").update({
+  const updated = (await supabaseAdmin.from("Invoices").update({
         ...buildUpdateData(input),
         activity: {
           create: { actorId: user.id, action: "UPDATED" },

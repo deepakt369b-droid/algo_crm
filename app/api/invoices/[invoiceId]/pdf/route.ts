@@ -23,7 +23,7 @@ export async function GET(
     throw e;
   }
 
-  const invoice = (await supabaseAdmin.from("invoices").select("createdBy, status, pdfStorageKey").eq("id", invoiceId).single()).data;
+  const invoice = (await supabaseAdmin.from("Invoices").select("createdBy, status, pdfStorageKey").eq("id", invoiceId).single()).data;
   if (!invoice) return notFoundOrForbiddenResponse();
 
   if (

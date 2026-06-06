@@ -42,7 +42,7 @@ export async function getUserApiKeys(): Promise<UserProviderStatus[]> {
       }
 
       // 2. Check SYSTEM row
-      const systemRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", provider).single()).data;
+      const systemRow = (await supabaseAdmin.from("ApiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", provider).single()).data;
 
       if (systemRow) {
         const plaintext = decrypt(systemRow.encryptedKey);
@@ -55,7 +55,7 @@ export async function getUserApiKeys(): Promise<UserProviderStatus[]> {
       }
 
       // 3. Check USER row
-      const userRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "USER").eq("provider", provider).eq("userId", userId).single()).data;
+      const userRow = (await supabaseAdmin.from("ApiKeys").select("encryptedKey").eq("scope", "USER").eq("provider", provider).eq("userId", userId).single()).data;
 
       if (userRow) {
         const plaintext = decrypt(userRow.encryptedKey);
@@ -84,10 +84,10 @@ export async function upsertUserApiKey(
   const encryptedKey = encrypt(key);
 
   await Promise.all([
-    supabaseAdmin.from("apiKeys").deleteMany({
+    supabaseAdmin.from("ApiKeys").deleteMany({
       where: { scope: "USER", provider, userId },
     }),
-    (await supabaseAdmin.from("apiKeys").insert({
+    (await supabaseAdmin.from("ApiKeys").insert({
                   scope: "USER",
                   provider,
                   userId,
@@ -104,7 +104,7 @@ export async function deleteUserApiKey(provider: ApiKeyProvider): Promise<void> 
 
   const userId = session.user.id;
 
-  await supabaseAdmin.from("apiKeys").deleteMany({
+  await supabaseAdmin.from("ApiKeys").deleteMany({
     where: { scope: "USER", provider, userId },
   });
 

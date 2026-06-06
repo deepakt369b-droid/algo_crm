@@ -33,9 +33,9 @@ export const createSection = async (data: {
   }
 
   try {
-    const sectionPosition = (await supabaseAdmin.from("sections").select("*", { count: 'exact', head: true }).eq("board", boardId)).count;
+    const sectionPosition = (await supabaseAdmin.from("Sections").select("*", { count: 'exact', head: true }).eq("board", boardId)).count;
 
-    const newSection = (await supabaseAdmin.from("sections").insert({
+    const newSection = (await supabaseAdmin.from("Sections").insert({
                 v: 0,
                 board: boardId,
                 title,

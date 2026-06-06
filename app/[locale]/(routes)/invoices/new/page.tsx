@@ -10,10 +10,10 @@ export default async function NewInvoicePage() {
   const [products, taxRates, series, currencies, settings] =
     await Promise.all([
       (await supabaseAdmin.from("crm_Products").select("id, name").eq("status", "ACTIVE").order("name", { ascending: true })).data,
-      (await supabaseAdmin.from("invoice_TaxRates").select("*").eq("active", true).order("rate", { ascending: false })).data,
-      (await supabaseAdmin.from("invoice_Series").select("*").eq("active", true).order("name", { ascending: true })).data,
-      (await supabaseAdmin.from("currency").select("*").eq("isEnabled", true).order("code", { ascending: true })).data,
-      (await supabaseAdmin.from("invoice_Settings").select("*").single()).data,
+      (await supabaseAdmin.from("Invoice_TaxRates").select("*").eq("active", true).order("rate", { ascending: false })).data,
+      (await supabaseAdmin.from("Invoice_Series").select("*").eq("active", true).order("name", { ascending: true })).data,
+      (await supabaseAdmin.from("Currency").select("*").eq("isEnabled", true).order("code", { ascending: true })).data,
+      (await supabaseAdmin.from("Invoice_Settings").select("*").single()).data,
     ]);
 
   const formLabels = {

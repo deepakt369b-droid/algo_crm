@@ -16,7 +16,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const { purchaseOrderId, productId, description, quantity, unitPrice, taxRate, sortOrder } = data;
 
   try {
-    const po = (await supabaseAdmin.from("purchaseOrders").select("*").eq("id", purchaseOrderId).single()).data;
+    const po = (await supabaseAdmin.from("PurchaseOrders").select("*").eq("id", purchaseOrderId).single()).data;
     if (!po || po.deletedAt) {
       return { error: "Purchase order not found" };
     }
@@ -26,7 +26,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
     const lineTotal = Number((quantity * unitPrice).toFixed(2));
 
-    const lineItem = (await supabaseAdmin.from("purchaseOrderLineItems").insert({
+    const lineItem = (await supabaseAdmin.from("PurchaseOrderLineItems").insert({
                 purchaseOrderId,
                 productId: productId || undefined,
                 description,
@@ -38,7 +38,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
               }).select("*").single()).data;
 
     // Recalculate totals
-    const allItems = (await supabaseAdmin.from("purchaseOrderLineItems").select("*").eq("purchaseOrderId", purchaseOrderId)).data;
+    const allItems = (await supabaseAdmin.from("PurchaseOrderLineItems").select("*").eq("purchaseOrderId", purchaseOrderId)).data;
     const subtotal = allItems.reduce((sum, li) => sum + Number(li.lineTotal), 0);
     const taxTotal = allItems.reduce((sum, li) => {
       if (li.taxRate) {
@@ -48,7 +48,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     }, 0);
     const grandTotal = subtotal + taxTotal;
 
-    (await supabaseAdmin.from("purchaseOrders").update({
+    (await supabaseAdmin.from("PurchaseOrders").update({
                   subtotal: subtotal,
                   taxTotal: taxTotal,
                   grandTotal: grandTotal,

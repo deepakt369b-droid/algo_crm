@@ -28,7 +28,7 @@ export async function PATCH(
   if (denied) return denied;
 
   const body = await request.json();
-  const taxRate = (await supabaseAdmin.from("invoice_TaxRates").update({
+  const taxRate = (await supabaseAdmin.from("Invoice_TaxRates").update({
           ...(body.name !== undefined && { name: body.name }),
           ...(body.rate !== undefined && { rate: body.rate }),
           ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
@@ -46,6 +46,6 @@ export async function DELETE(
   const denied = await ensureAdmin();
   if (denied) return denied;
 
-  (await supabaseAdmin.from("invoice_TaxRates").delete().select("*").single().eq("id", id).select("*").single()).data;
+  (await supabaseAdmin.from("Invoice_TaxRates").delete().select("*").single().eq("id", id).select("*").single()).data;
   return NextResponse.json({ success: true });
 }

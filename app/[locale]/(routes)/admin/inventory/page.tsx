@@ -31,18 +31,18 @@ export default async function AdminInventoryPage(props: Props) {
     (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).eq("status", "ACTIVE").is("deletedAt", null)).count,
     (await supabaseAdmin.from("crm_ProductCategories").select("*", { count: 'exact', head: true }).eq("isActive", true)).count,
     (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).eq("type", "SERVICE").is("deletedAt", null)).count,
-    (await supabaseAdmin.from("inventoryWarehouse").select("*", { count: 'exact', head: true }).eq("isActive", true)).count,
-    (await supabaseAdmin.from("reorderThreshold").select("*", { count: 'exact', head: true }).gt("reorderPoint", 0)).count,
+    (await supabaseAdmin.from("InventoryWarehouse").select("*", { count: 'exact', head: true }).eq("isActive", true)).count,
+    (await supabaseAdmin.from("ReorderThreshold").select("*", { count: 'exact', head: true }).gt("reorderPoint", 0)).count,
     Promise.resolve({ _sum: { quantity: 0 } }),
   ]);
 
   // Count actual low stock items by comparing stock vs reorder points
-  const thresholdsWithStockData = (await supabaseAdmin.from("reorderThreshold").select("id, reorderPoint, productId, warehouseId")).data || [];
+  const thresholdsWithStockData = (await supabaseAdmin.from("ReorderThreshold").select("id, reorderPoint, productId, warehouseId")).data || [];
 
   // Get current stock for each threshold
   const stockRecords = await Promise.all(
     thresholdsWithStockData.map((t) =>
-      supabaseAdmin.from("inventoryStock").select("quantity").eq("productId", t.productId).eq("warehouseId", t.warehouseId).single()
+      supabaseAdmin.from("InventoryStock").select("quantity").eq("productId", t.productId).eq("warehouseId", t.warehouseId).single()
     ),
   );
 

@@ -40,7 +40,7 @@ export interface PurchaseOrderLineItemDetail {
 }
 
 export async function getPurchaseOrderById(id: string): Promise<PurchaseOrderDetail | null> {
-  const order = (await supabaseAdmin.from("purchaseOrders").select("*, vendor(id, name, email, website), requestedByUser(id, name), approvedByUser(id, name), lineItems(*, product(id, name, sku))").eq("id", id).single()).data;
+  const order = (await supabaseAdmin.from("PurchaseOrders").select("*, vendor(id, name, email, website), requestedByUser(id, name), approvedByUser(id, name), lineItems(*, product(id, name, sku))").eq("id", id).single()).data;
 
   if (!order || order.deletedAt) return null;
 

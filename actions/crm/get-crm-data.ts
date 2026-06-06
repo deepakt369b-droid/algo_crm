@@ -35,8 +35,8 @@ export const getAllCrmData = cache(async () => {
     (await supabaseAdmin.from("crm_Lead_Sources").select("*").order("name", { ascending: true })).data,
     (await supabaseAdmin.from("crm_Lead_Statuses").select("*").order("name", { ascending: true })).data,
     (await supabaseAdmin.from("crm_Lead_Types").select("*").order("name", { ascending: true })).data,
-    (await supabaseAdmin.from("currency").select("*").eq("isEnabled", true).order("code", { ascending: true })).data,
-    (await supabaseAdmin.from("exchangeRate").select("*")).data,
+    (await supabaseAdmin.from("Currency").select("*").eq("isEnabled", true).order("code", { ascending: true })).data,
+    (await supabaseAdmin.from("ExchangeRate").select("*")).data,
     (await supabaseAdmin.from("crm_ProductCategories").select("*").eq("isActive", true).order("order", { ascending: true })).data,
   ]);
 

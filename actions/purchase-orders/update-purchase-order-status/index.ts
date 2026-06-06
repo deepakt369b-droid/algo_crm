@@ -30,7 +30,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const { id, status, rejectionReason } = data;
 
   try {
-    const existing = (await supabaseAdmin.from("purchaseOrders").select("*").eq("id", id).single()).data;
+    const existing = (await supabaseAdmin.from("PurchaseOrders").select("*").eq("id", id).single()).data;
     if (!existing || existing.deletedAt) {
       return { error: "Purchase order not found" };
     }
@@ -60,7 +60,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       updateData.deliveredDate = new Date();
     }
 
-    const updated = (await supabaseAdmin.from("purchaseOrders").update(updateData).select("*").single()).data;
+    const updated = (await supabaseAdmin.from("PurchaseOrders").update(updateData).select("*").single()).data;
 
     await writeAuditLog({
       entityType: "purchase_order",

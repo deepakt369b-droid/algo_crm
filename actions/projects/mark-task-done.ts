@@ -32,7 +32,7 @@ export const markTaskDone = async (taskId: string) => {
   }
 
   try {
-    (await supabaseAdmin.from("tasks").update({
+    (await supabaseAdmin.from("Tasks").update({
                   taskStatus: "COMPLETE",
                   updatedBy: session.user.id,
                 }).select("*").single().eq("id", taskId).select("*").single()).data;

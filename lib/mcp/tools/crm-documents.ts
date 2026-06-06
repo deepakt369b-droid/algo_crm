@@ -72,8 +72,8 @@ export const crmDocumentTools = [
         };
       }
       const [data, total] = await Promise.all([
-        (await supabaseAdmin.from("documents").select("*").order("createdAt", { ascending: false })).data,
-        (await supabaseAdmin.from("documents").select("*", { count: 'exact', head: true })).count,
+        (await supabaseAdmin.from("Documents").select("*").order("createdAt", { ascending: false })).data,
+        (await supabaseAdmin.from("Documents").select("*", { count: 'exact', head: true })).count,
       ]);
       return listResponse(data, total, args.offset);
     },
@@ -83,7 +83,7 @@ export const crmDocumentTools = [
     description: "Get a single document by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const doc = (await supabaseAdmin.from("documents").select("*, accounts, contacts, leads, opportunities, tasks").eq("id", args.id).eq("created_by_user", userId).is("deletedAt", null).single()).data;
+      const doc = (await supabaseAdmin.from("Documents").select("*, accounts, contacts, leads, opportunities, tasks").eq("id", args.id).eq("created_by_user", userId).is("deletedAt", null).single()).data;
       if (!doc) notFound("Document");
       return itemResponse(doc);
     },
@@ -112,7 +112,7 @@ export const crmDocumentTools = [
       const key = `documents/${randomUUID()}.${ext}`;
       const fileUrl = `${MINIO_PUBLIC_URL}/${MINIO_BUCKET}/${key}`;
 
-      const doc = (await supabaseAdmin.from("documents").insert({
+      const doc = (await supabaseAdmin.from("Documents").insert({
                       document_name: args.document_name,
                       document_file_mimeType: args.contentType,
                       document_file_url: fileUrl,
@@ -139,7 +139,7 @@ export const crmDocumentTools = [
     description: "Get a presigned upload URL for an existing document",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const doc = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).single()).data;
+      const doc = (await supabaseAdmin.from("Documents").select("*").eq("id", args.id).eq("created_by_user", userId).single()).data;
       if (!doc) notFound("Document");
       if (!doc.key) validationError("Document has no storage key");
       const command = new PutObjectCommand({
@@ -156,7 +156,7 @@ export const crmDocumentTools = [
     description: "Get a presigned download URL for a document",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const doc = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).single()).data;
+      const doc = (await supabaseAdmin.from("Documents").select("*").eq("id", args.id).eq("created_by_user", userId).single()).data;
       if (!doc) notFound("Document");
       if (!doc.key) validationError("Document has no storage key");
       const command = new GetObjectCommand({
@@ -180,7 +180,7 @@ export const crmDocumentTools = [
       args: { document_id: string; entityType: string; entityId: string },
       userId: string
     ) {
-      const doc = (await supabaseAdmin.from("documents").select("*").eq("id", args.document_id).eq("created_by_user", userId).single()).data;
+      const doc = (await supabaseAdmin.from("Documents").select("*").eq("id", args.document_id).eq("created_by_user", userId).single()).data;
       if (!doc) notFound("Document");
 
       const table = ENTITY_LINK_MAP[args.entityType];
@@ -210,7 +210,7 @@ export const crmDocumentTools = [
       args: { document_id: string; entityType: string; entityId: string },
       userId: string
     ) {
-      const doc = (await supabaseAdmin.from("documents").select("*").eq("id", args.document_id).eq("created_by_user", userId).single()).data;
+      const doc = (await supabaseAdmin.from("Documents").select("*").eq("id", args.document_id).eq("created_by_user", userId).single()).data;
       if (!doc) notFound("Document");
 
       const table = ENTITY_LINK_MAP[args.entityType];
@@ -239,9 +239,9 @@ export const crmDocumentTools = [
     description: "Soft-delete a document (sets status to DELETED)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).is("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("Documents").select("*").eq("id", args.id).eq("created_by_user", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Document");
-      const doc = (await supabaseAdmin.from("documents").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
+      const doc = (await supabaseAdmin.from("Documents").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: doc.id, deletedAt: doc.deletedAt });
     },
   },

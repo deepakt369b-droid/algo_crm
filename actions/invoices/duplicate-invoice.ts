@@ -19,7 +19,7 @@ export async function duplicateInvoice(invoiceId: string) {
     throw e;
   }
 
-  const source = (await supabaseAdmin.from("invoices").select("*, lineItems(*)").eq("id", invoiceId).single()).data;
+  const source = (await supabaseAdmin.from("Invoices").select("*, lineItems(*)").eq("id", invoiceId).single()).data;
 
   if (
     !canReadInvoice(
@@ -37,7 +37,7 @@ export async function duplicateInvoice(invoiceId: string) {
     throw e;
   }
 
-  const invoice = (await supabaseAdmin.from("invoices").insert({
+  const invoice = (await supabaseAdmin.from("Invoices").insert({
         type: source.type,
         status: "DRAFT",
         createdBy: user.id,

@@ -13,12 +13,12 @@ export async function deleteWarehouse(id: string): Promise<{ error?: string }> {
 
   try {
     // Check if warehouse has stock
-    const stockCount = (await supabaseAdmin.from("inventoryStock").select("*", { count: 'exact', head: true }).eq("warehouseId", id).gt("quantity", 0)).count;
+    const stockCount = (await supabaseAdmin.from("InventoryStock").select("*", { count: 'exact', head: true }).eq("warehouseId", id).gt("quantity", 0)).count;
     if (stockCount > 0) {
       return { error: "Cannot delete warehouse with existing stock. Transfer stock first." };
     }
 
-    (await supabaseAdmin.from("inventoryWarehouse").delete().select("*").single().eq("id", id).select("*").single()).data;
+    (await supabaseAdmin.from("InventoryWarehouse").delete().select("*").single().eq("id", id).select("*").single()).data;
     revalidatePath("/[locale]/(routes)/admin/inventory", "page");
     return {};
   } catch (error) {
@@ -28,13 +28,13 @@ export async function deleteWarehouse(id: string): Promise<{ error?: string }> {
 }
 
 export async function getWarehouses() {
-  const warehouses = (await supabaseAdmin.from("inventoryWarehouse").select("*").order("name", { ascending: true })).data;
+  const warehouses = (await supabaseAdmin.from("InventoryWarehouse").select("*").order("name", { ascending: true })).data;
   return warehouses.map((w) => ({
     ...w,
   }));
 }
 
 export async function getWarehouseById(id: string) {
-  const warehouse = (await supabaseAdmin.from("inventoryWarehouse").select("*, stock(*, product(id, name, sku, unit_price, currency)), thresholds").eq("id", id).single()).data;
+  const warehouse = (await supabaseAdmin.from("InventoryWarehouse").select("*, stock(*, product(id, name, sku, unit_price, currency)), thresholds").eq("id", id).single()).data;
   return warehouse;
 }

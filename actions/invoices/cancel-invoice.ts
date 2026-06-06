@@ -9,7 +9,7 @@ import { serializeDecimals } from "@/lib/serialize-decimals";
 export async function cancelInvoice(invoiceId: string) {
   const user = await getUser();
 
-  const invoice = (await supabaseAdmin.from("invoices").select("status, createdBy").eq("id", invoiceId).single()).data;
+  const invoice = (await supabaseAdmin.from("Invoices").select("status, createdBy").eq("id", invoiceId).single()).data;
 
   if (
     !canCancelInvoice(
@@ -20,7 +20,7 @@ export async function cancelInvoice(invoiceId: string) {
     throw new Error("Cannot cancel this invoice");
   }
 
-  const updated = (await supabaseAdmin.from("invoices").update({
+  const updated = (await supabaseAdmin.from("Invoices").update({
         status: "CANCELLED",
         activity: {
           create: { actorId: user.id, action: "CANCELLED" },

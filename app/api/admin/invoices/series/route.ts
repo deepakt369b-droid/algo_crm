@@ -23,7 +23,7 @@ export async function GET() {
   const denied = await ensureAdmin();
   if (denied) return denied;
 
-  const series = (await supabaseAdmin.from("invoice_Series").select("*").order("name", { ascending: true })).data;
+  const series = (await supabaseAdmin.from("Invoice_Series").select("*").order("name", { ascending: true })).data;
 
   return NextResponse.json({ data: series });
 }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const series = (await supabaseAdmin.from("invoice_Series").insert({
+  const series = (await supabaseAdmin.from("Invoice_Series").insert({
           name,
           prefixTemplate,
           resetPolicy: resetPolicy ?? "YEARLY",

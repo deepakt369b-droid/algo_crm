@@ -14,7 +14,7 @@ async function requireSession() {
 
 export async function getEmailAccounts() {
   const userId = await requireSession();
-  return (await supabaseAdmin.from("emailAccount").select("id, label, imapHost, imapPort, imapSsl, smtpHost, smtpPort, smtpSsl, username, isActive, sentFolderName, lastSyncedAt, createdAt").eq("userId", userId).order("createdAt", { ascending: true })).data;
+  return (await supabaseAdmin.from("EmailAccount").select("id, label, imapHost, imapPort, imapSsl, smtpHost, smtpPort, smtpSsl, username, isActive, sentFolderName, lastSyncedAt, createdAt").eq("userId", userId).order("createdAt", { ascending: true })).data;
 }
 
 type CreateInput = {
@@ -43,7 +43,7 @@ export async function createEmailAccount(input: CreateInput) {
   if (input.smtpPort < 1 || input.smtpPort > 65535) throw new Error("Invalid SMTP port");
 
   const passwordEncrypted = encrypt(input.password);
-  return (await supabaseAdmin.from("emailAccount").insert({
+  return (await supabaseAdmin.from("EmailAccount").insert({
           userId,
           label: input.label,
           imapHost: input.imapHost,
@@ -60,16 +60,16 @@ export async function createEmailAccount(input: CreateInput) {
 
 export async function deleteEmailAccount(id: string) {
   const userId = await requireSession();
-  const account = (await supabaseAdmin.from("emailAccount").select("*").eq("id", id).eq("userId", userId).single()).data;
+  const account = (await supabaseAdmin.from("EmailAccount").select("*").eq("id", id).eq("userId", userId).single()).data;
   if (!account) throw new Error("Not found");
-  (await supabaseAdmin.from("emailAccount").delete().select("*").single().eq("id", id).select("*").single()).data;
+  (await supabaseAdmin.from("EmailAccount").delete().select("*").single().eq("id", id).select("*").single()).data;
 }
 
 export async function setEmailAccountActive(id: string, isActive: boolean) {
   const userId = await requireSession();
-  const account = (await supabaseAdmin.from("emailAccount").select("*").eq("id", id).eq("userId", userId).single()).data;
+  const account = (await supabaseAdmin.from("EmailAccount").select("*").eq("id", id).eq("userId", userId).single()).data;
   if (!account) throw new Error("Not found");
-  return (await supabaseAdmin.from("emailAccount").update({ isActive }).select("*").single().eq("id", id).select("*").single()).data;
+  return (await supabaseAdmin.from("EmailAccount").update({ isActive }).select("*").single().eq("id", id).select("*").single()).data;
 }
 
 type TestInput = {

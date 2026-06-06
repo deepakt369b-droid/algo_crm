@@ -38,7 +38,7 @@ export async function createDocument(input: CreateDocumentInput) {
     }
   }
 
-  const document = (await supabaseAdmin.from("documents").insert({
+  const document = (await supabaseAdmin.from("Documents").insert({
           v: 0,
           document_name: input.name,
           description: "new document",

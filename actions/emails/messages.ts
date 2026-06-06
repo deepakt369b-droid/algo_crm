@@ -52,8 +52,8 @@ export async function getEmails(
       : baseWhere;
 
   const [emails, rawCount] = await Promise.all([
-    (await supabaseAdmin.from("email").select("id, subject, fromName, fromEmail, sentAt, isRead, folder").order("sentAt", { ascending: false }).limit(PAGE_SIZE).range((page - 1) * PAGE_SIZE, (page - 1) * PAGE_SIZE + (PAGE_SIZE - 1))).data,
-    (await supabaseAdmin.from("email").select("*", { count: 'exact', head: true })).count,
+    (await supabaseAdmin.from("Email").select("id, subject, fromName, fromEmail, sentAt, isRead, folder").order("sentAt", { ascending: false }).limit(PAGE_SIZE).range((page - 1) * PAGE_SIZE, (page - 1) * PAGE_SIZE + (PAGE_SIZE - 1))).data,
+    (await supabaseAdmin.from("Email").select("*", { count: 'exact', head: true })).count,
   ]);
 
   const total = Math.min(rawCount, MAX_COUNT);
@@ -62,13 +62,13 @@ export async function getEmails(
 
 export async function getEmail(id: string) {
   const userId = await requireSession();
-  const email = (await supabaseAdmin.from("email").select("*, contacts(*, contact(id, first_name, last_name)), accounts(*, account(id, name))").eq("id", id).eq("userId", userId).eq("isDeleted", false).single()).data;
+  const email = (await supabaseAdmin.from("Email").select("*, contacts(*, contact(id, first_name, last_name)), accounts(*, account(id, name))").eq("id", id).eq("userId", userId).eq("isDeleted", false).single()).data;
   if (!email) throw new Error("Not found");
 
   // Lazy body fetch for emails not yet CRM-linked at sync time
   if (!email.bodyText && !email.bodyHtml && email.imapUid) {
     try {
-      const account = (await supabaseAdmin.from("emailAccount").select("username, passwordEncrypted, imapHost, imapPort, imapSsl, sentFolderName").eq("id", email.emailAccountId).single()).data;
+      const account = (await supabaseAdmin.from("EmailAccount").select("username, passwordEncrypted, imapHost, imapPort, imapSsl, sentFolderName").eq("id", email.emailAccountId).single()).data;
 
       if (account) {
         const { fetchBodyByUid } = await import("@/inngest/lib/imap-utils");
@@ -86,7 +86,7 @@ export async function getEmail(id: string) {
         );
 
         if (body.bodyText || body.bodyHtml) {
-          (await supabaseAdmin.from("email").update({ bodyText: body.bodyText ?? null, bodyHtml: body.bodyHtml ?? null }).select("*").single().eq("id", id).select("*").single()).data;
+          (await supabaseAdmin.from("Email").update({ bodyText: body.bodyText ?? null, bodyHtml: body.bodyHtml ?? null }).select("*").single().eq("id", id).select("*").single()).data;
           // Patch in-memory so caller gets the body immediately (before any send that may throw)
           email.bodyText = body.bodyText ?? null;
           email.bodyHtml = body.bodyHtml ?? null;
@@ -105,7 +105,7 @@ export async function getEmail(id: string) {
 
   // Mark as read (fire-and-forget)
   if (!email.isRead) {
-    (await supabaseAdmin.from("email").update({ isRead: true }).select("*").single().eq("id", id).select("*").single()).data.catch(() => {});
+    (await supabaseAdmin.from("Email").update({ isRead: true }).select("*").single().eq("id", id).select("*").single()).data.catch(() => {});
   }
 
   return email;
@@ -113,9 +113,9 @@ export async function getEmail(id: string) {
 
 export async function deleteEmail(id: string) {
   const userId = await requireSession();
-  const email = (await supabaseAdmin.from("email").select("*").eq("id", id).eq("userId", userId).eq("isDeleted", false).single()).data;
+  const email = (await supabaseAdmin.from("Email").select("*").eq("id", id).eq("userId", userId).eq("isDeleted", false).single()).data;
   if (!email) throw new Error("Not found");
-  (await supabaseAdmin.from("email").update({ isDeleted: true }).select("*").single().eq("id", id).select("*").single()).data;
+  (await supabaseAdmin.from("Email").update({ isDeleted: true }).select("*").single().eq("id", id).select("*").single()).data;
 }
 
 type SendInput = {
@@ -132,7 +132,7 @@ type SendInput = {
 export async function sendEmail(input: SendInput) {
   const userId = await requireSession();
 
-  const account = (await supabaseAdmin.from("emailAccount").select("*").eq("id", input.accountId).eq("userId", userId).single()).data;
+  const account = (await supabaseAdmin.from("EmailAccount").select("*").eq("id", input.accountId).eq("userId", userId).single()).data;
   if (!account) throw new Error("Account not found");
 
   const password = decrypt(account.passwordEncrypted);
@@ -163,7 +163,7 @@ export async function sendEmail(input: SendInput) {
   });
 
   // Write sent message to DB immediately so it appears in Sent view
-  (await supabaseAdmin.from("email").insert({
+  (await supabaseAdmin.from("Email").insert({
             emailAccountId: input.accountId,
             userId,
             rfcMessageId: info.messageId ?? `local-${crypto.randomUUID()}@flowlinepro`,

@@ -22,5 +22,5 @@ export async function getInvoicesByAccountId(accountId: string) {
     throw e;
   }
 
-  return (await supabaseAdmin.from("invoices").select("*, account(id, name), series(id, name)").eq("accountId", accountId).order("createdAt", { ascending: false })).data;
+  return (await supabaseAdmin.from("Invoices").select("*, account(id, name), series(id, name)").eq("accountId", accountId).order("createdAt", { ascending: false })).data;
 }

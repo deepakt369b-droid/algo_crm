@@ -366,7 +366,7 @@ export async function assertCanReadDocument(
   user: AuthzUser,
   documentId: string,
 ): Promise<void> {
-  const row = (await supabaseAdmin.from("documents").select("id").eq("id", documentId).single()).data;
+  const row = (await supabaseAdmin.from("Documents").select("id").eq("id", documentId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -382,7 +382,7 @@ export async function filterAuthorizedDocumentIds(
   documentIds: string[],
 ): Promise<string[]> {
   if (documentIds.length === 0) return [];
-  const rows = (await supabaseAdmin.from("documents").select("id").in("id", documentIds)).data;
+  const rows = (await supabaseAdmin.from("Documents").select("id").in("id", documentIds)).data;
   return rows.map((r: { id: string }) => r.id);
 }
 
@@ -504,7 +504,7 @@ export async function assertCanReadBoard(
   user: AuthzUser,
   boardId: string,
 ): Promise<void> {
-  const row = (await supabaseAdmin.from("boards").select("id").eq("id", boardId).single()).data;
+  const row = (await supabaseAdmin.from("Boards").select("id").eq("id", boardId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -512,7 +512,7 @@ export async function assertCanWriteBoard(
   user: AuthzUser,
   boardId: string,
 ): Promise<void> {
-  const row = (await supabaseAdmin.from("boards").select("id").eq("id", boardId).single()).data;
+  const row = (await supabaseAdmin.from("Boards").select("id").eq("id", boardId).single()).data;
   if (!row) throw new AuthorizationError();
 }
 
@@ -520,7 +520,7 @@ export async function assertCanReadTask(
   user: AuthzUser,
   taskId: string,
 ): Promise<void> {
-  const task = (await supabaseAdmin.from("tasks").select("*").eq("id", taskId).single()).data;
+  const task = (await supabaseAdmin.from("Tasks").select("*").eq("id", taskId).single()).data;
   const boardId = task?.assigned_section?.board_relation?.id;
   if (!boardId) throw new AuthorizationError();
   return assertCanReadBoard(user, boardId);
@@ -530,7 +530,7 @@ export async function assertCanWriteTask(
   user: AuthzUser,
   taskId: string,
 ): Promise<void> {
-  const task = (await supabaseAdmin.from("tasks").select("user").eq("id", taskId).single()).data;
+  const task = (await supabaseAdmin.from("Tasks").select("user").eq("id", taskId).single()).data;
   const boardId = task?.assigned_section?.board_relation?.id;
   if (!boardId) throw new AuthorizationError();
   if (user.role === "user" && task?.user === user.id) return;

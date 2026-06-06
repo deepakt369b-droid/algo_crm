@@ -27,7 +27,7 @@ export const projectTools = [
     description: "List project boards the user owns or is shared with",
     schema: z.object({ ...paginationSchema }),
     async handler(args: { limit: number; offset: number }, userId: string) {
-      const { data, count: total } = await supabaseAdmin.from("boards")
+      const { data, count: total } = await supabaseAdmin.from("Boards")
         .select("*, sections(count)", { count: "exact" })
         .or(`user.eq.${userId},sharedWith.cs.{${userId}}`)
         .is("deletedAt", null)
@@ -41,7 +41,7 @@ export const projectTools = [
     description: "Get a project board with its sections and tasks",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const board = (await supabaseAdmin.from("boards")
+      const board = (await supabaseAdmin.from("Boards")
         .select("*, sections(*, tasks(*)), watchers(*)")
         .eq("id", args.id)
         .or(`user.eq.${userId},sharedWith.cs.{${userId}}`)
@@ -64,7 +64,7 @@ export const projectTools = [
       args: { title: string; description: string; icon?: string; visibility?: string },
       userId: string
     ) {
-      const board = (await supabaseAdmin.from("boards").insert({
+      const board = (await supabaseAdmin.from("Boards").insert({
               v: 0,
               title: args.title,
               description: args.description,
@@ -88,14 +88,14 @@ export const projectTools = [
       visibility: z.string().optional(),
     }),
     async handler(args: Record<string, any>, userId: string) {
-      const existing = (await supabaseAdmin.from("boards").select("id")
+      const existing = (await supabaseAdmin.from("Boards").select("id")
         .eq("id", args.id)
         .or(`user.eq.${userId},sharedWith.cs.{${userId}}`)
         .is("deletedAt", null)
         .single()).data;
       if (!existing) notFound("Board");
       const { id, ...updateData } = args;
-      const board = (await supabaseAdmin.from("boards").update({
+      const board = (await supabaseAdmin.from("Boards").update({
               ...updateData, updatedBy: userId
             }).select("*").single().eq("id", id).select().single()).data;
       return itemResponse(board);
@@ -106,13 +106,13 @@ export const projectTools = [
     description: "Soft-delete a project board (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("boards").select("id")
+      const existing = (await supabaseAdmin.from("Boards").select("id")
         .eq("id", args.id)
         .or(`user.eq.${userId},sharedWith.cs.{${userId}}`)
         .is("deletedAt", null)
         .single()).data;
       if (!existing) notFound("Board");
-      const board = (await supabaseAdmin.from("boards").update(softDeleteData(userId)).select("*").single().eq("id", args.id).select().single()).data;
+      const board = (await supabaseAdmin.from("Boards").update(softDeleteData(userId)).select("*").single().eq("id", args.id).select().single()).data;
       return itemResponse({ id: board.id, deletedAt: board.deletedAt });
     },
   },
@@ -126,15 +126,15 @@ export const projectTools = [
       title: z.string().min(1),
     }),
     async handler(args: { board: string; title: string }, userId: string) {
-      const board = (await supabaseAdmin.from("boards").select("id")
+      const board = (await supabaseAdmin.from("Boards").select("id")
         .eq("id", args.board)
         .or(`user.eq.${userId},sharedWith.cs.{${userId}}`)
         .is("deletedAt", null)
         .single()).data;
       if (!board) notFound("Board");
-      const maxPosResult = await supabaseAdmin.from("sections").select("position").eq("board", args.board).order("position", { ascending: false }).limit(1).single();
+      const maxPosResult = await supabaseAdmin.from("Sections").select("position").eq("board", args.board).order("position", { ascending: false }).limit(1).single();
       const maxPosition = maxPosResult.data?.position ? BigInt(maxPosResult.data.position) : BigInt(0);
-      const section = (await supabaseAdmin.from("sections").insert({
+      const section = (await supabaseAdmin.from("Sections").insert({
               v: 0,
               board: args.board,
               title: args.title,
@@ -152,10 +152,10 @@ export const projectTools = [
       position: z.number().int().optional(),
     }),
     async handler(args: { id: string; title?: string; position?: number }, _userId: string) {
-      const existing = (await supabaseAdmin.from("sections").select("id").eq("id", args.id).single()).data;
+      const existing = (await supabaseAdmin.from("Sections").select("id").eq("id", args.id).single()).data;
       if (!existing) notFound("Section");
       const { id, position, ...rest } = args;
-      const section = (await supabaseAdmin.from("sections").update({
+      const section = (await supabaseAdmin.from("Sections").update({
               ...rest, ...(position !== undefined && { position })
             }).select("*").single().eq("id", id).select().single()).data;
       return itemResponse(section);
@@ -166,11 +166,11 @@ export const projectTools = [
     description: "Delete a section (must be empty — no tasks)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const section = (await supabaseAdmin.from("sections").select("id, tasks(count)").eq("id", args.id).single()).data;
+      const section = (await supabaseAdmin.from("Sections").select("id, tasks(count)").eq("id", args.id).single()).data;
       if (!section) notFound("Section");
       // @ts-ignore
       if (section.tasks && section.tasks[0]?.count > 0) conflict("Cannot delete section with tasks. Move or delete tasks first.");
-      await supabaseAdmin.from("sections").delete().select("*").single().eq("id", args.id);
+      await supabaseAdmin.from("Sections").delete().select("*").single().eq("id", args.id);
       return itemResponse({ id: args.id, deleted: true });
     },
   },
@@ -190,7 +190,7 @@ export const projectTools = [
       args: { board?: string; section?: string; user?: string; status?: string; limit: number; offset: number },
       userId: string
     ) {
-      let query = supabaseAdmin.from("tasks").select("*", { count: "exact" });
+      let query = supabaseAdmin.from("Tasks").select("*", { count: "exact" });
       if (args.section) query = query.eq("section", args.section);
       if (args.user) query = query.eq("user", args.user);
       if (args.status) query = query.eq("taskStatus", args.status);
@@ -204,7 +204,7 @@ export const projectTools = [
     description: "Get a task by ID with comments and documents",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const task = (await supabaseAdmin.from("tasks").select("*, comments(*), documents(*)").eq("id", args.id).single()).data;
+      const task = (await supabaseAdmin.from("Tasks").select("*, comments(*), documents(*)").eq("id", args.id).single()).data;
       if (!task) notFound("Task");
       return itemResponse(task);
     },
@@ -223,11 +223,11 @@ export const projectTools = [
       args: { title: string; content?: string; section: string; priority: string; dueDateAt?: string },
       userId: string
     ) {
-      const sec = (await supabaseAdmin.from("sections").select("id").eq("id", args.section).single()).data;
+      const sec = (await supabaseAdmin.from("Sections").select("id").eq("id", args.section).single()).data;
       if (!sec) notFound("Section");
-      const maxPosResult = await supabaseAdmin.from("tasks").select("position").eq("section", args.section).order("position", { ascending: false }).limit(1).single();
+      const maxPosResult = await supabaseAdmin.from("Tasks").select("position").eq("section", args.section).order("position", { ascending: false }).limit(1).single();
       const maxPosition = maxPosResult.data?.position ? BigInt(maxPosResult.data.position) : BigInt(0);
-      const task = (await supabaseAdmin.from("tasks").insert({
+      const task = (await supabaseAdmin.from("Tasks").insert({
               v: 0,
               title: args.title,
               content: args.content,
@@ -254,10 +254,10 @@ export const projectTools = [
       taskStatus: z.enum(["ACTIVE", "PENDING", "COMPLETE"]).optional(),
     }),
     async handler(args: Record<string, any>, userId: string) {
-      const existing = (await supabaseAdmin.from("tasks").select("id").eq("id", args.id).single()).data;
+      const existing = (await supabaseAdmin.from("Tasks").select("id").eq("id", args.id).single()).data;
       if (!existing) notFound("Task");
       const { id, dueDateAt, ...rest } = args;
-      const task = (await supabaseAdmin.from("tasks").update({
+      const task = (await supabaseAdmin.from("Tasks").update({
               ...rest,
               ...(dueDateAt !== undefined && { dueDateAt: new Date(dueDateAt).toISOString() }),
               updatedBy: userId,
@@ -274,11 +274,11 @@ export const projectTools = [
       position: z.number().int().optional(),
     }),
     async handler(args: { id: string; section: string; position?: number }, userId: string) {
-      const existing = (await supabaseAdmin.from("tasks").select("id").eq("id", args.id).single()).data;
+      const existing = (await supabaseAdmin.from("Tasks").select("id").eq("id", args.id).single()).data;
       if (!existing) notFound("Task");
-      const sec = (await supabaseAdmin.from("sections").select("id").eq("id", args.section).single()).data;
+      const sec = (await supabaseAdmin.from("Sections").select("id").eq("id", args.section).single()).data;
       if (!sec) notFound("Section");
-      const task = (await supabaseAdmin.from("tasks").update({
+      const task = (await supabaseAdmin.from("Tasks").update({
               section: args.section,
               ...(args.position !== undefined && { position: args.position }),
               updatedBy: userId,
@@ -291,9 +291,9 @@ export const projectTools = [
     description: "Soft-delete a task (sets status to COMPLETE)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("tasks").select("id").eq("id", args.id).single()).data;
+      const existing = (await supabaseAdmin.from("Tasks").select("id").eq("id", args.id).single()).data;
       if (!existing) notFound("Task");
-      const task = (await supabaseAdmin.from("tasks").update({
+      const task = (await supabaseAdmin.from("Tasks").update({
               taskStatus: "COMPLETE", updatedBy: userId
             }).select("*").single().eq("id", args.id).select().single()).data;
       return itemResponse({ id: task.id, status: "COMPLETE" });
@@ -309,7 +309,7 @@ export const projectTools = [
       comment: z.string().min(1),
     }),
     async handler(args: { task: string; comment: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("tasks").select("id").eq("id", args.task).single()).data;
+      const existing = (await supabaseAdmin.from("Tasks").select("id").eq("id", args.task).single()).data;
       if (!existing) notFound("Task");
       const tc = (await supabaseAdmin.from("tasksComments").insert({
               v: 0, task: args.task, comment: args.comment, user: userId
@@ -343,7 +343,7 @@ export const projectTools = [
       document_id: z.string().uuid(),
     }),
     async handler(args: { task_id: string; document_id: string }, _userId: string) {
-      (await supabaseAdmin.from("documentsToTasks").insert({
+      (await supabaseAdmin.from("DocumentsToTasks").insert({
                 task_id: args.task_id, document_id: args.document_id
               }).select("*").single()).data;
       return itemResponse({ task_id: args.task_id, document_id: args.document_id });
@@ -360,11 +360,11 @@ export const projectTools = [
     }),
     async handler(args: { board_id: string; watch: boolean }, userId: string) {
       if (args.watch) {
-        await supabaseAdmin.from("boardWatchers").insert({
+        await supabaseAdmin.from("BoardWatchers").insert({
                   board_id: args.board_id, user_id: userId
                 }).select("*").single().catch(() => {}); // Already watching — ignore duplicate
       } else {
-        await supabaseAdmin.from("boardWatchers").delete().select("*").single().match({
+        await supabaseAdmin.from("BoardWatchers").delete().select("*").single().match({
           board_id: args.board_id, user_id: userId
         }).catch(() => {}); // Not watching — ignore
       }

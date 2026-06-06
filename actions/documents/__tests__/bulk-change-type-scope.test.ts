@@ -23,21 +23,21 @@ describe("bulkChangeType auth", () => {
   it("401: unauthenticated throws and does not updateMany", async () => {
     (getSession as jest.Mock).mockResolvedValue(null);
     await expect(bulkChangeType(["d1"], "private" as any)).rejects.toThrow("Unauthenticated");
-    (await supabaseAdmin.from("documents").update()).data.not.toHaveBeenCalled();
+    (await supabaseAdmin.from("Documents").update()).data.not.toHaveBeenCalled();
   });
 
   it("403: partial unauthorized → fail-closed, no update", async () => {
     mockUser("user", "u1");
     (prismadb.documents.findMany as jest.Mock).mockResolvedValue([{ id: "d1" }]);
     await expect(bulkChangeType(["d1", "d2"], "private" as any)).rejects.toThrow("Forbidden");
-    (await supabaseAdmin.from("documents").update()).data.not.toHaveBeenCalled();
+    (await supabaseAdmin.from("Documents").update()).data.not.toHaveBeenCalled();
   });
 
   it("403: all unauthorized → fail-closed", async () => {
     mockUser("user", "u1");
     (prismadb.documents.findMany as jest.Mock).mockResolvedValue([]);
     await expect(bulkChangeType(["d1", "d2"], "private" as any)).rejects.toThrow("Forbidden");
-    (await supabaseAdmin.from("documents").update()).data.not.toHaveBeenCalled();
+    (await supabaseAdmin.from("Documents").update()).data.not.toHaveBeenCalled();
   });
 
   it("200: all authorized → updateMany applies system type", async () => {
@@ -48,7 +48,7 @@ describe("bulkChangeType auth", () => {
     ]);
     (prismadb.documents.updateMany as jest.Mock).mockResolvedValue({ count: 2 });
     await bulkChangeType(["d1", "d2"], "private" as any);
-    (await supabaseAdmin.from("documents").update()).data.toHaveBeenCalledWith({
+    (await supabaseAdmin.from("Documents").update()).data.toHaveBeenCalledWith({
       where: { id: { in: ["d1", "d2"] } },
       data: { document_system_type: "private" },
     });
@@ -61,6 +61,6 @@ describe("bulkChangeType auth", () => {
     await bulkChangeType(["d1"], "private" as any);
     const where = (prismadb.documents.findMany as jest.Mock).mock.calls[0][0].where;
     expect(where.OR).toBeUndefined();
-    (await supabaseAdmin.from("documents").update()).data.toHaveBeenCalled();
+    (await supabaseAdmin.from("Documents").update()).data.toHaveBeenCalled();
   });
 });

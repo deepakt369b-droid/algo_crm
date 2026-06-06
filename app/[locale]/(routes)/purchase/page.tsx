@@ -18,10 +18,10 @@ export default async function AdminPurchasePage(props: Props) {
   const { locale } = params;
 
   const [totalOrders, draftCount, pendingApprovalCount, approvedCount, orders] = await Promise.all([
-    (await supabaseAdmin.from("purchaseOrders").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count,
-    (await supabaseAdmin.from("purchaseOrders").select("*", { count: 'exact', head: true }).is("deletedAt", null).eq("status", "DRAFT")).count,
-    (await supabaseAdmin.from("purchaseOrders").select("*", { count: 'exact', head: true }).is("deletedAt", null).eq("status", "PENDING_APPROVAL")).count,
-    (await supabaseAdmin.from("purchaseOrders").select("*", { count: 'exact', head: true }).is("deletedAt", null).eq("status", "APPROVED")).count,
+    (await supabaseAdmin.from("PurchaseOrders").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count,
+    (await supabaseAdmin.from("PurchaseOrders").select("*", { count: 'exact', head: true }).is("deletedAt", null).eq("status", "DRAFT")).count,
+    (await supabaseAdmin.from("PurchaseOrders").select("*", { count: 'exact', head: true }).is("deletedAt", null).eq("status", "PENDING_APPROVAL")).count,
+    (await supabaseAdmin.from("PurchaseOrders").select("*", { count: 'exact', head: true }).is("deletedAt", null).eq("status", "APPROVED")).count,
     getPurchaseOrders(),
   ]);
 

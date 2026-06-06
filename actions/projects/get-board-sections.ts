@@ -23,7 +23,7 @@ export const getBoardSections = async (boadId: string) => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("sections").select("*").eq("board", boadId)).data;
+  const data = (await supabaseAdmin.from("Sections").select("*").eq("board", boadId)).data;
 
   return data;
 };

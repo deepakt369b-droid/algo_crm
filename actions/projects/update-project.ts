@@ -35,7 +35,7 @@ export const updateProject = async (data: {
   }
 
   try {
-    (await supabaseAdmin.from("boards").update({
+    (await supabaseAdmin.from("Boards").update({
                   title,
                   description,
                   visibility,

@@ -24,35 +24,35 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return { error: "Product not found" };
     }
 
-    const fromWarehouse = (await supabaseAdmin.from("inventoryWarehouse").select("*").eq("id", fromWarehouseId).single()).data;
-    const toWarehouse = (await supabaseAdmin.from("inventoryWarehouse").select("*").eq("id", toWarehouseId).single()).data;
+    const fromWarehouse = (await supabaseAdmin.from("InventoryWarehouse").select("*").eq("id", fromWarehouseId).single()).data;
+    const toWarehouse = (await supabaseAdmin.from("InventoryWarehouse").select("*").eq("id", toWarehouseId).single()).data;
     if (!fromWarehouse || !toWarehouse) {
       return { error: "Warehouse not found" };
     }
 
     // Get source stock
-    const fromStock = (await supabaseAdmin.from("inventoryStock").select("*").eq("productId", productId).eq("warehouseId", fromWarehouseId).single()).data;
+    const fromStock = (await supabaseAdmin.from("InventoryStock").select("*").eq("productId", productId).eq("warehouseId", fromWarehouseId).single()).data;
 
     const fromQuantity = fromStock ? Number(fromStock.quantity) : 0;
     if (fromQuantity < quantity) {
       return { error: `Insufficient stock. Available: ${fromQuantity}, Requested: ${quantity}` };
     }
 
-    const toStock = (await supabaseAdmin.from("inventoryStock").select("*").eq("productId", productId).eq("warehouseId", toWarehouseId).single()).data;
+    const toStock = (await supabaseAdmin.from("InventoryStock").select("*").eq("productId", productId).eq("warehouseId", toWarehouseId).single()).data;
     const toQuantity = toStock ? Number(toStock.quantity) : 0;
 
     // Deduct from source
-    await supabaseAdmin.from("inventoryStock").upsert({
+    await supabaseAdmin.from("InventoryStock").upsert({
       productId, warehouseId: fromWarehouseId, quantity: fromQuantity - quantity
     }, { onConflict: "productId,warehouseId" });
 
     // Add to destination
-    await supabaseAdmin.from("inventoryStock").upsert({
+    await supabaseAdmin.from("InventoryStock").upsert({
       productId, warehouseId: toWarehouseId, quantity: toQuantity + quantity
     }, { onConflict: "productId,warehouseId" });
 
     // Record movements
-    (await supabaseAdmin.from("inventoryMovement").insert({
+    (await supabaseAdmin.from("InventoryMovement").insert({
             productId,
             warehouseId: fromWarehouseId,
             type: "TRANSFER_OUT",
@@ -62,7 +62,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
             createdBy: session.user.id,
           }).select("*").single()).data;
 
-    (await supabaseAdmin.from("inventoryMovement").insert({
+    (await supabaseAdmin.from("InventoryMovement").insert({
             productId,
             warehouseId: toWarehouseId,
             type: "TRANSFER_IN",

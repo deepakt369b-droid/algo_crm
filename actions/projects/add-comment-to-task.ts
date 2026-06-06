@@ -33,7 +33,7 @@ export const addCommentToTask = async (data: {
   if (!comment) return { error: "Missing comment" };
 
   // Resolve parent board (if any) via assigned_section relation for scope check.
-  const taskBoardLookup = (await supabaseAdmin.from("tasks").select("assigned_section(board_relation(id))").eq("id", taskId).single()).data;
+  const taskBoardLookup = (await supabaseAdmin.from("Tasks").select("assigned_section(board_relation(id))").eq("id", taskId).single()).data;
   const parentBoardId =
     taskBoardLookup?.assigned_section?.board_relation?.id;
   if (parentBoardId) {
@@ -46,16 +46,16 @@ export const addCommentToTask = async (data: {
   }
 
   try {
-    const task = (await supabaseAdmin.from("tasks").select("*").eq("id", taskId).single()).data;
+    const task = (await supabaseAdmin.from("Tasks").select("*").eq("id", taskId).single()).data;
 
     if (!task) return { error: "Task not found" };
     if (!task.section) return { error: "Task section not found" };
 
-    const section = (await supabaseAdmin.from("sections").select("*").eq("id", task.section).single()).data;
+    const section = (await supabaseAdmin.from("Sections").select("*").eq("id", task.section).single()).data;
 
     if (section) {
       // Task from Projects module - add user as board watcher
-      (await supabaseAdmin.from("boards").update({
+      (await supabaseAdmin.from("Boards").update({
                         watchers: junctionTableHelpers.addWatcher(session.user.id),
                       }).select("*").single().eq("id", section.board).select("*").single()).data;
 
@@ -76,7 +76,7 @@ export const addCommentToTask = async (data: {
         }
 
         if (resend) {
-          const boardWatchers = (await supabaseAdmin.from("boardWatchers").select("*").eq("board_id", section.board)).data;
+          const boardWatchers = (await supabaseAdmin.from("BoardWatchers").select("*").eq("board_id", section.board)).data;
 
           const emailRecipients = boardWatchers.map(
             (w: (typeof boardWatchers)[number]) => w.user

@@ -11,7 +11,7 @@ export async function getTasksCreatedCompleted(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<{ name: string; created: number; completed: number }[]> {
-  const tasks = (await supabaseAdmin.from("tasks").select("createdAt, taskStatus")).data;
+  const tasks = (await supabaseAdmin.from("Tasks").select("createdAt, taskStatus")).data;
   const grouped: Record<string, { created: number; completed: number }> = {};
   for (const task of tasks) {
     if (!task.createdAt) continue;
@@ -32,14 +32,14 @@ export async function getOverdueTasks(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<number> {
-  return (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("taskStatus", "ACTIVE")).count;
+  return (await supabaseAdmin.from("Tasks").select("*", { count: 'exact', head: true }).eq("taskStatus", "ACTIVE")).count;
 }
 
 export async function getTasksByAssignee(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<ChartDataPoint[]> {
-  const tasks = (await supabaseAdmin.from("tasks").select("*")).data;
+  const tasks = (await supabaseAdmin.from("Tasks").select("*")).data;
   const grouped: Record<string, number> = {};
   for (const t of tasks) {
     const name = t.assigned_user?.name ?? "Unassigned";

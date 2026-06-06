@@ -35,7 +35,7 @@ export async function bulkLinkToAccount(documentIds: string[], accountId: string
     throw new Error("Forbidden");
   }
 
-  await supabaseAdmin.from("documentsToAccounts").createMany({
+  await supabaseAdmin.from("DocumentsToAccounts").createMany({
     data: documentIds.map((document_id) => ({ document_id, account_id: accountId })),
     skipDuplicates: true,
   });

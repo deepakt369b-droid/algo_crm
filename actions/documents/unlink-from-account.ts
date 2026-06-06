@@ -33,7 +33,7 @@ export async function unlinkFromAccount(documentId: string, accountId: string) {
     throw e;
   }
 
-  (await supabaseAdmin.from("documentsToAccounts").delete().select("*").single()).data;
+  (await supabaseAdmin.from("DocumentsToAccounts").delete().select("*").single()).data;
 
   revalidatePath("/[locale]/(routes)/documents");
   revalidatePath(`/[locale]/(routes)/crm/accounts/${accountId}`);

@@ -1,7 +1,9 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getStorageSize = async () => {
-  const data = (await supabaseAdmin.from("documents").select("*")).data;
+  const { data, error } = await supabaseAdmin.from("Documents").select("*");
+
+  if (error || !data) return 0;
 
   //TODO: fix this any
   const storageSize = data.reduce((acc: number, doc: any) => {

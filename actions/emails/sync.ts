@@ -14,7 +14,7 @@ async function requireSession() {
 export async function triggerSync(accountId: string) {
   const userId = await requireSession();
 
-  const account = (await supabaseAdmin.from("emailAccount").select("id").eq("id", accountId).eq("userId", userId).single()).data;
+  const account = (await supabaseAdmin.from("EmailAccount").select("id").eq("id", accountId).eq("userId", userId).single()).data;
   if (!account) throw new Error("Account not found");
 
   await inngest.send({ name: "email/sync-account", data: { accountId } });

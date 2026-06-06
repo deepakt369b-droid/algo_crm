@@ -290,7 +290,7 @@ export const campaignTools = [
     async handler(args: { campaign_id: string; target_list_id: string }, _userId: string) {
       const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.campaign_id).is("deletedAt", null).single()).data;
       if (!campaign) notFound("Campaign");
-      (await supabaseAdmin.from("campaignToTargetLists").insert({ campaign_id: args.campaign_id, target_list_id: args.target_list_id }).select("*").single()).data;
+      (await supabaseAdmin.from("CampaignToTargetLists").insert({ campaign_id: args.campaign_id, target_list_id: args.target_list_id }).select("*").single()).data;
       return itemResponse({ campaign_id: args.campaign_id, target_list_id: args.target_list_id });
     },
   },
@@ -302,7 +302,7 @@ export const campaignTools = [
       target_list_id: z.string().uuid(),
     }),
     async handler(args: { campaign_id: string; target_list_id: string }, _userId: string) {
-      (await supabaseAdmin.from("campaignToTargetLists").delete().select("*").single()).data;
+      (await supabaseAdmin.from("CampaignToTargetLists").delete().select("*").single()).data;
       return itemResponse({ campaign_id: args.campaign_id, target_list_id: args.target_list_id, removed: true });
     },
   },

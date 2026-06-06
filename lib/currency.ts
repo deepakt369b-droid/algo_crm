@@ -6,7 +6,9 @@ export { findRate, convertAmount, formatCurrency } from "@/lib/currency-format";
 export type { Rate } from "@/lib/currency-format";
 
 export async function getExchangeRates() {
-  const rates = (await supabaseAdmin.from("exchangeRate").select("*")).data;
+  const { data: rates, error } = await supabaseAdmin.from("ExchangeRate").select("*");
+  if (error || !rates) return [];
+
   return rates.map((r: { fromCurrency: string; toCurrency: string; rate: Decimal }) => ({
     fromCurrency: r.fromCurrency,
     toCurrency: r.toCurrency,
@@ -19,15 +21,28 @@ export async function getSnapshotRate(
   to: string
 ): Promise<Decimal | null> {
   if (from === to) return new Decimal("1");
-  const rate = (await supabaseAdmin.from("exchangeRate").select("*").single()).data;
+  const rate = (await supabaseAdmin.from("ExchangeRate").select("*").single()).data;
   return rate ? rate.rate : null;
 }
 
 export async function getDefaultCurrency(): Promise<string> {
-  const setting = (await supabaseAdmin.from("crm_SystemSettings").select("*").eq("key", "default_currency").single()).data;
+  const { data: setting } = await supabaseAdmin
+    .from("crm_SystemSettings")
+    .select("*")
+    .eq("key", "default_currency")
+    .maybeSingle();
+
   return setting?.value || "EUR";
 }
 
 export async function getEnabledCurrencies() {
-  return (await supabaseAdmin.from("currency").select("*").eq("isEnabled", true).order("code", { ascending: true })).data;
+  const { data: currencies, error } = await supabaseAdmin
+    .from("Currency")
+    .select("*")
+    .eq("isEnabled", true)
+    .order("code", { ascending: true });
+
+  if (!error && currencies && currencies.length > 0) return currencies;
+
+  return [{ code: "EUR", name: "Euro", symbol: "EUR" }];
 }

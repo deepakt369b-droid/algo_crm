@@ -33,7 +33,7 @@ describe("bulkDeleteDocuments auth", () => {
   it("401: unauthenticated throws and does not delete", async () => {
     (getSession as jest.Mock).mockResolvedValue(null);
     await expect(bulkDeleteDocuments(["d1", "d2"])).rejects.toThrow("Unauthenticated");
-    (await supabaseAdmin.from("documents").delete()).data.not.toHaveBeenCalled();
+    (await supabaseAdmin.from("Documents").delete()).data.not.toHaveBeenCalled();
   });
 
   it("403: partial unauthorized → fail-closed, nothing deleted", async () => {
@@ -41,14 +41,14 @@ describe("bulkDeleteDocuments auth", () => {
     // Filter returns only 1 of 2 ids → unauthorized.
     (prismadb.documents.findMany as jest.Mock).mockResolvedValue([{ id: "d1" }]);
     await expect(bulkDeleteDocuments(["d1", "d2"])).rejects.toThrow("Forbidden");
-    (await supabaseAdmin.from("documents").delete()).data.not.toHaveBeenCalled();
+    (await supabaseAdmin.from("Documents").delete()).data.not.toHaveBeenCalled();
   });
 
   it("403: all unauthorized → fail-closed", async () => {
     mockUser("user", "u1");
     (prismadb.documents.findMany as jest.Mock).mockResolvedValue([]);
     await expect(bulkDeleteDocuments(["d1", "d2"])).rejects.toThrow("Forbidden");
-    (await supabaseAdmin.from("documents").delete()).data.not.toHaveBeenCalled();
+    (await supabaseAdmin.from("Documents").delete()).data.not.toHaveBeenCalled();
   });
 
   it("200: all authorized → deletes all", async () => {
@@ -63,7 +63,7 @@ describe("bulkDeleteDocuments auth", () => {
     ]);
     (prismadb.documents.deleteMany as jest.Mock).mockResolvedValue({ count: 2 });
     await bulkDeleteDocuments(["d1", "d2"]);
-    (await supabaseAdmin.from("documents").delete()).data.toHaveBeenCalledWith({
+    (await supabaseAdmin.from("Documents").delete()).data.toHaveBeenCalledWith({
       where: { id: { in: ["d1", "d2"] } },
     });
   });
@@ -82,6 +82,6 @@ describe("bulkDeleteDocuments auth", () => {
     await bulkDeleteDocuments(["d1", "d2"]);
     const where = (prismadb.documents.findMany as jest.Mock).mock.calls[0][0].where;
     expect(where.OR).toBeUndefined();
-    (await supabaseAdmin.from("documents").delete()).data.toHaveBeenCalled();
+    (await supabaseAdmin.from("Documents").delete()).data.toHaveBeenCalled();
   });
 });

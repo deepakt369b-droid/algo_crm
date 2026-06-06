@@ -72,11 +72,11 @@ export async function getDashboardKPIs(
     (await supabaseAdmin.from("Users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE")).count,
     (await supabaseAdmin.from("Users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE").lte("created_on", prev.dateTo)).count,
     // tasks total
-    (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true })).count,
-    (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true })).count,
+    (await supabaseAdmin.from("Tasks").select("*", { count: 'exact', head: true })).count,
+    (await supabaseAdmin.from("Tasks").select("*", { count: 'exact', head: true })).count,
     // open tasks (ACTIVE = not completed)
-    (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("taskStatus", "ACTIVE")).count,
-    (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("taskStatus", "ACTIVE")).count,
+    (await supabaseAdmin.from("Tasks").select("*", { count: 'exact', head: true }).eq("taskStatus", "ACTIVE")).count,
+    (await supabaseAdmin.from("Tasks").select("*", { count: 'exact', head: true }).eq("taskStatus", "ACTIVE")).count,
     // campaignsSent (sends have no direct scope; manager/admin = no-op)
     (await supabaseAdmin.from("crm_campaign_sends").select("*", { count: 'exact', head: true })).count,
     (await supabaseAdmin.from("crm_campaign_sends").select("*", { count: 'exact', head: true })).count,

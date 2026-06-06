@@ -20,7 +20,7 @@ export const assignDocumentToCrmTask = async (data: {
 
     if (!task) return { error: "CRM task not found" };
 
-    (await supabaseAdmin.from("documentsToCrmAccountsTasks").insert({
+    (await supabaseAdmin.from("DocumentsToCrmAccountsTasks").insert({
                   document_id: documentId,
                   crm_accounts_task_id: taskId,
                 }).select("*").single()).data;
@@ -49,7 +49,7 @@ export const disconnectDocumentFromCrmTask = async (data: {
 
     if (!task) return { error: "CRM task not found" };
 
-    (await supabaseAdmin.from("documentsToCrmAccountsTasks").delete().select("*").single()).data;
+    (await supabaseAdmin.from("DocumentsToCrmAccountsTasks").delete().select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/crm", "page");
     return { success: true };

@@ -25,7 +25,7 @@ export default async function PurchaseOrderDetailPage({ params }: PageProps) {
   const [products, vendors, currencies] = await Promise.all([
     (await supabaseAdmin.from("crm_Products").select("id, name, sku, unit_price").is("deletedAt", null).eq("status", "ACTIVE").order("name", { ascending: true })).data,
     (await supabaseAdmin.from("crm_Accounts").select("id, name, email").is("deletedAt", null).order("name", { ascending: true })).data,
-    (await supabaseAdmin.from("currency").select("code, name, symbol").eq("isEnabled", true)).data,
+    (await supabaseAdmin.from("Currency").select("code, name, symbol").eq("isEnabled", true)).data,
   ]);
 
   const serializedProducts = serializeDecimalsList(products);

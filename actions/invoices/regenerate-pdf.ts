@@ -25,7 +25,7 @@ export async function regenerateInvoicePdf(
   }
 
   try {
-    const invoice = (await supabaseAdmin.from("invoices").select("*, lineItems(*, taxRate(*)), account(*)").eq("id", invoiceId).single()).data;
+    const invoice = (await supabaseAdmin.from("Invoices").select("*, lineItems(*, taxRate(*)), account(*)").eq("id", invoiceId).single()).data;
 
     // Permission: manager/admin OR the creator of the invoice
     if (
@@ -51,7 +51,7 @@ export async function regenerateInvoicePdf(
       };
     }
 
-    const settings = (await supabaseAdmin.from("invoice_Settings").select("*").single()).data;
+    const settings = (await supabaseAdmin.from("Invoice_Settings").select("*").single()).data;
 
     const pdfData = buildInvoicePdfData(
       invoice,
@@ -63,7 +63,7 @@ export async function regenerateInvoicePdf(
     const storageKey = await uploadInvoicePdf(invoice.id, pdfBuffer);
 
     const pdfGeneratedAt = new Date();
-    (await supabaseAdmin.from("invoices").update({ pdfStorageKey: storageKey, pdfGeneratedAt }).eq("id", invoice.id).select("*").single()).data;
+    (await supabaseAdmin.from("Invoices").update({ pdfStorageKey: storageKey, pdfGeneratedAt }).eq("id", invoice.id).select("*").single()).data;
 
     revalidatePath(`/invoices/${invoiceId}`);
     return { ok: true, pdfGeneratedAt: pdfGeneratedAt.toISOString() };

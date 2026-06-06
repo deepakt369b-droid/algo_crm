@@ -41,7 +41,7 @@ export const updateTask = async (data: {
     return { error: "Missing one of the task data" };
   }
 
-  const existing = (await supabaseAdmin.from("tasks").select("assigned_section(board_relation(id))").eq("id", taskId).single()).data;
+  const existing = (await supabaseAdmin.from("Tasks").select("assigned_section(board_relation(id))").eq("id", taskId).single()).data;
   const parentBoardId = existing?.assigned_section?.board_relation?.id;
   if (!parentBoardId) return { error: "Not found" };
 
@@ -53,7 +53,7 @@ export const updateTask = async (data: {
   }
 
   try {
-    const task = (await supabaseAdmin.from("tasks").update({
+    const task = (await supabaseAdmin.from("Tasks").update({
                 priority,
                 title,
                 content,
@@ -63,7 +63,7 @@ export const updateTask = async (data: {
               }).select("*").single().eq("id", taskId).select("*").single()).data;
 
     if (resolvedBoardId) {
-      (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).select("*").single().eq("id", resolvedBoardId).select("*").single()).data;
+      (await supabaseAdmin.from("Boards").update({ updatedAt: new Date() }).select("*").single().eq("id", resolvedBoardId).select("*").single()).data;
     }
 
     // Send email notification if assigning to a different user
@@ -79,7 +79,7 @@ export const updateTask = async (data: {
         if (resend) {
           const notifyRecipient = (await supabaseAdmin.from("Users").select("*").eq("id", user).single()).data;
 
-          const boardData = (await supabaseAdmin.from("boards").select("*").eq("id", resolvedBoardId).single()).data;
+          const boardData = (await supabaseAdmin.from("Boards").select("*").eq("id", resolvedBoardId).single()).data;
 
           if (notifyRecipient?.email) {
             await resend.emails.send({

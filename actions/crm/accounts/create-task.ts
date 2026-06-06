@@ -76,7 +76,7 @@ export const createTask = async (data: {
 
     // Notification to account watchers
     try {
-      const accountWatchers = (await supabaseAdmin.from("accountWatchers").select("*").eq("account_id", account)).data;
+      const accountWatchers = (await supabaseAdmin.from("AccountWatchers").select("*").eq("account_id", account)).data;
 
       for (const watcher of accountWatchers) {
         await resend.emails.send({

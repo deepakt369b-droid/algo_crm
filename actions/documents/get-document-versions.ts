@@ -24,7 +24,7 @@ export async function getDocumentVersions(documentId: string) {
     throw e;
   }
 
-  const versions = (await supabaseAdmin.from("documents").select("id, version, document_file_url, createdAt, size, created_by(name)").eq("OR", [
+  const versions = (await supabaseAdmin.from("Documents").select("id, version, document_file_url, createdAt, size, created_by(name)").eq("OR", [
           { id: documentId },
           { parent_document_id: documentId },
         ]).order("version", { ascending: false })).data;

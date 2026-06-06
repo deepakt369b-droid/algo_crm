@@ -46,9 +46,9 @@ export const createTaskInBoard = async (data: {
   // Quick-add path: no title/user/priority/content - create a blank task
   if (!title || !user || !priority || !content) {
     try {
-      const tasksCount = (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("section", section)).count;
+      const tasksCount = (await supabaseAdmin.from("Tasks").select("*", { count: 'exact', head: true }).eq("section", section)).count;
 
-      (await supabaseAdmin.from("tasks").insert({
+      (await supabaseAdmin.from("Tasks").insert({
                         v: 0,
                         priority: "normal",
                         title: "New task",
@@ -61,7 +61,7 @@ export const createTaskInBoard = async (data: {
                         taskStatus: "ACTIVE",
                       }).select("*").single()).data;
 
-      (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).select("*").single().eq("id", boardId).select("*").single()).data;
+      (await supabaseAdmin.from("Boards").update({ updatedAt: new Date() }).select("*").single().eq("id", boardId).select("*").single()).data;
 
       revalidatePath("/[locale]/(routes)/projects", "page");
       return { success: true };
@@ -73,9 +73,9 @@ export const createTaskInBoard = async (data: {
 
   // Full-detail path
   try {
-    const tasksCount = (await supabaseAdmin.from("tasks").select("*", { count: 'exact', head: true }).eq("section", section)).count;
+    const tasksCount = (await supabaseAdmin.from("Tasks").select("*", { count: 'exact', head: true }).eq("section", section)).count;
 
-    const task = (await supabaseAdmin.from("tasks").insert({
+    const task = (await supabaseAdmin.from("Tasks").insert({
                 v: 0,
                 priority,
                 title,
@@ -89,7 +89,7 @@ export const createTaskInBoard = async (data: {
                 taskStatus: "ACTIVE",
               }).select("*").single()).data;
 
-    (await supabaseAdmin.from("boards").update({ updatedAt: new Date() }).select("*").single().eq("id", boardId).select("*").single()).data;
+    (await supabaseAdmin.from("Boards").update({ updatedAt: new Date() }).select("*").single().eq("id", boardId).select("*").single()).data;
 
     // Send email notification if assigning to a different user
     if (user !== session.user.id) {
@@ -105,7 +105,7 @@ export const createTaskInBoard = async (data: {
         if (resend) {
           const notifyRecipient = (await supabaseAdmin.from("Users").select("*").eq("id", user).single()).data;
 
-          const boardData = (await supabaseAdmin.from("boards").select("*").eq("id", boardId).single()).data;
+          const boardData = (await supabaseAdmin.from("Boards").select("*").eq("id", boardId).single()).data;
 
           if (notifyRecipient?.email) {
             await resend.emails.send({

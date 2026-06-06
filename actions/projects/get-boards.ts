@@ -15,6 +15,6 @@ export const getBoards = async (_userId?: string) => {
     if (e instanceof AuthenticationError) return [];
     throw e;
   }
-  const data = (await supabaseAdmin.from("boards").select("*, assigned_user(name)").order("updatedAt", { ascending: false })).data;
+  const data = (await supabaseAdmin.from("Boards").select("*, assigned_user(name)").order("updatedAt", { ascending: false })).data;
   return data;
 };

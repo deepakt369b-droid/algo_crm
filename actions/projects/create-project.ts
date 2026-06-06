@@ -22,9 +22,9 @@ export const createProject = async (data: {
   if (!description) return { error: "Missing project description" };
 
   try {
-    const boardsCount = (await supabaseAdmin.from("boards").select("*", { count: 'exact', head: true })).count;
+    const boardsCount = (await supabaseAdmin.from("Boards").select("*", { count: 'exact', head: true })).count;
 
-    const newBoard = (await supabaseAdmin.from("boards").insert({
+    const newBoard = (await supabaseAdmin.from("Boards").insert({
             v: 0,
             user: user.id,
             title,
@@ -35,7 +35,7 @@ export const createProject = async (data: {
             createdBy: user.id,
           }).select("*").single()).data;
 
-    (await supabaseAdmin.from("sections").insert({
+    (await supabaseAdmin.from("Sections").insert({
                   v: 0,
                   board: newBoard.id,
                   title: "Backlog",

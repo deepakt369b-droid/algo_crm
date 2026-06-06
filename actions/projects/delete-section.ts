@@ -20,7 +20,7 @@ export const deleteSection = async (sectionId: string) => {
 
   if (!sectionId) return { error: "Missing section ID" };
 
-  const existing = (await supabaseAdmin.from("sections").select("board").eq("id", sectionId).single()).data;
+  const existing = (await supabaseAdmin.from("Sections").select("board").eq("id", sectionId).single()).data;
   if (!existing) return { error: "Not found" };
 
   try {
@@ -31,9 +31,9 @@ export const deleteSection = async (sectionId: string) => {
   }
 
   try {
-    (await supabaseAdmin.from("tasks").delete().select("*").single().eq("section", sectionId)).data;
+    (await supabaseAdmin.from("Tasks").delete().select("*").single().eq("section", sectionId)).data;
 
-    (await supabaseAdmin.from("sections").delete().select("*").single().eq("id", sectionId).select("*").single()).data;
+    (await supabaseAdmin.from("Sections").delete().select("*").single().eq("id", sectionId).select("*").single()).data;
 
     revalidatePath("/[locale]/(routes)/projects", "page");
     return { success: true };

@@ -28,12 +28,12 @@ export async function getApiKey(
   if (envKey) return envKey;
 
   // Tier 2: system-wide DB key
-  const systemRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", provider).single()).data;
+  const systemRow = (await supabaseAdmin.from("ApiKeys").select("encryptedKey").eq("scope", "SYSTEM").eq("provider", provider).single()).data;
   if (systemRow) return decrypt(systemRow.encryptedKey);
 
   // Tier 3: user-specific DB key
   if (userId) {
-    const userRow = (await supabaseAdmin.from("apiKeys").select("encryptedKey").eq("scope", "USER").eq("userId", userId).eq("provider", provider).single()).data;
+    const userRow = (await supabaseAdmin.from("ApiKeys").select("encryptedKey").eq("scope", "USER").eq("userId", userId).eq("provider", provider).single()).data;
     if (userRow) return decrypt(userRow.encryptedKey);
   }
 

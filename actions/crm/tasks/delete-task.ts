@@ -15,7 +15,7 @@ export const deleteTask = async (taskId: string) => {
     // the Projects-facing `task` FK — see actions/crm/tasks/add-comment.ts.
     (await supabaseAdmin.from("tasksComments").delete().select("*").single().eq("assigned_crm_account_task", taskId)).data;
 
-    (await supabaseAdmin.from("documentsToCrmAccountsTasks").delete().select("*").single().eq("crm_accounts_task_id", taskId)).data;
+    (await supabaseAdmin.from("DocumentsToCrmAccountsTasks").delete().select("*").single().eq("crm_accounts_task_id", taskId)).data;
 
     (await supabaseAdmin.from("crm_Accounts_Tasks").delete().select("*").single().eq("id", taskId).select("*").single()).data;
 

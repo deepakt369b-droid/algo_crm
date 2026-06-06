@@ -29,10 +29,10 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
     // Generate order number (PO-YYYYMMDD-XXXX)
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const count = (await supabaseAdmin.from("purchaseOrders").select("*", { count: 'exact', head: true }).gte("createdAt", new Date(new Date().setHours(0, 0, 0, 0)))).count;
+    const count = (await supabaseAdmin.from("PurchaseOrders").select("*", { count: 'exact', head: true }).gte("createdAt", new Date(new Date().setHours(0, 0, 0, 0)))).count;
     const orderNumber = `PO-${dateStr}-${String(count + 1).padStart(4, "0")}`;
 
-    const purchaseOrder = (await supabaseAdmin.from("purchaseOrders").insert({
+    const purchaseOrder = (await supabaseAdmin.from("PurchaseOrders").insert({
                 orderNumber,
                 vendorId,
                 currency,
