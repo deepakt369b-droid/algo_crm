@@ -61,9 +61,8 @@ export function TemplateSelector({ selectedTemplateId, onSelect }: TemplateSelec
     : industryTemplates.filter((t) => t.industry === selectedSector);
 
   return (
-    <div className="space-y-6 w-full py-2">
-      {/* Premium Sector Filtering Pills */}
-      <div className="flex flex-wrap gap-2 pb-2 border-b border-border/40">
+    <div className="space-y-4 w-full py-1">
+      <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border/40 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {sectors.map((sector) => {
           const isActive = selectedSector === sector;
           return (
@@ -71,7 +70,7 @@ export function TemplateSelector({ selectedTemplateId, onSelect }: TemplateSelec
               key={sector}
               onClick={() => setSelectedSector(sector)}
               className={cn(
-                "text-xs px-3 py-1.5 rounded-full font-semibold transition-all cursor-pointer border select-none",
+                "shrink-0 text-[11px] px-3 py-1.5 rounded-full font-semibold transition-all cursor-pointer border select-none",
                 isActive
                   ? "bg-primary border-primary text-primary-foreground shadow-sm shadow-primary/20"
                   : "bg-muted/40 hover:bg-muted border-border/60 text-muted-foreground hover:text-foreground"
@@ -89,12 +88,12 @@ export function TemplateSelector({ selectedTemplateId, onSelect }: TemplateSelec
           No blueprints found for the selected sector.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
           {selectedSector === "All" && (
             <Card 
               className={cn(
-                "relative cursor-pointer transition-all duration-300 overflow-hidden select-none flex flex-col h-full glass-card border-2",
-                "hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5",
+                "relative cursor-pointer transition-all duration-200 overflow-hidden select-none flex flex-col min-h-[210px] glass-card border-2",
+                "hover:border-primary/50 hover:shadow-md",
                 selectedTemplateId === "custom"
                   ? "border-primary ring-2 ring-primary bg-primary/[0.03] dark:bg-primary/[0.01]" 
                   : "border-dashed border-border/80"
@@ -102,29 +101,29 @@ export function TemplateSelector({ selectedTemplateId, onSelect }: TemplateSelec
               onClick={() => onSelect("custom")}
             >
               {selectedTemplateId === "custom" && (
-                <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 rounded-bl-lg text-xs font-semibold flex items-center gap-1 shadow-sm">
-                  <Check className="w-3.5 h-3.5 stroke-[3px]" /> Custom Design
+                <div className="absolute top-3 right-3 bg-primary text-primary-foreground rounded-full p-1 shadow-sm">
+                  <Check className="w-3.5 h-3.5 stroke-[3px]" />
                 </div>
               )}
-              <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3 pt-5">
+              <CardHeader className="flex flex-row items-start gap-3 space-y-0 pb-2 pt-4">
                 <div className={cn(
-                  "p-3 rounded-xl transition-colors duration-300 bg-gradient-to-tr from-primary to-purple-500 text-white shadow-md shadow-primary/10"
+                  "p-2.5 rounded-xl transition-colors duration-300 bg-gradient-to-tr from-primary to-purple-500 text-white shadow-md shadow-primary/10"
                 )}>
-                  <Settings2 className="w-6 h-6" />
+                  <Settings2 className="w-5 h-5" />
                 </div>
-                <div className="flex flex-col pr-24">
-                  <CardTitle className="text-lg font-bold tracking-tight">Build Custom CRM</CardTitle>
+                <div className="flex min-w-0 flex-col pr-8">
+                  <CardTitle className="text-base font-bold tracking-tight leading-snug">Build Custom CRM</CardTitle>
                   <CardDescription className="text-xs font-semibold text-primary mt-0.5 uppercase tracking-wider">
                     Tailored Workspace
                   </CardDescription>
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-between pt-0 pb-5">
-                <p className="text-sm text-muted-foreground leading-relaxed">
+              <CardContent className="flex-1 flex flex-col justify-between pt-0 pb-4">
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4">
                   Select your own CRM modules, configure pipeline stages, and design custom contact fields interactively.
                 </p>
-                <div className="mt-4 pt-3 border-t border-border/40 text-[10px] text-primary font-bold tracking-wider uppercase">
-                  → Click to launch playground
+                <div className="mt-3 pt-3 border-t border-border/40 text-[10px] text-primary font-bold tracking-wider uppercase">
+                  Custom setup
                 </div>
               </CardContent>
             </Card>
@@ -146,45 +145,43 @@ export function TemplateSelector({ selectedTemplateId, onSelect }: TemplateSelec
               <Card 
                 key={template.id} 
                 className={cn(
-                  "relative cursor-pointer transition-all duration-300 overflow-hidden select-none flex flex-col h-full glass-card",
-                  "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5",
+                  "relative cursor-pointer transition-all duration-200 overflow-hidden select-none flex flex-col min-h-[210px] glass-card",
+                  "hover:border-primary/50 hover:shadow-md hover:shadow-primary/5",
                   isSelected 
                     ? "border-primary ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/[0.03] dark:bg-primary/[0.01]" 
                     : "border-border/60"
                 )}
                 onClick={() => onSelect(template.id)}
               >
-                {/* Top selection indicator tag */}
                 {isSelected && (
-                  <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 rounded-bl-lg text-xs font-semibold flex items-center gap-1 shadow-sm">
-                    <Check className="w-3.5 h-3.5 stroke-[3px]" /> Active Template
+                  <div className="absolute top-3 right-3 bg-primary text-primary-foreground rounded-full p-1 shadow-sm">
+                    <Check className="w-3.5 h-3.5 stroke-[3px]" />
                   </div>
                 )}
 
-                <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3 pt-5">
+                <CardHeader className="flex flex-row items-start gap-3 space-y-0 pb-2 pt-4">
                   <div className={cn(
-                    "p-3 rounded-xl transition-colors duration-300",
+                    "p-2.5 rounded-xl transition-colors duration-300",
                     isSelected ? "bg-primary/20 text-primary" : "bg-muted/70 text-muted-foreground"
                   )}>
-                    <IconComponent className="w-6 h-6" />
+                    <IconComponent className="w-5 h-5" />
                   </div>
-                  <div className="flex flex-col pr-24">
-                    <CardTitle className="text-lg font-bold tracking-tight">{template.name}</CardTitle>
+                  <div className="flex min-w-0 flex-col pr-8">
+                    <CardTitle className="text-base font-bold tracking-tight leading-snug line-clamp-2">{template.name}</CardTitle>
                     <CardDescription className="text-xs font-medium text-primary mt-0.5 uppercase tracking-wider">
                       {template.industry}
                     </CardDescription>
                   </div>
                 </CardHeader>
 
-                <CardContent className="flex-1 flex flex-col justify-between pt-0 pb-5">
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                <CardContent className="flex-1 flex flex-col justify-between pt-0 pb-4">
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
                       {template.description}
                     </p>
 
-                    {/* Features badges */}
-                    <div className="flex flex-wrap gap-1.5 pb-2">
-                      {template.features.map((feature) => (
+                    <div className="flex flex-wrap gap-1.5">
+                      {template.features.slice(0, 3).map((feature) => (
                         <Badge 
                           key={feature} 
                           variant="secondary" 
@@ -193,41 +190,39 @@ export function TemplateSelector({ selectedTemplateId, onSelect }: TemplateSelec
                           {feature}
                         </Badge>
                       ))}
+                      {template.features.length > 3 && (
+                        <Badge variant="outline" className="text-[10px] font-semibold px-2 py-0.5">
+                          +{template.features.length - 3}
+                        </Badge>
+                      )}
                     </div>
 
-                    {/* Visual Engine Specs to wow the user */}
-                    <div className="border-t border-border/40 pt-3 space-y-2.5 text-xs text-muted-foreground">
-                      {/* Enabled Modules */}
+                    <div className="border-t border-border/40 pt-3 space-y-2 text-[11px] text-muted-foreground">
                       <div className="flex items-start gap-2">
                         <Layers className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0 opacity-70" />
-                        <div>
+                        <div className="min-w-0">
                           <span className="font-semibold text-foreground">Modules: </span>
-                          <span>{activeModules.join(", ")}</span>
+                          <span>{activeModules.slice(0, 4).join(", ")}</span>
+                          {activeModules.length > 4 && <span> +{activeModules.length - 4}</span>}
                         </div>
                       </div>
 
-                      {/* Custom Fields */}
                       {template.crmCustomFields && template.crmCustomFields.length > 0 && (
                         <div className="flex items-start gap-2">
                           <Settings2 className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0 opacity-70" />
-                          <div>
-                            <span className="font-semibold text-foreground">Custom Fields: </span>
-                            <span className="italic">
-                              {template.crmCustomFields.map((f: any) => `${f.name} (${f.type})`).join(", ")}
-                            </span>
+                          <div className="min-w-0">
+                            <span className="font-semibold text-foreground">Fields: </span>
+                            <span>{template.crmCustomFields.length} included</span>
                           </div>
                         </div>
                       )}
 
-                      {/* WhatsApp Automated Templates */}
                       {template.whatsappTemplates && template.whatsappTemplates.length > 0 && (
                         <div className="flex items-start gap-2">
                           <MessageSquareCode className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0 opacity-70" />
-                          <div>
-                            <span className="font-semibold text-foreground">WA Automations: </span>
-                            <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono">
-                              {template.whatsappTemplates[0].name}
-                            </code>
+                          <div className="min-w-0">
+                            <span className="font-semibold text-foreground">WhatsApp: </span>
+                            <span>{template.whatsappTemplates.length} templates</span>
                           </div>
                         </div>
                       )}

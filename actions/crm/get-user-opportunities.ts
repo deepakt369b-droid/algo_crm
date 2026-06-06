@@ -21,6 +21,17 @@ export const getUserOpportunities = async (userId: string) => {
     return [];
   }
 
-  const data = (await supabaseAdmin.from("crm_Opportunities").select("*, assigned_sales_stage(name)").eq("assigned_to", userId).is("deletedAt", null).order("createdAt", { ascending: false })).data;
+  const { data, error } = await supabaseAdmin
+    .from("crm_Opportunities")
+    .select("*, assigned_sales_stage:crm_Opportunities_Sales_Stages!crm_Opportunities_sales_stage_fkey(name)")
+    .eq("assigned_to", userId)
+    .is("deletedAt", null)
+    .order("createdAt", { ascending: false });
+
+  if (error) {
+    console.error("[CRM_USER_OPPORTUNITIES_ERROR]", error);
+    return [];
+  }
+
   return serializeDecimalsList(data);
 };

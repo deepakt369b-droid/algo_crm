@@ -1,11 +1,12 @@
 import Decimal from "decimal.js";
+import { unstable_cache } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 // Re-export pure functions so existing server-side imports still work
 export { findRate, convertAmount, formatCurrency } from "@/lib/currency-format";
 export type { Rate } from "@/lib/currency-format";
 
-export async function getExchangeRates() {
+export const getExchangeRates = unstable_cache(async () => {
   const { data: rates, error } = await supabaseAdmin.from("ExchangeRate").select("*");
   if (error || !rates) return [];
 
@@ -14,7 +15,7 @@ export async function getExchangeRates() {
     toCurrency: r.toCurrency,
     rate: r.rate,
   }));
-}
+}, ["exchange-rates"], { revalidate: 60 });
 
 export async function getSnapshotRate(
   from: string,
@@ -25,7 +26,7 @@ export async function getSnapshotRate(
   return rate ? rate.rate : null;
 }
 
-export async function getDefaultCurrency(): Promise<string> {
+export const getDefaultCurrency = unstable_cache(async (): Promise<string> => {
   const { data: setting } = await supabaseAdmin
     .from("crm_SystemSettings")
     .select("*")
@@ -33,9 +34,9 @@ export async function getDefaultCurrency(): Promise<string> {
     .maybeSingle();
 
   return setting?.value || "EUR";
-}
+}, ["default-currency"], { revalidate: 60 });
 
-export async function getEnabledCurrencies() {
+export const getEnabledCurrencies = unstable_cache(async () => {
   const { data: currencies, error } = await supabaseAdmin
     .from("Currency")
     .select("*")
@@ -45,4 +46,4 @@ export async function getEnabledCurrencies() {
   if (!error && currencies && currencies.length > 0) return currencies;
 
   return [{ code: "EUR", name: "Euro", symbol: "EUR" }];
-}
+}, ["enabled-currencies"], { revalidate: 60 });

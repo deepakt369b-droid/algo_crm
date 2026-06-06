@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { type LucideIcon, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -62,6 +62,15 @@ interface NavMainProps {
 
 export function NavMain({ items, dict }: NavMainProps) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const prefetchRoute = React.useCallback(
+    (url?: string) => {
+      if (!url || url === pathname) return
+      router.prefetch(url)
+    },
+    [pathname, router],
+  )
 
   // Helper function to check if a route is active
   const isRouteActive = (url: string, exact?: boolean): boolean => {
@@ -125,7 +134,11 @@ export function NavMain({ items, dict }: NavMainProps) {
                                 isActive ? "bg-primary/5 text-primary font-semibold hover:bg-primary/10" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                               )}
                             >
-                              <Link href={subItem.url}>
+                              <Link
+                                href={subItem.url}
+                                onFocus={() => prefetchRoute(subItem.url)}
+                                onMouseEnter={() => prefetchRoute(subItem.url)}
+                              >
                                 <span>{subItem.title}</span>
                               </Link>
                             </SidebarMenuSubButton>
@@ -153,7 +166,11 @@ export function NavMain({ items, dict }: NavMainProps) {
                   isActive ? "bg-primary/10 text-primary font-semibold hover:bg-primary/15 hover:text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <Link href={item.url}>
+                <Link
+                  href={item.url}
+                  onFocus={() => prefetchRoute(item.url)}
+                  onMouseEnter={() => prefetchRoute(item.url)}
+                >
                   {item.icon && <item.icon className={cn("w-5 h-5 transition-transform duration-200 group-hover:scale-105", isActive ? "text-primary" : "text-muted-foreground")} />}
                   <span className="font-medium">{item.title}</span>
                 </Link>
