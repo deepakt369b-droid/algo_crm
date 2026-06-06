@@ -4,32 +4,15 @@ import Container from "../../components/ui/Container";
 import { InviteForm } from "./components/IviteForm";
 import { Separator } from "@/components/ui/separator";
 
-import { getSession } from "@/lib/auth-server";
 import { AdminUserDataTable } from "./table-components/data-table";
 import { columns } from "./table-components/columns";
 import { Users } from "@/lib/prisma-types";
-import { Button } from "@/components/ui/button";
 import SendMailToAll from "./components/send-mail-to-all";
 import { getTranslations } from "next-intl/server";
 
 const AdminUsersPage = async () => {
   const users: Users[] = await getUsers();
   const t = await getTranslations("AdminPage");
-
-  const session = await getSession();
-
-  if (session?.user?.role !== "admin") {
-    return (
-      <Container
-        title={t("title")}
-        description={t("accessNotAllowed")}
-      >
-        <div className="flex w-full h-full items-center justify-center">
-          {t("accessNotAllowed")}
-        </div>
-      </Container>
-    );
-  }
 
   return (
     <Container

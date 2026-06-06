@@ -1,5 +1,4 @@
 import { getSession } from "@/lib/auth-server";
-import { redirect } from "next/navigation";
 import { getAuditLogAdmin } from "@/actions/crm/audit-log/get-audit-log-admin";
 import { AdminFilters } from "@/components/crm/audit-log/AdminFilters";
 import { AdminAuditLogClient } from "@/components/crm/audit-log/AdminPageClient";
@@ -14,7 +13,6 @@ const AuditLogPage = async (props: {
   }>;
 }) => {
   const session = await getSession();
-  if (session?.user?.role !== "admin") redirect("/");
 
   const sp = await props.searchParams;
   const currentPage = Math.max(1, parseInt(sp?.page ?? "1", 10) || 1);
