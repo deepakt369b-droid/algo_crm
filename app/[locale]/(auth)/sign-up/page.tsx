@@ -137,7 +137,7 @@ function SignUpPageContent() {
   return (
     <div className={cn(
       "w-full transition-all duration-500 ease-in-out mx-auto px-4 py-8",
-      step === 2 ? "max-w-7xl" : "max-w-md"
+      step === 2 ? "max-w-[1180px]" : "max-w-md"
     )}>
       {/* Premium Stepper */}
       <div className="mb-10 relative">

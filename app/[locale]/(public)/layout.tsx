@@ -15,6 +15,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               width={180}
               height={90}
               priority
+              loading="eager"
               className="h-10 w-auto object-contain"
             />
           </Link>

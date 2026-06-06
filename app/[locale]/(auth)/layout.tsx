@@ -39,7 +39,7 @@ const AuthLayout = async ({ children }: { children: React.ReactNode }) => {
         </Link>
         <ThemeToggle />
       </div>
-      <div className="flex items-center justify-center grow h-full w-full max-w-md px-6 py-20 z-10">
+      <div className="flex items-center justify-center grow h-full w-full max-w-[1280px] px-6 py-20 z-10">
         {children}
       </div>
       <div className="w-full mt-auto py-4 z-10 flex justify-center border-t border-border/10 bg-background/30 backdrop-blur-sm">
