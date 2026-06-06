@@ -34,14 +34,27 @@ export async function searchDocuments(
 
   // Keyword search — scope OR (visibility/ownership) goes at top level;
   // user-supplied search OR moves into AND so it cannot replace the scope OR.
-  const kwResults = (await supabaseAdmin.from("Documents").select("id, document_name, summary, document_system_type, accounts(account(name))").is("parent_document_id", null).eq("AND", [
-          {
-            OR: [
-              { document_name: { contains: query, mode: "insensitive" } },
-              { summary: { contains: query, mode: "insensitive" } },
-            ],
-          },
-        ]).limit(5)).data;
+  const safeQuery = query.trim().replace(/[,%]/g, "");
+  const { data: kwResultsRaw, error: keywordError } = await supabaseAdmin
+    .from("Documents")
+    .select(`
+      id,
+      document_name,
+      summary,
+      document_system_type,
+      accounts:DocumentsToAccounts!DocumentsToAccounts_document_id_fkey(
+        account:crm_Accounts!DocumentsToAccounts_account_id_fkey(name)
+      )
+    `)
+    .is("parent_document_id", null)
+    .or(`document_name.ilike.%${safeQuery}%,summary.ilike.%${safeQuery}%`)
+    .limit(5);
+
+  if (keywordError) {
+    console.error("[DOCUMENTS_SEARCH_KEYWORD_ERROR]", keywordError);
+  }
+
+  const kwResults = kwResultsRaw ?? [];
 
   // Semantic search via raw pgvector. Apply post-filter for authz.
   let semResults: { id: string; similarity: number }[] = [];
@@ -77,7 +90,7 @@ export async function searchDocuments(
 
   let extraDocs: typeof kwResults = [];
   if (semOnlyIds.length > 0) {
-    extraDocs = (await supabaseAdmin.from("Documents").select("id, document_name, summary, document_system_type").in("id", semOnlyIds).is("parent_document_id", null)).data;
+    extraDocs = (await supabaseAdmin.from("Documents").select("id, document_name, summary, document_system_type").in("id", semOnlyIds).is("parent_document_id", null)).data ?? [];
   }
 
   return [...kwResults, ...extraDocs].map((r) => ({

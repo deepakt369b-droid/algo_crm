@@ -21,7 +21,14 @@ export const getContractsWithIncludes = cache(async () => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("crm_Contracts").select("*, assigned_to_user(name), assigned_account(name)").order("createdAt", { ascending: false })).data;
+  const data = (await supabaseAdmin
+    .from("crm_Contracts")
+    .select(`
+      *,
+      assigned_to_user:Users!crm_Contracts_assigned_to_fkey(name),
+      assigned_account:crm_Accounts!crm_Contracts_account_fkey(name)
+    `)
+    .order("createdAt", { ascending: false })).data ?? [];
   return serializeDecimalsList(data);
 });
 
@@ -41,6 +48,13 @@ export const getContractsByAccountId = async (accountId: string) => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("crm_Contracts").select("*, assigned_to_user(name), assigned_account(name)").eq("account", accountId)).data;
+  const data = (await supabaseAdmin
+    .from("crm_Contracts")
+    .select(`
+      *,
+      assigned_to_user:Users!crm_Contracts_assigned_to_fkey(name),
+      assigned_account:crm_Accounts!crm_Contracts_account_fkey(name)
+    `)
+    .eq("account", accountId)).data ?? [];
   return serializeDecimalsList(data);
 };

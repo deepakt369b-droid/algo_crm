@@ -15,7 +15,23 @@ export const getDocuments = async () => {
     throw e;
   }
 
-  const documents = (await supabaseAdmin.from("Documents").select("*, created_by(id, name, email), assigned_to_user(id, name, email), accounts(account(id, name))").is("parent_document_id", null).order("date_created", { ascending: false })).data;
+  const { data: documents, error } = await supabaseAdmin
+    .from("Documents")
+    .select(`
+      *,
+      created_by:Users!Documents_created_by_user_fkey(id, name, email),
+      assigned_to_user:Users!Documents_assigned_user_fkey(id, name, email),
+      accounts:DocumentsToAccounts!DocumentsToAccounts_document_id_fkey(
+        account:crm_Accounts!DocumentsToAccounts_account_id_fkey(id, name)
+      )
+    `)
+    .is("parent_document_id", null)
+    .order("date_created", { ascending: false });
 
-  return documents;
+  if (error) {
+    console.error("[DOCUMENTS_LIST_ERROR]", error);
+    return [];
+  }
+
+  return documents ?? [];
 };

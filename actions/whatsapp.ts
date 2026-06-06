@@ -5,7 +5,12 @@ import { getTenantId } from "@/lib/get-tenant";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 async function resolveTenantId(fallbackTenantId?: string) {
-  return (await getTenantId()) || fallbackTenantId || null;
+  try {
+    return (await getTenantId()) || fallbackTenantId || null;
+  } catch (error) {
+    console.error("[WHATSAPP_TENANT_RESOLUTION_ERROR]", error);
+    return fallbackTenantId || null;
+  }
 }
 
 export async function listInstances(tenantId?: string) {

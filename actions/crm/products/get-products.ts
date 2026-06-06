@@ -10,6 +10,24 @@ export const getProductsFull = cache(async () => {
     if (e instanceof AuthenticationError) return [];
     throw e;
   }
-  const products = (await supabaseAdmin.from("crm_Products").select("*, category, created_by_user(id, name), _count(accountProducts)").is("deletedAt", null).order("createdAt", { ascending: false })).data;
-  return products;
+  const { data: products, error } = await supabaseAdmin
+    .from("crm_Products")
+    .select(`
+      *,
+      category:crm_ProductCategories!crm_Products_categoryId_fkey(id, name),
+      created_by_user:Users!crm_Products_createdBy_fkey(id, name),
+      accountProducts:crm_AccountProducts!crm_AccountProducts_productId_fkey(id)
+    `)
+    .is("deletedAt", null)
+    .order("createdAt", { ascending: false });
+  if (error) {
+    console.error("[CRM_PRODUCTS_LIST_ERROR]", error);
+    return [];
+  }
+  return (products ?? []).map((product: any) => ({
+    ...product,
+    _count: {
+      accountProducts: product.accountProducts?.length ?? 0,
+    },
+  }));
 });

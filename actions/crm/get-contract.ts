@@ -25,7 +25,26 @@ export const getContract = async (contractId: string) => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("crm_Contracts").select("*, assigned_account(id, name), assigned_to_user(id, name), lineItems(*, product(id, name, status))").eq("id", contractId).is("deletedAt", null).single()).data;
+  const { data, error } = await supabaseAdmin
+    .from("crm_Contracts")
+    .select(`
+      *,
+      assigned_account:crm_Accounts!crm_Contracts_account_fkey(id, name),
+      assigned_to_user:Users!crm_Contracts_assigned_to_fkey(id, name),
+      lineItems:crm_ContractLineItems!crm_ContractLineItems_contractId_fkey(
+        *,
+        product:crm_Products!crm_ContractLineItems_productId_fkey(id, name, status)
+      )
+    `)
+    .eq("id", contractId)
+    .is("deletedAt", null)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[CRM_CONTRACT_DETAIL_ERROR]", error);
+    return null;
+  }
+
   if (!data) return null;
   return serializeDecimals(data);
 };

@@ -28,6 +28,20 @@ export const getContactsByAccountId = async (accountId: string) => {
 
   // Defense in depth: even with parent-account access, scope the contact list
   // by the contact's own ownership rules.
-  const data = (await supabaseAdmin.from("crm_Contacts").select("*, assigned_to_user(name), crate_by_user(name), assigned_accounts").eq("accountsIDs", accountId)).data;
-  return data;
+  const { data, error } = await supabaseAdmin
+    .from("crm_Contacts")
+    .select(`
+      *,
+      assigned_to_user:Users!crm_Contacts_assigned_to_fkey(name),
+      crate_by_user:Users!crm_Contacts_createdBy_fkey(name),
+      assigned_accounts:crm_Accounts!crm_Contacts_accountsIDs_fkey(*)
+    `)
+    .eq("accountsIDs", accountId);
+
+  if (error) {
+    console.error("[CRM_ACCOUNT_CONTACTS_ERROR]", error);
+    return [];
+  }
+
+  return data ?? [];
 };

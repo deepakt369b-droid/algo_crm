@@ -135,6 +135,6 @@ export function serializeDecimals<T>(obj: T): T {
 /**
  * Serialize Decimal and Date fields in an array of objects.
  */
-export function serializeDecimalsList<T>(list: T[]): T[] {
-  return list.map(serializeDecimals);
+export function serializeDecimalsList<T>(list: T[] | null | undefined): T[] {
+  return (list || []).map(serializeDecimals);
 }

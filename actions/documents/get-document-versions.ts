@@ -24,10 +24,16 @@ export async function getDocumentVersions(documentId: string) {
     throw e;
   }
 
-  const versions = (await supabaseAdmin.from("Documents").select("id, version, document_file_url, createdAt, size, created_by(name)").eq("OR", [
-          { id: documentId },
-          { parent_document_id: documentId },
-        ]).order("version", { ascending: false })).data;
+  const { data: versions, error } = await supabaseAdmin
+    .from("Documents")
+    .select("id, version, document_file_url, createdAt, size, created_by:Users!Documents_created_by_user_fkey(name)")
+    .or(`id.eq.${documentId},parent_document_id.eq.${documentId}`)
+    .order("version", { ascending: false });
 
-  return versions;
+  if (error) {
+    console.error("[DOCUMENT_VERSIONS_ERROR]", error);
+    return [];
+  }
+
+  return versions ?? [];
 }

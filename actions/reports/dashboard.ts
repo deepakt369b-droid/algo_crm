@@ -21,6 +21,10 @@ function prevPeriod(filters: ReportFilters): { dateFrom: Date; dateTo: Date } {
   };
 }
 
+function toSupabaseTimestamp(date: Date): string {
+  return date.toISOString();
+}
+
 export async function getDashboardKPIs(
   filters: ReportFilters,
   displayCurrency: string = "EUR",
@@ -70,7 +74,7 @@ export async function getDashboardKPIs(
     (await supabaseAdmin.from("crm_Contacts").select("*", { count: 'exact', head: true })).count,
     // activeUsers (status = ACTIVE, not date-filtered) - global; manager/admin only typically read this KPI
     (await supabaseAdmin.from("Users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE")).count,
-    (await supabaseAdmin.from("Users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE").lte("created_on", prev.dateTo)).count,
+    (await supabaseAdmin.from("Users").select("*", { count: 'exact', head: true }).eq("userStatus", "ACTIVE").lte("created_on", toSupabaseTimestamp(prev.dateTo))).count,
     // tasks total
     (await supabaseAdmin.from("Tasks").select("*", { count: 'exact', head: true })).count,
     (await supabaseAdmin.from("Tasks").select("*", { count: 'exact', head: true })).count,

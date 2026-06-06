@@ -16,6 +16,25 @@ export const getContacts = cache(async () => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("crm_Contacts").select("*, assigned_to_user(name), crate_by_user(name), assigned_accounts, opportunities(*, opportunity(id, name)), documents(*, document(id, document_name))")).data;
-  return data;
+  const { data, error } = await supabaseAdmin
+    .from("crm_Contacts")
+    .select(`
+      *,
+      assigned_to_user:Users!crm_Contacts_assigned_to_fkey(name),
+      crate_by_user:Users!crm_Contacts_createdBy_fkey(name),
+      assigned_accounts:crm_Accounts!crm_Contacts_accountsIDs_fkey(id, name),
+      opportunities:ContactsToOpportunities!ContactsToOpportunities_contact_id_fkey(
+        *,
+        opportunity:crm_Opportunities!ContactsToOpportunities_opportunity_id_fkey(id, name)
+      ),
+      documents:DocumentsToContacts!DocumentsToContacts_contact_id_fkey(
+        *,
+        document:Documents!DocumentsToContacts_document_id_fkey(id, document_name)
+      )
+    `);
+  if (error) {
+    console.error("[CRM_CONTACTS_LIST_ERROR]", error);
+    return [];
+  }
+  return data ?? [];
 });

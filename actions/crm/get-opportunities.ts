@@ -16,7 +16,25 @@ export const getOpportunities = async () => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("crm_Opportunities").select("*, assigned_to_user(avatar, name), created_by_user(name), contacts(*, contact(id, first_name, last_name)), documents(*, document(id, document_name))")).data;
+  const { data, error } = await supabaseAdmin
+    .from("crm_Opportunities")
+    .select(`
+      *,
+      assigned_to_user:Users!crm_Opportunities_assigned_to_fkey(avatar, name),
+      created_by_user:Users!crm_Opportunities_createdBy_fkey(name),
+      contacts:ContactsToOpportunities!ContactsToOpportunities_opportunity_id_fkey(
+        *,
+        contact:crm_Contacts!ContactsToOpportunities_contact_id_fkey(id, first_name, last_name)
+      ),
+      documents:DocumentsToOpportunities!DocumentsToOpportunities_opportunity_id_fkey(
+        *,
+        document:Documents!DocumentsToOpportunities_document_id_fkey(id, document_name)
+      )
+    `);
+  if (error) {
+    console.error("[CRM_OPPORTUNITIES_LIST_ERROR]", error);
+    return [];
+  }
   return serializeDecimalsList(data);
 };
 
@@ -51,7 +69,10 @@ export const getOpportunitiesByMonth = async () => {
 
 //Get opportunities by sales_stage name for chart
 export const getOpportunitiesByStage = async () => {
-  const opportunities = (await supabaseAdmin.from("crm_Opportunities").select("assigned_sales_stage(name)").is("deletedAt", null)).data;
+  const opportunities = (await supabaseAdmin
+    .from("crm_Opportunities")
+    .select("assigned_sales_stage:crm_Opportunities_Sales_Stages!crm_Opportunities_sales_stage_fkey(name)")
+    .is("deletedAt", null)).data;
 
   console.log(opportunities, "opportunities");
   if (!opportunities) {

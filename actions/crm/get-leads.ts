@@ -16,6 +16,21 @@ export const getLeads = cache(async () => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("crm_Leads").select("*, assigned_to_user(name), assigned_accounts, documents(*, document(id, document_name))").order("createdAt", { ascending: false })).data;
-  return data;
+  const { data, error } = await supabaseAdmin
+    .from("crm_Leads")
+    .select(`
+      *,
+      assigned_to_user:Users!crm_Leads_assigned_to_fkey(name),
+      assigned_accounts:crm_Accounts!crm_Leads_accountsIDs_fkey(id, name),
+      documents:DocumentsToLeads!DocumentsToLeads_lead_id_fkey(
+        *,
+        document:Documents!DocumentsToLeads_document_id_fkey(id, document_name)
+      )
+    `)
+    .order("createdAt", { ascending: false });
+  if (error) {
+    console.error("[CRM_LEADS_LIST_ERROR]", error);
+    return [];
+  }
+  return data ?? [];
 });

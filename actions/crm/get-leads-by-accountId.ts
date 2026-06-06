@@ -28,6 +28,16 @@ export const getLeadsByAccountId = async (accountId: string) => {
 
   // Defense in depth: even with parent-account access, scope the lead list
   // by the lead's own ownership rules.
-  const data = (await supabaseAdmin.from("crm_Leads").select("*, assigned_to_user(name)").eq("accountsIDs", accountId).order("createdAt", { ascending: false })).data;
-  return data;
+  const { data, error } = await supabaseAdmin
+    .from("crm_Leads")
+    .select("*, assigned_to_user:Users!crm_Leads_assigned_to_fkey(name)")
+    .eq("accountsIDs", accountId)
+    .order("createdAt", { ascending: false });
+
+  if (error) {
+    console.error("[CRM_ACCOUNT_LEADS_ERROR]", error);
+    return [];
+  }
+
+  return data ?? [];
 };

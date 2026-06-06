@@ -35,7 +35,16 @@ export async function createDocumentVersion(input: CreateVersionInput) {
     throw e;
   }
 
-  const parent = (await supabaseAdmin.from("Documents").select("id, document_name, version, accounts(account_id)").eq("id", input.parentDocumentId).single()).data;
+  const parent = (await supabaseAdmin
+    .from("Documents")
+    .select(`
+      id,
+      document_name,
+      version,
+      accounts:DocumentsToAccounts!DocumentsToAccounts_document_id_fkey(account_id)
+    `)
+    .eq("id", input.parentDocumentId)
+    .maybeSingle()).data;
   if (!parent) throw new Error("Parent document not found");
 
   const newVersion = parent.version + 1;
