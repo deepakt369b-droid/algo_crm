@@ -24,5 +24,5 @@ export const getTemplate = async (id: string) => {
     throw e;
   }
 
-  return (await supabaseAdmin.from("crm_campaign_templates").select("*, created_by_user(name)").eq("id", id).eq("deletedAt", null).single()).data;
+  return (await supabaseAdmin.from("crm_campaign_templates").select("*, created_by_user(name)").eq("id", id).is("deletedAt", null).single()).data;
 };

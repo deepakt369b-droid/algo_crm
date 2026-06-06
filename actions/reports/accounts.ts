@@ -10,7 +10,7 @@ export async function getNewAccounts(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<ChartDataPoint[]> {
-  const accounts = (await supabaseAdmin.from("crm_Accounts").select("createdAt").eq("deletedAt", null)).data;
+  const accounts = (await supabaseAdmin.from("crm_Accounts").select("createdAt").is("deletedAt", null)).data;
   const grouped: Record<string, number> = {};
   for (const a of accounts) {
     const d = new Date(a.createdAt);
@@ -24,7 +24,7 @@ export async function getAccountsByIndustry(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<ChartDataPoint[]> {
-  const accounts = (await supabaseAdmin.from("crm_Accounts").select("*").eq("deletedAt", null)).data;
+  const accounts = (await supabaseAdmin.from("crm_Accounts").select("*").is("deletedAt", null)).data;
   const grouped: Record<string, number> = {};
   for (const a of accounts) {
     const name = a.industry_type?.name ?? "Unknown";
@@ -37,7 +37,7 @@ export async function getTopAccountsByRevenue(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<ChartDataPoint[]> {
-  const accounts = (await supabaseAdmin.from("crm_Accounts").select("name, annual_revenue").eq("deletedAt", null).order("annual_revenue", { ascending: false }).limit(10)).data;
+  const accounts = (await supabaseAdmin.from("crm_Accounts").select("name, annual_revenue").is("deletedAt", null).order("annual_revenue", { ascending: false }).limit(10)).data;
   return accounts.map((a: { name: string; annual_revenue: string | null }) => ({ name: a.name, Number: parseInt(a.annual_revenue ?? "0", 10) }));
 }
 
@@ -45,7 +45,7 @@ export async function getAccountsBySize(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<ChartDataPoint[]> {
-  const accounts = (await supabaseAdmin.from("crm_Accounts").select("employees").eq("deletedAt", null)).data;
+  const accounts = (await supabaseAdmin.from("crm_Accounts").select("employees").is("deletedAt", null)).data;
   const ranges = [
     { label: "1-10", min: 1, max: 10 },
     { label: "11-50", min: 11, max: 50 },

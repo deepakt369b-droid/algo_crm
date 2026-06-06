@@ -37,7 +37,7 @@ export const crmProductTools = [
     description: "Get a single CRM product by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const product = (await supabaseAdmin.from("crm_Products").select("*, category").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const product = (await supabaseAdmin.from("crm_Products").select("*, category").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!product) notFound("Product");
       return itemResponse(product);
     },
@@ -116,7 +116,7 @@ export const crmProductTools = [
       categoryId: z.string().uuid().optional(),
     }),
     async handler(args: Record<string, any>, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_Products").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Products").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!existing) notFound("Product");
       const { id, ...updateData } = args;
       const product = (await supabaseAdmin.from("crm_Products").update({ ...updateData, updatedBy: userId }).select("*").single().eq("id", id).select("*").single()).data;
@@ -128,7 +128,7 @@ export const crmProductTools = [
     description: "Soft-delete a CRM product (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_Products").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Products").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!existing) notFound("Product");
       const product = (await supabaseAdmin.from("crm_Products").update({ deletedAt: new Date(), deletedBy: userId, status: "ARCHIVED" as any }).select("*").single().eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: product.id, status: "ARCHIVED" });

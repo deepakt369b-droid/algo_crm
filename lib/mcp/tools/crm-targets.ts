@@ -30,7 +30,7 @@ export const crmTargetTools = [
     description: "Get a single CRM target by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const target = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).eq("deletedAt", null).single()).data;
+      const target = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).is("deletedAt", null).single()).data;
       if (!target) notFound("Target");
       return itemResponse(target);
     },
@@ -115,7 +115,7 @@ export const crmTargetTools = [
       },
       userId: string
     ) {
-      const existing = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Target");
       const { id, ...updateData } = args;
       const target = (await supabaseAdmin.from("crm_Targets").update({ ...updateData, updatedBy: userId }).select("*").single().eq("id", id).select("*").single()).data;
@@ -127,7 +127,7 @@ export const crmTargetTools = [
     description: "Soft-delete a CRM target by ID (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", args.id).eq("created_by", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Target");
       const target = (await supabaseAdmin.from("crm_Targets").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: target.id, deletedAt: target.deletedAt });

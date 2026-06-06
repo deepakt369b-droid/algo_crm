@@ -14,7 +14,7 @@ export async function setInactiveOpportunity(id: string) {
     console.log("Opportunity id is required");
   }
   try {
-    const opportunity = (await supabaseAdmin.from("crm_Opportunities").select("assigned_to").eq("id", id).eq("deletedAt", null).single()).data;
+    const opportunity = (await supabaseAdmin.from("crm_Opportunities").select("assigned_to").eq("id", id).is("deletedAt", null).single()).data;
 
     if (!opportunity) {
       return { error: "Opportunity not found" };

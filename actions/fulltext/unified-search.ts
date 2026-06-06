@@ -88,7 +88,7 @@ export async function unifiedSearch(
       semDocuments,
       semDocChunks,
     ] = await Promise.all([
-      (await supabaseAdmin.from("crm_Accounts").select("id, name, email").eq("deletedAt", null).eq("AND", [
+      (await supabaseAdmin.from("crm_Accounts").select("id, name, email").is("deletedAt", null).eq("AND", [
                     scope.account,
                     {
                       OR: [
@@ -98,7 +98,7 @@ export async function unifiedSearch(
                       ],
                     },
                   ]).limit(10)).data,
-      (await supabaseAdmin.from("crm_Contacts").select("id, first_name, last_name, email").eq("deletedAt", null).eq("AND", [
+      (await supabaseAdmin.from("crm_Contacts").select("id, first_name, last_name, email").is("deletedAt", null).eq("AND", [
                     scope.contact,
                     {
                       OR: [
@@ -108,7 +108,7 @@ export async function unifiedSearch(
                       ],
                     },
                   ]).limit(10)).data,
-      (await supabaseAdmin.from("crm_Leads").select("id, firstName, lastName, company, email").eq("deletedAt", null).eq("AND", [
+      (await supabaseAdmin.from("crm_Leads").select("id, firstName, lastName, company, email").is("deletedAt", null).eq("AND", [
                   scope.lead,
                   {
                     OR: [
@@ -119,7 +119,7 @@ export async function unifiedSearch(
                     ],
                   },
                 ]).limit(10)).data,
-      (await supabaseAdmin.from("crm_Opportunities").select("id, name, status").eq("deletedAt", null).eq("AND", [
+      (await supabaseAdmin.from("crm_Opportunities").select("id, name, status").is("deletedAt", null).eq("AND", [
                   scope.opportunity,
                   {
                     OR: [
@@ -148,7 +148,7 @@ export async function unifiedSearch(
                           { username: { contains: query, mode: "insensitive" } },
                         ]).limit(10)).data
         : Promise.resolve([] as { id: string; name: string | null; email: string | null }[]),
-      (await supabaseAdmin.from("documents").select("id, document_name, summary, document_system_type, accounts(account(name))").eq("parent_document_id", null).eq("OR", [
+      (await supabaseAdmin.from("documents").select("id, document_name, summary, document_system_type, accounts(account(name))").is("parent_document_id", null).eq("OR", [
                   { document_name: { contains: query, mode: "insensitive" } },
                   { summary: { contains: query, mode: "insensitive" } },
                   { description: { contains: query, mode: "insensitive" } },
@@ -221,10 +221,10 @@ export async function unifiedSearch(
 
     const [extraAccounts, extraContacts, extraLeads, extraOpportunities] =
       await Promise.all([
-        (await supabaseAdmin.from("crm_Accounts").select("id, name, email").eq("deletedAt", null).in("id", semAccounts.map((r) => r.id).filter((id) => !kwAccountIds.has(id))).eq("AND", [scope.account])).data,
-        (await supabaseAdmin.from("crm_Contacts").select("id, first_name, last_name, email").eq("deletedAt", null).in("id", semContacts.map((r) => r.id).filter((id) => !kwContactIds.has(id))).eq("AND", [scope.contact])).data,
-        (await supabaseAdmin.from("crm_Leads").select("id, firstName, lastName, company, email").eq("deletedAt", null).in("id", semLeads.map((r) => r.id).filter((id) => !kwLeadIds.has(id))).eq("AND", [scope.lead])).data,
-        (await supabaseAdmin.from("crm_Opportunities").select("id, name, status").eq("deletedAt", null).in("id", semOpportunities.map((r) => r.id).filter((id) => !kwOpportunityIds.has(id))).eq("AND", [scope.opportunity])).data,
+        (await supabaseAdmin.from("crm_Accounts").select("id, name, email").is("deletedAt", null).in("id", semAccounts.map((r) => r.id).filter((id) => !kwAccountIds.has(id))).eq("AND", [scope.account])).data,
+        (await supabaseAdmin.from("crm_Contacts").select("id, first_name, last_name, email").is("deletedAt", null).in("id", semContacts.map((r) => r.id).filter((id) => !kwContactIds.has(id))).eq("AND", [scope.contact])).data,
+        (await supabaseAdmin.from("crm_Leads").select("id, firstName, lastName, company, email").is("deletedAt", null).in("id", semLeads.map((r) => r.id).filter((id) => !kwLeadIds.has(id))).eq("AND", [scope.lead])).data,
+        (await supabaseAdmin.from("crm_Opportunities").select("id, name, status").is("deletedAt", null).in("id", semOpportunities.map((r) => r.id).filter((id) => !kwOpportunityIds.has(id))).eq("AND", [scope.opportunity])).data,
       ]);
 
     const accounts = mergeResults(
@@ -315,7 +315,7 @@ export async function unifiedSearch(
     const kwDocumentIds = new Set(kwDocuments.map((r) => r.id));
 
     const extraDocuments = queryVec
-      ? (await supabaseAdmin.from("documents").select("id, document_name, summary, document_system_type").eq("parent_document_id", null).in("id", allSemDocs.map((r) => r.id).filter((id) => !kwDocumentIds.has(id)))).data
+      ? (await supabaseAdmin.from("documents").select("id, document_name, summary, document_system_type").is("parent_document_id", null).in("id", allSemDocs.map((r) => r.id).filter((id) => !kwDocumentIds.has(id)))).data
       : [];
 
     const documents = mergeResults(

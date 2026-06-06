@@ -38,7 +38,7 @@ export const campaignTools = [
     description: "Get a campaign by ID with steps and stats summary",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const campaign = (await supabaseAdmin.from("crm_campaigns").select("*, steps(*, template), target_lists(*, target_list), _count(sends)").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const campaign = (await supabaseAdmin.from("crm_campaigns").select("*, steps(*, template), target_lists(*, target_list), _count(sends)").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!campaign) notFound("Campaign");
       return itemResponse(campaign);
     },
@@ -82,7 +82,7 @@ export const campaignTools = [
       template_id: z.string().uuid().optional(),
     }),
     async handler(args: Record<string, any>, _userId: string) {
-      const existing = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!existing) notFound("Campaign");
       if (existing.status === "sending") conflict("Cannot update a campaign that is currently sending");
       const { id, ...updateData } = args;
@@ -95,7 +95,7 @@ export const campaignTools = [
     description: "Soft-delete a campaign (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!existing) notFound("Campaign");
       if (existing.status === "sending") conflict("Cannot delete a campaign that is currently sending");
       (await supabaseAdmin.from("crm_campaigns").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
@@ -109,7 +109,7 @@ export const campaignTools = [
     description: "Trigger sending a campaign. Campaign must be in draft or scheduled status.",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!campaign) notFound("Campaign");
       if (!["draft", "scheduled"].includes(campaign.status ?? "")) {
         conflict(`Cannot send campaign in status: ${campaign.status}`);
@@ -165,7 +165,7 @@ export const campaignTools = [
     description: "Get a campaign template by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const template = (await supabaseAdmin.from("crm_campaign_templates").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const template = (await supabaseAdmin.from("crm_campaign_templates").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!template) notFound("Template");
       return itemResponse(template);
     },
@@ -207,7 +207,7 @@ export const campaignTools = [
       content_json: z.any().optional(),
     }),
     async handler(args: Record<string, any>, _userId: string) {
-      const existing = (await supabaseAdmin.from("crm_campaign_templates").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_campaign_templates").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!existing) notFound("Template");
       const { id, ...updateData } = args;
       const template = (await supabaseAdmin.from("crm_campaign_templates").update(updateData).select("*").single()).data;
@@ -219,7 +219,7 @@ export const campaignTools = [
     description: "Soft-delete a campaign template (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_campaign_templates").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_campaign_templates").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!existing) notFound("Template");
       (await supabaseAdmin.from("crm_campaign_templates").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: args.id, deletedAt: new Date().toISOString() });
@@ -242,7 +242,7 @@ export const campaignTools = [
       args: { campaign_id: string; order: number; template_id: string; subject: string; delay_days: number; send_to: string },
       _userId: string
     ) {
-      const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.campaign_id).eq("deletedAt", null).single()).data;
+      const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.campaign_id).is("deletedAt", null).single()).data;
       if (!campaign) notFound("Campaign");
       const step = (await supabaseAdmin.from("crm_campaign_steps").insert(args).select("*").single()).data;
       return itemResponse(step);
@@ -288,7 +288,7 @@ export const campaignTools = [
       target_list_id: z.string().uuid(),
     }),
     async handler(args: { campaign_id: string; target_list_id: string }, _userId: string) {
-      const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.campaign_id).eq("deletedAt", null).single()).data;
+      const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.campaign_id).is("deletedAt", null).single()).data;
       if (!campaign) notFound("Campaign");
       (await supabaseAdmin.from("campaignToTargetLists").insert({ campaign_id: args.campaign_id, target_list_id: args.target_list_id }).select("*").single()).data;
       return itemResponse({ campaign_id: args.campaign_id, target_list_id: args.target_list_id });
@@ -313,7 +313,7 @@ export const campaignTools = [
     description: "Get send/open/click/unsubscribe stats for a campaign",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const campaign = (await supabaseAdmin.from("crm_campaigns").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!campaign) notFound("Campaign");
       const sends = (await supabaseAdmin.from("crm_campaign_sends").select("status, opened_at, clicked_at, unsubscribed_at").eq("campaign_id", args.id)).data;
       const stats = {

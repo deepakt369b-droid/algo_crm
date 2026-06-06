@@ -51,7 +51,7 @@ export const updateOpportunity = async (data: {
     const snapshotRate = currency
       ? await getSnapshotRate(currency, defaultCurrency)
       : null;
-    const before = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", id).eq("deletedAt", null).single()).data;
+    const before = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", id).is("deletedAt", null).single()).data;
     const opportunity = (await supabaseAdmin.from("crm_Opportunities").update({
                 account: account || undefined,
                 assigned_to: assigned_to || undefined,

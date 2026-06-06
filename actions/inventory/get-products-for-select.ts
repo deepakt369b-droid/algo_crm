@@ -9,6 +9,6 @@ export interface ProductOption {
 }
 
 export async function getProductsForSelect(): Promise<ProductOption[]> {
-  const products = (await supabaseAdmin.from("crm_Products").select("id, name, sku").eq("deletedAt", null).order("name", { ascending: true })).data;
+  const products = (await supabaseAdmin.from("crm_Products").select("id, name, sku").is("deletedAt", null).order("name", { ascending: true })).data;
   return products;
 }

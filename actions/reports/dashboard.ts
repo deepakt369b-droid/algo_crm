@@ -54,17 +54,17 @@ export async function getDashboardKPIs(
     contractsPrev,
   ] = await Promise.all([
     // totalRevenue
-    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("deletedAt", null).eq("status", "CLOSED")).data,
-    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("deletedAt", null).eq("status", "CLOSED")).data,
+    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").is("deletedAt", null).eq("status", "CLOSED")).data,
+    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").is("deletedAt", null).eq("status", "CLOSED")).data,
     // pipelineValue
-    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("deletedAt", null).eq("status", "ACTIVE")).data,
-    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("deletedAt", null).eq("status", "ACTIVE")).data,
+    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").is("deletedAt", null).eq("status", "ACTIVE")).data,
+    (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").is("deletedAt", null).eq("status", "ACTIVE")).data,
     // newLeads
-    (await supabaseAdmin.from("crm_Leads").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
-    (await supabaseAdmin.from("crm_Leads").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Leads").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Leads").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count,
     // conversionRate: closed opps count
-    (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true }).eq("deletedAt", null).eq("status", "CLOSED")).count,
-    (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true }).eq("deletedAt", null).eq("status", "CLOSED")).count,
+    (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true }).is("deletedAt", null).eq("status", "CLOSED")).count,
+    (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true }).is("deletedAt", null).eq("status", "CLOSED")).count,
     // newContacts (crm_Contacts has created_on, no deletedAt)
     (await supabaseAdmin.from("crm_Contacts").select("*", { count: 'exact', head: true })).count,
     (await supabaseAdmin.from("crm_Contacts").select("*", { count: 'exact', head: true })).count,
@@ -81,11 +81,11 @@ export async function getDashboardKPIs(
     (await supabaseAdmin.from("crm_campaign_sends").select("*", { count: 'exact', head: true })).count,
     (await supabaseAdmin.from("crm_campaign_sends").select("*", { count: 'exact', head: true })).count,
     // newAccounts
-    (await supabaseAdmin.from("crm_Accounts").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
-    (await supabaseAdmin.from("crm_Accounts").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Accounts").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Accounts").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count,
     // contractsExpiring (no direct scope; manager/admin = no-op)
-    (await supabaseAdmin.from("crm_Contracts").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
-    (await supabaseAdmin.from("crm_Contracts").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Contracts").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Contracts").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count,
   ]);
 
   function sumConverted(opps: { budget: unknown; currency: string | null }[]): number {

@@ -15,7 +15,7 @@ export const getDocuments = async () => {
     throw e;
   }
 
-  const documents = (await supabaseAdmin.from("documents").select("*, created_by(id, name, email), assigned_to_user(id, name, email), accounts(account(id, name))").eq("parent_document_id", null).order("date_created", { ascending: false })).data;
+  const documents = (await supabaseAdmin.from("documents").select("*, created_by(id, name, email), assigned_to_user(id, name, email), accounts(account(id, name))").is("parent_document_id", null).order("date_created", { ascending: false })).data;
 
   return documents;
 };

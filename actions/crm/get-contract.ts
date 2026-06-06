@@ -25,7 +25,7 @@ export const getContract = async (contractId: string) => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("crm_Contracts").select("*, assigned_account(id, name), assigned_to_user(id, name), lineItems(*, product(id, name, status))").eq("id", contractId).eq("deletedAt", null).single()).data;
+  const data = (await supabaseAdmin.from("crm_Contracts").select("*, assigned_account(id, name), assigned_to_user(id, name), lineItems(*, product(id, name, status))").eq("id", contractId).is("deletedAt", null).single()).data;
   if (!data) return null;
   return serializeDecimals(data);
 };

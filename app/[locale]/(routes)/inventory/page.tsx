@@ -27,10 +27,10 @@ export default async function InventoryPage(props: Props) {
     lowStockCount,
     totalStockValue,
   ] = await Promise.all([
-    (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count,
-    (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).eq("status", "ACTIVE").eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).eq("status", "ACTIVE").is("deletedAt", null)).count,
     (await supabaseAdmin.from("crm_ProductCategories").select("*", { count: 'exact', head: true }).eq("isActive", true)).count,
-    (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).eq("type", "SERVICE").eq("deletedAt", null)).count,
+    (await supabaseAdmin.from("crm_Products").select("*", { count: 'exact', head: true }).eq("type", "SERVICE").is("deletedAt", null)).count,
     (await supabaseAdmin.from("inventoryWarehouse").select("*", { count: 'exact', head: true }).eq("isActive", true)).count,
     (await supabaseAdmin.from("reorderThreshold").select("*", { count: 'exact', head: true }).gt("reorderPoint", 0)).count,
     Promise.resolve({ _sum: { quantity: 0 } }),

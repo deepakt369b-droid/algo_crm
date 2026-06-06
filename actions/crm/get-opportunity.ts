@@ -24,6 +24,6 @@ export const getOpportunity = async (opportunityId: string) => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("crm_Opportunities").select("*, assigned_account(name), assigned_sales_stage(name), assigned_type(name), contacts(*, contact(id, first_name, last_name, office_phone, mobile_phone, email)), assigned_to_user(name, email), created_by_user(name, email), lineItems(*, product(id, name, status)), documents(*, document(id, document_name, document_type, document_file_url, document_file_mimeType, createdAt, created_by(id, name, email)))").eq("id", opportunityId).eq("deletedAt", null).single()).data;
+  const data = (await supabaseAdmin.from("crm_Opportunities").select("*, assigned_account(name), assigned_sales_stage(name), assigned_type(name), contacts(*, contact(id, first_name, last_name, office_phone, mobile_phone, email)), assigned_to_user(name, email), created_by_user(name, email), lineItems(*, product(id, name, status)), documents(*, document(id, document_name, document_type, document_file_url, document_file_mimeType, createdAt, created_by(id, name, email)))").eq("id", opportunityId).is("deletedAt", null).single()).data;
   return serializeDecimals(data);
 };

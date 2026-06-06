@@ -4,7 +4,7 @@ import Decimal from "decimal.js";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getExpectedRevenue = async (displayCurrency: string) => {
-  const activeOpportunities = (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("status", "ACTIVE").eq("deletedAt", null)).data;
+  const activeOpportunities = (await supabaseAdmin.from("crm_Opportunities").select("budget, currency").eq("status", "ACTIVE").is("deletedAt", null)).data;
 
   const rates = await getExchangeRates();
 

@@ -24,7 +24,7 @@ export const getBoard = async (id: string) => {
     throw e;
   }
 
-  const board = (await supabaseAdmin.from("boards").select("*, assigned_user(name)").eq("id", id).eq("deletedAt", null).single()).data;
+  const board = (await supabaseAdmin.from("boards").select("*, assigned_user(name)").eq("id", id).is("deletedAt", null).single()).data;
 
   const sections = (await supabaseAdmin.from("sections").select("*").eq("board", id).order("position", { ascending: true })).data;
 

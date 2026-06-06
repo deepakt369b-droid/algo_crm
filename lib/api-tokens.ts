@@ -14,7 +14,7 @@ export async function generateApiToken(
   name: string,
   expiresAt?: Date
 ): Promise<{ rawToken: string; tokenId: string }> {
-  const activeCount = (await supabaseAdmin.from("apiToken").select("*", { count: 'exact', head: true }).eq("userId", userId).eq("revokedAt", null).eq("OR", [{ expiresAt: null }, { expiresAt: { gt: new Date() } }])).count;
+  const activeCount = (await supabaseAdmin.from("apiToken").select("*", { count: 'exact', head: true }).eq("userId", userId).is("revokedAt", null).eq("OR", [{ expiresAt: null }, { expiresAt: { gt: new Date() } }])).count;
 
   if (activeCount >= MAX_TOKENS_PER_USER) {
     throw new Error("Maximum 10 active tokens allowed per user");

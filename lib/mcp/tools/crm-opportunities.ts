@@ -30,7 +30,7 @@ export const crmOpportunityTools = [
     description: "Get a single CRM opportunity by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const opp = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
+      const opp = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", args.id).eq("assigned_to", userId).is("deletedAt", null).single()).data;
       if (!opp) notFound("Opportunity");
       return itemResponse(opp);
     },
@@ -120,7 +120,7 @@ export const crmOpportunityTools = [
       },
       userId: string
     ) {
-      const existing = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", args.id).eq("assigned_to", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Opportunity");
       const { id, budget, expected_revenue, close_date, currency, ...rest } = args;
       const opp = (await supabaseAdmin.from("crm_Opportunities").update({
@@ -139,7 +139,7 @@ export const crmOpportunityTools = [
     description: "Soft-delete a CRM opportunity by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Opportunities").select("*").eq("id", args.id).eq("assigned_to", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Opportunity");
       const opp = (await supabaseAdmin.from("crm_Opportunities").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: opp.id, deletedAt: opp.deletedAt });

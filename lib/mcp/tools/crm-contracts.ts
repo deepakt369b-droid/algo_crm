@@ -53,7 +53,7 @@ export const crmContractTools = [
     description: "Get a single CRM contract by ID with line items",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const contract = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const contract = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!contract) notFound("Contract");
       return itemResponse(contract);
     },
@@ -112,7 +112,7 @@ export const crmContractTools = [
       currency: z.string().length(3).optional(),
     }),
     async handler(args: Record<string, any>, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!existing) notFound("Contract");
       const { id, startDate, endDate, ...rest } = args;
       const contract = (await supabaseAdmin.from("crm_Contracts").update({
@@ -129,7 +129,7 @@ export const crmContractTools = [
     description: "Soft-delete a CRM contract (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!existing) notFound("Contract");
       const contract = (await supabaseAdmin.from("crm_Contracts").update({ deletedAt: new Date(), deletedBy: userId }).select("*").single().eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: contract.id, status: "DELETED" });

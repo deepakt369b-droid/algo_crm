@@ -23,6 +23,6 @@ export const getLead = async (leadId: string) => {
     throw e;
   }
 
-  const data = (await supabaseAdmin.from("crm_Leads").select("*, lead_source(id, name), lead_status(id, name), lead_type(id, name), assigned_to_user(id, name), assigned_accounts, documents(*, document(id, document_name, document_type, document_file_url, document_file_mimeType, createdAt, created_by(id, name, email)))").eq("id", leadId).eq("deletedAt", null).single()).data;
+  const data = (await supabaseAdmin.from("crm_Leads").select("*, lead_source(id, name), lead_status(id, name), lead_type(id, name), assigned_to_user(id, name), assigned_accounts, documents(*, document(id, document_name, document_type, document_file_url, document_file_mimeType, createdAt, created_by(id, name, email)))").eq("id", leadId).is("deletedAt", null).single()).data;
   return data;
 };

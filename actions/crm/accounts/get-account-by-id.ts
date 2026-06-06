@@ -25,7 +25,7 @@ export async function getAccountById(accountId: string) {
     throw e;
   }
 
-  const account = (await supabaseAdmin.from("crm_Accounts").select("id, name").eq("id", accountId).eq("deletedAt", null).single()).data;
+  const account = (await supabaseAdmin.from("crm_Accounts").select("id, name").eq("id", accountId).is("deletedAt", null).single()).data;
 
   return account ?? null;
 }

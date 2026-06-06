@@ -22,7 +22,7 @@ export const getOpportunities = async () => {
 
 //Get opportunities by month for chart
 export const getOpportunitiesByMonth = async () => {
-  const opportunities = (await supabaseAdmin.from("crm_Opportunities").select("created_on").eq("deletedAt", null)).data;
+  const opportunities = (await supabaseAdmin.from("crm_Opportunities").select("created_on").is("deletedAt", null)).data;
 
   if (!opportunities) {
     return {};
@@ -51,7 +51,7 @@ export const getOpportunitiesByMonth = async () => {
 
 //Get opportunities by sales_stage name for chart
 export const getOpportunitiesByStage = async () => {
-  const opportunities = (await supabaseAdmin.from("crm_Opportunities").select("assigned_sales_stage(name)").eq("deletedAt", null)).data;
+  const opportunities = (await supabaseAdmin.from("crm_Opportunities").select("assigned_sales_stage(name)").is("deletedAt", null)).data;
 
   console.log(opportunities, "opportunities");
   if (!opportunities) {

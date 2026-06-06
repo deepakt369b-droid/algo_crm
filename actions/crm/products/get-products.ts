@@ -10,6 +10,6 @@ export const getProductsFull = cache(async () => {
     if (e instanceof AuthenticationError) return [];
     throw e;
   }
-  const products = (await supabaseAdmin.from("crm_Products").select("*, category, created_by_user(id, name), _count(accountProducts)").eq("deletedAt", null).order("createdAt", { ascending: false })).data;
+  const products = (await supabaseAdmin.from("crm_Products").select("*, category, created_by_user(id, name), _count(accountProducts)").is("deletedAt", null).order("createdAt", { ascending: false })).data;
   return products;
 });

@@ -10,7 +10,7 @@ export async function convertTarget(
   const session = await getSession();
   if (!session) return { error: "Unauthorized" };
 
-  const target = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", targetId).eq("deletedAt", null).single()).data;
+  const target = (await supabaseAdmin.from("crm_Targets").select("*").eq("id", targetId).is("deletedAt", null).single()).data;
   if (!target) return { error: "Target not found" };
 
   // Guard: need at least a name for the Account and Contact

@@ -83,7 +83,7 @@ export const crmDocumentTools = [
     description: "Get a single document by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const doc = (await supabaseAdmin.from("documents").select("*, accounts, contacts, leads, opportunities, tasks").eq("id", args.id).eq("created_by_user", userId).eq("deletedAt", null).single()).data;
+      const doc = (await supabaseAdmin.from("documents").select("*, accounts, contacts, leads, opportunities, tasks").eq("id", args.id).eq("created_by_user", userId).is("deletedAt", null).single()).data;
       if (!doc) notFound("Document");
       return itemResponse(doc);
     },
@@ -239,7 +239,7 @@ export const crmDocumentTools = [
     description: "Soft-delete a document (sets status to DELETED)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("documents").select("*").eq("id", args.id).eq("created_by_user", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Document");
       const doc = (await supabaseAdmin.from("documents").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: doc.id, deletedAt: doc.deletedAt });

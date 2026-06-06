@@ -49,7 +49,7 @@ export const updateContact = async (data: {
   if (!id) return { error: "id is required" };
 
   try {
-    const before = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", id).eq("deletedAt", null).single()).data;
+    const before = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", id).is("deletedAt", null).single()).data;
     const contact = (await supabaseAdmin.from("crm_Contacts").update({
             v: 0,
             updatedBy: userId,

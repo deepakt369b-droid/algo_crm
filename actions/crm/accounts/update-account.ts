@@ -39,7 +39,7 @@ export const updateAccount = async (data: {
   if (!id) return { error: "id is required" };
 
   try {
-    const before = (await supabaseAdmin.from("crm_Accounts").select("*").eq("id", id).eq("deletedAt", null).single()).data;
+    const before = (await supabaseAdmin.from("crm_Accounts").select("*").eq("id", id).is("deletedAt", null).single()).data;
     const account = (await supabaseAdmin.from("crm_Accounts").update({
                 v: 0,
                 updatedBy: session.user.id,

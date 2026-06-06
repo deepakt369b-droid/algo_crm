@@ -62,7 +62,7 @@ export const crmActivityTools = [
     description: "Get a single CRM activity by ID with entity links",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const activity = (await supabaseAdmin.from("crm_Activities").select("*, links").eq("id", args.id).eq("createdBy", userId).eq("deletedAt", null).single()).data;
+      const activity = (await supabaseAdmin.from("crm_Activities").select("*, links").eq("id", args.id).eq("createdBy", userId).is("deletedAt", null).single()).data;
       if (!activity) notFound("Activity");
       return itemResponse(activity);
     },
@@ -139,7 +139,7 @@ export const crmActivityTools = [
       },
       userId: string
     ) {
-      const existing = (await supabaseAdmin.from("crm_Activities").select("*").eq("id", args.id).eq("createdBy", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Activities").select("*").eq("id", args.id).eq("createdBy", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Activity");
       const { id, date, status, ...rest } = args;
       const activity = (await supabaseAdmin.from("crm_Activities").update({
@@ -156,7 +156,7 @@ export const crmActivityTools = [
     description: "Soft-delete a CRM activity by ID (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_Activities").select("*").eq("id", args.id).eq("createdBy", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Activities").select("*").eq("id", args.id).eq("createdBy", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Activity");
       const activity = (await supabaseAdmin.from("crm_Activities").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: activity.id, deletedAt: activity.deletedAt });

@@ -30,7 +30,7 @@ export const crmContactTools = [
     description: "Get a single CRM contact by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const contact = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
+      const contact = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", args.id).eq("assigned_to", userId).is("deletedAt", null).single()).data;
       if (!contact) notFound("Contact");
       return itemResponse(contact);
     },
@@ -119,7 +119,7 @@ export const crmContactTools = [
       },
       userId: string
     ) {
-      const existing = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", args.id).eq("assigned_to", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Contact");
       const { id, ...updateData } = args;
       const contact = (await supabaseAdmin.from("crm_Contacts").update({ ...updateData, updatedBy: userId }).select("*").single().eq("id", id).select("*").single()).data;
@@ -131,7 +131,7 @@ export const crmContactTools = [
     description: "Soft-delete a CRM contact by ID (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Contacts").select("*").eq("id", args.id).eq("assigned_to", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Contact");
       const contact = (await supabaseAdmin.from("crm_Contacts").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: contact.id, deletedAt: contact.deletedAt });

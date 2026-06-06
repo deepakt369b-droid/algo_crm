@@ -49,7 +49,7 @@ export const updateLead = async (data: {
   if (!id) return { error: "id is required" };
 
   try {
-    const before = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", id).eq("deletedAt", null).single()).data;
+    const before = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", id).is("deletedAt", null).single()).data;
     const lead = (await supabaseAdmin.from("crm_Leads").update({
                 v: 1,
                 updatedBy: userId,

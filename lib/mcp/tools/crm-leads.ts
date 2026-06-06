@@ -30,7 +30,7 @@ export const crmLeadTools = [
     description: "Get a single CRM lead by ID",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const lead = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
+      const lead = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", args.id).eq("assigned_to", userId).is("deletedAt", null).single()).data;
       if (!lead) notFound("Lead");
       return itemResponse(lead);
     },
@@ -111,7 +111,7 @@ export const crmLeadTools = [
       },
       userId: string
     ) {
-      const existing = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", args.id).eq("assigned_to", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Lead");
       const { id, ...updateData } = args;
       const lead = (await supabaseAdmin.from("crm_Leads").update({ ...updateData, updatedBy: userId }).select("*").single().eq("id", id).select("*").single()).data;
@@ -123,7 +123,7 @@ export const crmLeadTools = [
     description: "Soft-delete a CRM lead by ID (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, userId: string) {
-      const existing = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", args.id).eq("assigned_to", userId).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_Leads").select("*").eq("id", args.id).eq("assigned_to", userId).is("deletedAt", null).single()).data;
       if (!existing) notFound("Lead");
       const lead = (await supabaseAdmin.from("crm_Leads").update(softDeleteData(userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: lead.id, deletedAt: lead.deletedAt });

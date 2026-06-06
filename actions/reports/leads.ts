@@ -21,7 +21,7 @@ export async function getNewLeads(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<ChartDataPoint[]> {
-  const leads = (await supabaseAdmin.from("crm_Leads").select("createdAt").eq("deletedAt", null)).data;
+  const leads = (await supabaseAdmin.from("crm_Leads").select("createdAt").is("deletedAt", null)).data;
   return groupByMonth(leads);
 }
 
@@ -29,7 +29,7 @@ export async function getLeadSources(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<ChartDataPoint[]> {
-  const leads = (await supabaseAdmin.from("crm_Leads").select("*").eq("deletedAt", null)).data;
+  const leads = (await supabaseAdmin.from("crm_Leads").select("*").is("deletedAt", null)).data;
   const grouped: Record<string, number> = {};
   for (const lead of leads) {
     const source = lead.lead_source?.name ?? "Unknown";
@@ -42,8 +42,8 @@ export async function getConversionRate(
   filters: ReportFilters,
   scope: ReportScope = DEFAULT_SCOPE,
 ): Promise<{ leads: number; converted: number; rate: number }> {
-  const leads = (await supabaseAdmin.from("crm_Leads").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count;
-  const converted = (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true }).eq("deletedAt", null)).count;
+  const leads = (await supabaseAdmin.from("crm_Leads").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count;
+  const converted = (await supabaseAdmin.from("crm_Opportunities").select("*", { count: 'exact', head: true }).is("deletedAt", null)).count;
   return { leads, converted, rate: leads > 0 ? Math.round((converted / leads) * 100) : 0 };
 }
 

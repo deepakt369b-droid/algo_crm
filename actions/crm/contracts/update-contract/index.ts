@@ -56,7 +56,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     };
   }
 
-  const before = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", id).eq("deletedAt", null).single()).data;
+  const before = (await supabaseAdmin.from("crm_Contracts").select("*").eq("id", id).is("deletedAt", null).single()).data;
 
   try {
     const defaultCurrency = await getDefaultCurrency();

@@ -35,7 +35,7 @@ export const crmTargetListTools = [
       args: { id: string; limit: number; offset: number },
       _userId: string
     ) {
-      const tl = (await supabaseAdmin.from("crm_TargetLists").select("*, targets(*, target), _count(targets)").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const tl = (await supabaseAdmin.from("crm_TargetLists").select("*, targets(*, target), _count(targets)").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!tl) notFound("TargetList");
       return itemResponse(tl);
     },
@@ -64,7 +64,7 @@ export const crmTargetListTools = [
       args: { id: string; name?: string; description?: string },
       _userId: string
     ) {
-      const existing = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!existing) notFound("TargetList");
       const { id, ...updateData } = args;
       const tl = (await supabaseAdmin.from("crm_TargetLists").update(updateData).select("*").single()).data;
@@ -76,7 +76,7 @@ export const crmTargetListTools = [
     description: "Soft-delete a target list (sets deletedAt timestamp)",
     schema: z.object({ id: z.string().uuid() }),
     async handler(args: { id: string }, _userId: string) {
-      const existing = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.id).eq("deletedAt", null).single()).data;
+      const existing = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.id).is("deletedAt", null).single()).data;
       if (!existing) notFound("TargetList");
       const tl = (await supabaseAdmin.from("crm_TargetLists").update(softDeleteData(_userId)).eq("id", args.id).select("*").single()).data;
       return itemResponse({ id: tl.id, deletedAt: tl.deletedAt });
@@ -93,7 +93,7 @@ export const crmTargetListTools = [
       args: { target_list_id: string; target_ids: string[] },
       _userId: string
     ) {
-      const tl = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.target_list_id).eq("deletedAt", null).single()).data;
+      const tl = (await supabaseAdmin.from("crm_TargetLists").select("*").eq("id", args.target_list_id).is("deletedAt", null).single()).data;
       if (!tl) notFound("TargetList");
       await supabaseAdmin.from("targetsToTargetLists").insert(
         args.target_ids.map((tid) => ({
