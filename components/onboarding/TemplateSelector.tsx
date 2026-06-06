@@ -1,38 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { industryTemplates } from "@/lib/templates/definitions";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { 
-  Building, 
-  Briefcase, 
-  Stethoscope, 
-  Wrench, 
-  Car, 
-  Check, 
-  Layers, 
-  Settings2, 
+import {
+  Building,
+  Briefcase,
+  Stethoscope,
+  Wrench,
+  Car,
+  Check,
+  Layers,
+  Settings2,
   MessageSquareCode,
   Hotel,
   Hammer,
   GraduationCap,
   Scale,
-  Flame
+  Flame,
 } from "lucide-react";
 
 const icons = {
-  Building: Building,
-  Briefcase: Briefcase,
-  Stethoscope: Stethoscope,
-  Wrench: Wrench,
-  Car: Car,
-  Hotel: Hotel,
-  Hammer: Hammer,
-  GraduationCap: GraduationCap,
-  Scale: Scale,
-  Flame: Flame,
+  Building,
+  Briefcase,
+  Stethoscope,
+  Wrench,
+  Car,
+  Hotel,
+  Hammer,
+  GraduationCap,
+  Scale,
+  Flame,
 };
 
 const sectors = [
@@ -53,187 +56,230 @@ interface TemplateSelectorProps {
   onSelect: (id: string) => void;
 }
 
+type TemplateItem = (typeof industryTemplates)[number];
+
+const customTemplate = {
+  id: "custom",
+  name: "Build Custom CRM",
+  industry: "Tailored Workspace",
+  description:
+    "Select CRM modules, configure pipeline stages, and design custom fields for a workspace built around your process.",
+  icon: "Settings2",
+  features: ["Module Builder", "Custom Fields", "Pipeline Designer"],
+  enabledModules: {
+    accounts: true,
+    opportunities: true,
+    contacts: true,
+    leads: true,
+    whatsapp: true,
+  },
+  crmCustomFields: [],
+  whatsappTemplates: [],
+} as unknown as TemplateItem;
+
+function getActiveModules(template: TemplateItem) {
+  return Object.entries(template.enabledModules)
+    .filter(([, enabled]) => enabled)
+    .map(([name]) => {
+      if (name === "purchaseOrders") return "Purchase Orders";
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    });
+}
+
 export function TemplateSelector({ selectedTemplateId, onSelect }: TemplateSelectorProps) {
   const [selectedSector, setSelectedSector] = useState("All");
 
-  const filteredTemplates = selectedSector === "All"
-    ? industryTemplates
-    : industryTemplates.filter((t) => t.industry === selectedSector);
+  const templates = useMemo(() => {
+    const filtered =
+      selectedSector === "All"
+        ? industryTemplates
+        : industryTemplates.filter((template) => template.industry === selectedSector);
+
+    return selectedSector === "All" ? [customTemplate, ...filtered] : filtered;
+  }, [selectedSector]);
+
+  const selectedTemplate =
+    templates.find((template) => template.id === selectedTemplateId) ??
+    (selectedTemplateId === "custom" ? customTemplate : templates[0]);
+
+  const selectedModules = selectedTemplate ? getActiveModules(selectedTemplate) : [];
+  const SelectedIcon =
+    selectedTemplate && selectedTemplate.id === "custom"
+      ? Settings2
+      : selectedTemplate
+        ? icons[selectedTemplate.icon as keyof typeof icons] || Briefcase
+        : Briefcase;
 
   return (
-    <div className="space-y-4 w-full py-1">
-      <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border/40 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {sectors.map((sector) => {
-          const isActive = selectedSector === sector;
-          return (
-            <button
-              key={sector}
-              onClick={() => setSelectedSector(sector)}
-              className={cn(
-                "shrink-0 text-[11px] px-3 py-1.5 rounded-full font-semibold transition-all cursor-pointer border select-none",
-                isActive
-                  ? "bg-primary border-primary text-primary-foreground shadow-sm shadow-primary/20"
-                  : "bg-muted/40 hover:bg-muted border-border/60 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {sector}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Grid of blueprint cards */}
-      {filteredTemplates.length === 0 ? (
-        <div className="text-center py-10 text-muted-foreground text-sm">
-          No blueprints found for the selected sector.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-          {selectedSector === "All" && (
-            <Card 
-              className={cn(
-                "relative cursor-pointer transition-all duration-200 overflow-hidden select-none flex flex-col min-h-[210px] glass-card border-2",
-                "hover:border-primary/50 hover:shadow-md",
-                selectedTemplateId === "custom"
-                  ? "border-primary ring-2 ring-primary bg-primary/[0.03] dark:bg-primary/[0.01]" 
-                  : "border-dashed border-border/80"
-              )}
-              onClick={() => onSelect("custom")}
-            >
-              {selectedTemplateId === "custom" && (
-                <div className="absolute top-3 right-3 bg-primary text-primary-foreground rounded-full p-1 shadow-sm">
-                  <Check className="w-3.5 h-3.5 stroke-[3px]" />
-                </div>
-              )}
-              <CardHeader className="flex flex-row items-start gap-3 space-y-0 pb-2 pt-4">
-                <div className={cn(
-                  "p-2.5 rounded-xl transition-colors duration-300 bg-gradient-to-tr from-primary to-purple-500 text-white shadow-md shadow-primary/10"
-                )}>
-                  <Settings2 className="w-5 h-5" />
-                </div>
-                <div className="flex min-w-0 flex-col pr-8">
-                  <CardTitle className="text-base font-bold tracking-tight leading-snug">Build Custom CRM</CardTitle>
-                  <CardDescription className="text-xs font-semibold text-primary mt-0.5 uppercase tracking-wider">
-                    Tailored Workspace
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-between pt-0 pb-4">
-                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4">
-                  Select your own CRM modules, configure pipeline stages, and design custom contact fields interactively.
-                </p>
-                <div className="mt-3 pt-3 border-t border-border/40 text-[10px] text-primary font-bold tracking-wider uppercase">
-                  Custom setup
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {filteredTemplates.map((template) => {
-            const IconComponent = icons[template.icon as keyof typeof icons] || Briefcase;
-            const isSelected = selectedTemplateId === template.id;
-
-            // Extract enabled modules names
-            const activeModules = Object.entries(template.enabledModules)
-              .filter(([_, enabled]) => enabled)
-              .map(([name]) => {
-                if (name === "purchaseOrders") return "Purchase Orders";
-                return name.charAt(0).toUpperCase() + name.slice(1);
-              });
+    <div className="flex w-full flex-col gap-4">
+      <ScrollArea className="w-full whitespace-nowrap">
+        <div className="flex gap-2 pb-2">
+          {sectors.map((sector) => {
+            const isActive = selectedSector === sector;
 
             return (
-              <Card 
-                key={template.id} 
-                className={cn(
-                  "relative cursor-pointer transition-all duration-200 overflow-hidden select-none flex flex-col min-h-[210px] glass-card",
-                  "hover:border-primary/50 hover:shadow-md hover:shadow-primary/5",
-                  isSelected 
-                    ? "border-primary ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/[0.03] dark:bg-primary/[0.01]" 
-                    : "border-border/60"
-                )}
-                onClick={() => onSelect(template.id)}
+              <Button
+                key={sector}
+                type="button"
+                size="sm"
+                variant={isActive ? "default" : "outline"}
+                onClick={() => setSelectedSector(sector)}
+                className="shrink-0 rounded-full text-[11px]"
               >
-                {isSelected && (
-                  <div className="absolute top-3 right-3 bg-primary text-primary-foreground rounded-full p-1 shadow-sm">
-                    <Check className="w-3.5 h-3.5 stroke-[3px]" />
-                  </div>
-                )}
-
-                <CardHeader className="flex flex-row items-start gap-3 space-y-0 pb-2 pt-4">
-                  <div className={cn(
-                    "p-2.5 rounded-xl transition-colors duration-300",
-                    isSelected ? "bg-primary/20 text-primary" : "bg-muted/70 text-muted-foreground"
-                  )}>
-                    <IconComponent className="w-5 h-5" />
-                  </div>
-                  <div className="flex min-w-0 flex-col pr-8">
-                    <CardTitle className="text-base font-bold tracking-tight leading-snug line-clamp-2">{template.name}</CardTitle>
-                    <CardDescription className="text-xs font-medium text-primary mt-0.5 uppercase tracking-wider">
-                      {template.industry}
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="flex-1 flex flex-col justify-between pt-0 pb-4">
-                  <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                      {template.description}
-                    </p>
-
-                    <div className="flex flex-wrap gap-1.5">
-                      {template.features.slice(0, 3).map((feature) => (
-                        <Badge 
-                          key={feature} 
-                          variant="secondary" 
-                          className="text-[10px] font-semibold px-2 py-0.5 bg-muted/50 border-none hover:bg-muted"
-                        >
-                          {feature}
-                        </Badge>
-                      ))}
-                      {template.features.length > 3 && (
-                        <Badge variant="outline" className="text-[10px] font-semibold px-2 py-0.5">
-                          +{template.features.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="border-t border-border/40 pt-3 space-y-2 text-[11px] text-muted-foreground">
-                      <div className="flex items-start gap-2">
-                        <Layers className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0 opacity-70" />
-                        <div className="min-w-0">
-                          <span className="font-semibold text-foreground">Modules: </span>
-                          <span>{activeModules.slice(0, 4).join(", ")}</span>
-                          {activeModules.length > 4 && <span> +{activeModules.length - 4}</span>}
-                        </div>
-                      </div>
-
-                      {template.crmCustomFields && template.crmCustomFields.length > 0 && (
-                        <div className="flex items-start gap-2">
-                          <Settings2 className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0 opacity-70" />
-                          <div className="min-w-0">
-                            <span className="font-semibold text-foreground">Fields: </span>
-                            <span>{template.crmCustomFields.length} included</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {template.whatsappTemplates && template.whatsappTemplates.length > 0 && (
-                        <div className="flex items-start gap-2">
-                          <MessageSquareCode className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0 opacity-70" />
-                          <div className="min-w-0">
-                            <span className="font-semibold text-foreground">WhatsApp: </span>
-                            <span>{template.whatsappTemplates.length} templates</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                {sector}
+              </Button>
             );
           })}
         </div>
-      )}
+      </ScrollArea>
+
+      <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <ScrollArea className="h-[360px] rounded-lg border border-border/50">
+          <div className="flex flex-col gap-2 p-2">
+            {templates.map((template) => {
+              const IconComponent =
+                template.id === "custom"
+                  ? Settings2
+                  : icons[template.icon as keyof typeof icons] || Briefcase;
+              const isSelected = selectedTemplateId === template.id;
+              const activeModules = getActiveModules(template);
+
+              return (
+                <button
+                  key={template.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => onSelect(template.id)}
+                  className={cn(
+                    "group flex w-full gap-3 rounded-lg border bg-card p-3 text-left transition-colors",
+                    "hover:border-primary/60 hover:bg-accent/40",
+                    isSelected && "border-primary bg-primary/[0.04] ring-1 ring-primary",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex size-10 shrink-0 items-center justify-center rounded-md",
+                      isSelected ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    <IconComponent className="size-5" />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-foreground">
+                          {template.name}
+                        </div>
+                        <div className="truncate text-[10px] font-semibold uppercase tracking-wide text-primary">
+                          {template.industry}
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                          <Check className="size-3" />
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                      {template.description}
+                    </p>
+
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {template.features.slice(0, 2).map((feature) => (
+                        <Badge key={feature} variant="secondary" className="max-w-28 truncate text-[10px]">
+                          {feature}
+                        </Badge>
+                      ))}
+                      <Badge variant="outline" className="text-[10px]">
+                        {activeModules.length} modules
+                      </Badge>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
+            {templates.length === 0 && (
+              <Card className="border-dashed">
+                <CardContent className="p-6 text-center text-sm text-muted-foreground">
+                  No blueprints found for this sector.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </ScrollArea>
+
+        {selectedTemplate && (
+          <Card className="h-fit border-primary/20 bg-card/80">
+            <CardHeader className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <SelectedIcon className="size-5" />
+                </div>
+                <div className="min-w-0">
+                  <CardTitle className="text-base leading-snug">{selectedTemplate.name}</CardTitle>
+                  <CardDescription className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                    {selectedTemplate.industry}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="flex flex-col gap-4 p-4 pt-0 text-xs">
+              <p className="leading-relaxed text-muted-foreground">
+                {selectedTemplate.description}
+              </p>
+
+              <Separator />
+
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                  <Layers className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <div className="min-w-0">
+                    <div className="font-semibold text-foreground">Enabled modules</div>
+                    <div className="mt-1 text-muted-foreground">
+                      {selectedModules.slice(0, 6).join(", ")}
+                      {selectedModules.length > 6 ? ` +${selectedModules.length - 6}` : ""}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Settings2 className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <div>
+                    <div className="font-semibold text-foreground">Custom fields</div>
+                    <div className="mt-1 text-muted-foreground">
+                      {selectedTemplate.crmCustomFields?.length || 0} included
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <MessageSquareCode className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <div>
+                    <div className="font-semibold text-foreground">WhatsApp templates</div>
+                    <div className="mt-1 text-muted-foreground">
+                      {selectedTemplate.whatsappTemplates?.length || 0} automations
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="flex flex-wrap gap-1.5">
+                {selectedTemplate.features.slice(0, 5).map((feature) => (
+                  <Badge key={feature} variant="secondary" className="text-[10px]">
+                    {feature}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

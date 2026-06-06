@@ -137,7 +137,7 @@ function SignUpPageContent() {
   return (
     <div className={cn(
       "w-full transition-all duration-500 ease-in-out mx-auto px-4 py-8",
-      step === 2 ? "max-w-4xl" : "max-w-md"
+      step === 2 ? "max-w-5xl" : "max-w-md"
     )}>
       {/* Premium Stepper */}
       <div className="mb-10 relative">
@@ -250,7 +250,7 @@ function SignUpPageContent() {
             )}
 
             {step === 2 && (
-              <div className="max-h-[55vh] overflow-y-auto pr-1 space-y-6">
+              <div className="flex max-h-[64vh] flex-col gap-6 overflow-y-auto pr-1">
                 <TemplateSelector 
                   selectedTemplateId={formData.templateId} 
                   onSelect={(id) => setFormData({...formData, templateId: id})} 
