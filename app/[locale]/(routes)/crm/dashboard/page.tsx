@@ -5,19 +5,20 @@ import CRMKanban from "./_components/CRMKanban";
 import { getOpportunities } from "@/actions/crm/get-opportunities";
 import { getAllCrmData } from "@/actions/crm/get-crm-data";
 import { serializeDecimalsList } from "@/lib/serialize-decimals";
-import AIInsightCard from "./_components/AIInsightCard";
 
 const CrmDashboardPage = async () => {
-  const salesStages = await getSaleStages();
-  const opportunities = serializeDecimalsList(await getOpportunities());
-  const crmData = await getAllCrmData();
+  const [salesStages, opportunitiesRaw, crmData] = await Promise.all([
+    getSaleStages(),
+    getOpportunities(),
+    getAllCrmData(),
+  ]);
+  const opportunities = serializeDecimalsList(opportunitiesRaw);
 
   return (
     <Container
       title="CRM Dashboard"
       description="In development. After this compoment is finished, there will be a optimistic update of the data."
     >
-      <AIInsightCard />
       <div className="w-full h-full  overflow-hidden">
         <CRMKanban
           salesStages={salesStages}

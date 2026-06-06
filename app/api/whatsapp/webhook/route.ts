@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,11 +12,19 @@ export async function POST(request: NextRequest) {
 
     console.log(`[WhatsApp Webhook] Received status update for instance: ${instanceId} -> ${status}`);
 
-    // Update instance status in Postgres
-    (await supabaseAdmin.from("crm_Whatsapp_Instances").update({
-              status,
-              ...(phoneNumber ? { phoneNumber } : {}),
-            }).eq("id", instanceId).select("*").single()).data;
+    const { error } = await supabaseAdmin
+      .from("crm_Whatsapp_Instances")
+      .update({
+        status,
+        ...(phoneNumber ? { phoneNumber } : {}),
+      })
+      .eq("id", instanceId)
+      .select("*")
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

@@ -18,11 +18,10 @@ interface WhatsAppInstanceCardProps {
     connectionConfig?: any;
     credentials?: any;
   };
-  tenantId: string;
   onDelete: (id: string) => void;
 }
 
-export function WhatsAppInstanceCard({ instance, tenantId, onDelete }: WhatsAppInstanceCardProps) {
+export function WhatsAppInstanceCard({ instance, onDelete }: WhatsAppInstanceCardProps) {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loadingQr, setLoadingQr] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +34,6 @@ export function WhatsAppInstanceCard({ instance, tenantId, onDelete }: WhatsAppI
     try {
       await updateInstanceConfig({
         id: instance.id,
-        tenantId,
         connectionConfig: {
           whatsappOfficialApiUrl: configUrl,
           whatsappOfficialApiKey: configKey,
@@ -51,7 +49,7 @@ export function WhatsAppInstanceCard({ instance, tenantId, onDelete }: WhatsAppI
     setLoadingQr(true);
     setError(null);
     try {
-      const response = await fetch(`/api/whatsapp/qr?instanceId=${instance._id}`);
+      const response = await fetch(`/api/whatsapp/qr?instanceId=${instance.id}`);
       const data = await response.json();
       if (data.success && data.qrCode) {
         setQrCode(data.qrCode);
@@ -66,7 +64,7 @@ export function WhatsAppInstanceCard({ instance, tenantId, onDelete }: WhatsAppI
   };
 
   useEffect(() => {
-    if (instance.status === "PENDING") {
+    if (instance.status !== "CONNECTED") {
       fetchQrCode();
     }
   }, [instance.status, instance.id]);
@@ -90,7 +88,7 @@ export function WhatsAppInstanceCard({ instance, tenantId, onDelete }: WhatsAppI
       </CardHeader>
       
       <CardContent className="pt-0">
-        {instance.status === "PENDING" && (
+        {instance.status !== "CONNECTED" && (
           <div className="bg-zinc-950 p-4 rounded-md mb-4 flex flex-col items-center justify-center border border-zinc-800">
             <h4 className="text-sm text-zinc-400 mb-2 font-medium">Scan to Connect</h4>
             {loadingQr ? (

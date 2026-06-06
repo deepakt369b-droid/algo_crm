@@ -113,24 +113,24 @@ export default function LandingPage() {
         <div className="absolute top-[-10%] left-[20%] w-[500px] h-[500px] bg-primary/10 dark:bg-primary/5 rounded-full blur-[120px] pointer-events-none animate-pulse-glow" />
         <div className="absolute bottom-[10%] right-[15%] w-[400px] h-[400px] bg-blue-500/10 dark:bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none animate-pulse-glow" style={{ animationDelay: "-3s" }} />
 
-        <div className="relative z-10 max-w-5xl mx-auto space-y-8 text-center">
+        <div className="relative z-10 max-w-5xl mx-auto space-y-8 text-center motion-rise">
           {/* Tagline Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary mb-2 shadow-sm">
             <Sparkles className="w-3.5 h-3.5" /> Industry-Adapting Multi-Tenant CRM Engine
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] text-foreground">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] text-foreground motion-rise motion-delay-1">
             The CRM built specifically for <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-blue-500 dark:to-emerald-400">
               Your Exact Industry
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed motion-rise motion-delay-2">
             Flowline Pro is a highly adaptive multi-tenant CRM. Stop forcing your team to use generic tables. Select your blueprint, spin up isolated schemas, and trigger automated WhatsApp customer workflows instantly.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 motion-rise motion-delay-3">
             <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-base font-bold shadow-md cursor-pointer group" asChild>
               <Link href="/sign-up">
                 Start Free Trial 
@@ -144,8 +144,8 @@ export default function LandingPage() {
         </div>
 
         {/* INTERACTIVE PRODUCT DEMO SHIFT CONTAINER */}
-        <div className="relative z-10 w-full max-w-5xl mx-auto mt-20 px-2 sm:px-6">
-          <div className="border border-border/80 rounded-2xl shadow-2xl shadow-primary/5 dark:shadow-primary/10 bg-background/90 backdrop-blur overflow-hidden glass-card">
+        <div className="relative z-10 w-full max-w-5xl mx-auto mt-20 px-2 sm:px-6 motion-rise motion-delay-3">
+          <div className="landing-product-shell border border-border/80 rounded-2xl shadow-2xl shadow-primary/5 dark:shadow-primary/10 bg-background/90 backdrop-blur overflow-hidden glass-card">
             {/* Top Bar (Interactive Industry Selector) */}
             <div className="flex flex-wrap items-center justify-between border-b border-border/80 bg-muted/30 px-4 py-3 gap-3">
               <div className="flex items-center gap-1.5 shrink-0">
@@ -247,7 +247,7 @@ export default function LandingPage() {
                         {preview.kanban.map((item, idx) => (
                           <div 
                             key={item.id} 
-                            className="p-4 rounded-xl border border-border bg-muted/20 hover:border-primary/30 transition-all flex flex-col justify-between h-[110px] shadow-xs"
+                            className="motion-hover-lift p-4 rounded-xl border border-border bg-muted/20 hover:border-primary/30 transition-all flex flex-col justify-between h-[110px] shadow-xs"
                           >
                             <div>
                               <div className="flex items-center justify-between gap-2">
@@ -325,7 +325,7 @@ export default function LandingPage() {
       </section>
 
       {/* 2. Premium Bento Grid Features Section */}
-      <section id="features" className="py-24 px-4 max-w-5xl mx-auto w-full border-t border-border/40">
+      <section id="features" className="py-24 px-4 max-w-5xl mx-auto w-full border-t border-border/40 motion-rise">
         <div className="text-center space-y-4 mb-16">
           <Badge variant="outline" className="px-3 py-1 text-primary border-primary/20 bg-primary/5 text-xs font-bold">
             High Performance Architecture
@@ -341,7 +341,7 @@ export default function LandingPage() {
         {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Large Card: Isolated Database schemas */}
-          <Card className="md:col-span-2 border-border/60 glass-card p-6 flex flex-col justify-between hover:border-primary/30 transition-all duration-300">
+          <Card className="md:col-span-2 border-border/60 glass-card p-6 flex flex-col justify-between hover:border-primary/30 transition-all duration-300 motion-hover-lift">
             <CardHeader className="p-0">
               <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary mb-4">
                 <Database className="w-5 h-5" />
@@ -359,7 +359,7 @@ export default function LandingPage() {
           </Card>
 
           {/* Card: WhatsApp CRM Automation */}
-          <Card className="md:col-span-1 border-border/60 glass-card p-6 flex flex-col justify-between hover:border-primary/30 transition-all duration-300">
+          <Card className="md:col-span-1 border-border/60 glass-card p-6 flex flex-col justify-between hover:border-primary/30 transition-all duration-300 motion-hover-lift">
             <CardHeader className="p-0">
               <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-500 mb-4">
                 <MessageSquare className="w-5 h-5" />
@@ -377,7 +377,7 @@ export default function LandingPage() {
           </Card>
 
           {/* Card: No-code custom fields */}
-          <Card className="md:col-span-1 border-border/60 glass-card p-6 flex flex-col justify-between hover:border-primary/30 transition-all duration-300">
+          <Card className="md:col-span-1 border-border/60 glass-card p-6 flex flex-col justify-between hover:border-primary/30 transition-all duration-300 motion-hover-lift">
             <CardHeader className="p-0">
               <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-500 mb-4">
                 <Settings2 className="w-5 h-5" />
@@ -395,7 +395,7 @@ export default function LandingPage() {
           </Card>
 
           {/* Large Card: Deep Insights */}
-          <Card className="md:col-span-2 border-border/60 glass-card p-6 flex flex-col justify-between hover:border-primary/30 transition-all duration-300">
+          <Card className="md:col-span-2 border-border/60 glass-card p-6 flex flex-col justify-between hover:border-primary/30 transition-all duration-300 motion-hover-lift">
             <CardHeader className="p-0">
               <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-500 mb-4">
                 <TrendingUp className="w-5 h-5" />
@@ -415,7 +415,7 @@ export default function LandingPage() {
       </section>
 
       {/* 3. Detailed Showroom Section */}
-      <section className="py-24 px-4 max-w-5xl mx-auto w-full border-t border-border/40">
+      <section className="py-24 px-4 max-w-5xl mx-auto w-full border-t border-border/40 motion-rise">
         <div className="text-center space-y-4 mb-16">
           <Badge variant="outline" className="px-3 py-1 text-primary border-primary/20 bg-primary/5 text-xs font-bold">
             Industry Blueprints
@@ -430,7 +430,7 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Card 1 */}
-          <Card className="border-border/60 hover:border-primary/30 transition-all glass-card flex flex-col justify-between">
+          <Card className="border-border/60 hover:border-primary/30 transition-all glass-card flex flex-col justify-between motion-hover-lift">
             <CardHeader className="pb-3">
               <div className="w-10 h-10 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-3">
                 <Building2 className="w-5 h-5" />
@@ -451,7 +451,7 @@ export default function LandingPage() {
           </Card>
 
           {/* Card 2 */}
-          <Card className="border-border/60 hover:border-primary/30 transition-all glass-card flex flex-col justify-between">
+          <Card className="border-border/60 hover:border-primary/30 transition-all glass-card flex flex-col justify-between motion-hover-lift">
             <CardHeader className="pb-3">
               <div className="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-lg flex items-center justify-center mb-3">
                 <Stethoscope className="w-5 h-5" />
@@ -472,7 +472,7 @@ export default function LandingPage() {
           </Card>
 
           {/* Card 3 */}
-          <Card className="border-border/60 hover:border-primary/30 transition-all glass-card flex flex-col justify-between">
+          <Card className="border-border/60 hover:border-primary/30 transition-all glass-card flex flex-col justify-between motion-hover-lift">
             <CardHeader className="pb-3">
               <div className="w-10 h-10 bg-orange-500/10 text-orange-500 rounded-lg flex items-center justify-center mb-3">
                 <Wrench className="w-5 h-5" />
@@ -493,7 +493,7 @@ export default function LandingPage() {
           </Card>
 
           {/* Card 4 */}
-          <Card className="border-border/60 hover:border-primary/30 transition-all glass-card flex flex-col justify-between">
+          <Card className="border-border/60 hover:border-primary/30 transition-all glass-card flex flex-col justify-between motion-hover-lift">
             <CardHeader className="pb-3">
               <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center mb-3">
                 <Car className="w-5 h-5" />
@@ -514,7 +514,7 @@ export default function LandingPage() {
           </Card>
 
           {/* Card 5 */}
-          <Card className="border-border/60 hover:border-primary/30 transition-all glass-card flex flex-col justify-between">
+          <Card className="border-border/60 hover:border-primary/30 transition-all glass-card flex flex-col justify-between motion-hover-lift">
             <CardHeader className="pb-3">
               <div className="w-10 h-10 bg-purple-500/10 text-purple-500 rounded-lg flex items-center justify-center mb-3">
                 <Briefcase className="w-5 h-5" />
@@ -548,7 +548,7 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="border-border/60 glass-card p-6 hover:border-primary/20 transition-colors">
+          <Card className="border-border/60 glass-card p-6 hover:border-primary/20 transition-colors motion-hover-lift">
             <CardContent className="p-0 space-y-4">
               <div className="flex items-center gap-1 text-yellow-500">
                 <Star className="w-4 h-4 fill-current" />
@@ -572,7 +572,7 @@ export default function LandingPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 glass-card p-6 hover:border-primary/20 transition-colors">
+          <Card className="border-border/60 glass-card p-6 hover:border-primary/20 transition-colors motion-hover-lift">
             <CardContent className="p-0 space-y-4">
               <div className="flex items-center gap-1 text-yellow-500">
                 <Star className="w-4 h-4 fill-current" />

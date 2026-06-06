@@ -1,23 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { WhatsAppInstanceCard } from "./WhatsAppInstanceCard";
 import { listInstances, createInstance, deleteInstance } from "@/actions/whatsapp";
 
 export default function WhatsAppInstancesPage() {
-  // Hardcoding tenantId for demo purposes. In reality, this comes from context/auth.
-  const tenantId = "demo-tenant-123";
-
   const [instances, setInstances] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchInstances = async () => {
     try {
-      const data = await listInstances(tenantId);
+      const data = await listInstances();
       setInstances(data);
     } catch (err) {
       console.error(err);
@@ -28,14 +23,13 @@ export default function WhatsAppInstancesPage() {
 
   useEffect(() => {
     fetchInstances();
-  }, [tenantId]);
+  }, []);
 
   const handleAddInstance = async () => {
     setLoading(true);
     setError(null);
     try {
       await createInstance({
-        tenantId,
         instanceName: `Instance ${Math.floor(Math.random() * 1000)}`,
       });
       await fetchInstances();
@@ -48,7 +42,7 @@ export default function WhatsAppInstancesPage() {
 
   const handleDeleteInstance = async (id: string) => {
     try {
-      await deleteInstance({ id, tenantId });
+      await deleteInstance({ id });
       await fetchInstances();
     } catch (err) {
       console.error(err);
@@ -88,7 +82,6 @@ export default function WhatsAppInstancesPage() {
             <WhatsAppInstanceCard 
               key={instance.id} 
               instance={instance as any} 
-              tenantId={tenantId} 
               onDelete={(id) => handleDeleteInstance(id)} 
             />
           ))}

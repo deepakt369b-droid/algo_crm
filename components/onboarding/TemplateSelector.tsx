@@ -133,9 +133,21 @@ export function TemplateSelector({ selectedTemplateId, onSelect }: TemplateSelec
         </div>
       </ScrollArea>
 
-      <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <ScrollArea className="h-[360px] rounded-lg border border-border/50">
-          <div className="flex flex-col gap-2 p-2">
+      <div className="grid w-full gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="rounded-lg border border-border/50 bg-background/40 p-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-foreground">Available blueprints</div>
+              <div className="text-xs text-muted-foreground">
+                {templates.length} template{templates.length === 1 ? "" : "s"} ready to apply
+              </div>
+            </div>
+            <Badge variant="outline" className="shrink-0 text-[10px]">
+              {selectedSector}
+            </Badge>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
             {templates.map((template) => {
               const IconComponent =
                 template.id === "custom"
@@ -151,51 +163,49 @@ export function TemplateSelector({ selectedTemplateId, onSelect }: TemplateSelec
                   aria-pressed={isSelected}
                   onClick={() => onSelect(template.id)}
                   className={cn(
-                    "group flex w-full gap-3 rounded-lg border bg-card p-3 text-left transition-colors",
+                    "group flex min-h-[156px] w-full flex-col gap-3 rounded-lg border bg-card p-3 text-left transition-colors",
                     "hover:border-primary/60 hover:bg-accent/40",
                     isSelected && "border-primary bg-primary/[0.04] ring-1 ring-primary",
                   )}
                 >
-                  <div
-                    className={cn(
-                      "flex size-10 shrink-0 items-center justify-center rounded-md",
-                      isSelected ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+                  <div className="flex items-start justify-between gap-3">
+                    <div
+                      className={cn(
+                        "flex size-10 shrink-0 items-center justify-center rounded-md",
+                        isSelected ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      <IconComponent className="size-5" />
+                    </div>
+
+                    {isSelected && (
+                      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <Check className="size-3" />
+                      </span>
                     )}
-                  >
-                    <IconComponent className="size-5" />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-foreground">
-                          {template.name}
-                        </div>
-                        <div className="truncate text-[10px] font-semibold uppercase tracking-wide text-primary">
-                          {template.industry}
-                        </div>
-                      </div>
-                      {isSelected && (
-                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                          <Check className="size-3" />
-                        </span>
-                      )}
+                    <div className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+                      {template.name}
                     </div>
-
-                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    <div className="mt-1 line-clamp-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                      {template.industry}
+                    </div>
+                    <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
                       {template.description}
                     </p>
+                  </div>
 
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {template.features.slice(0, 2).map((feature) => (
-                        <Badge key={feature} variant="secondary" className="max-w-28 truncate text-[10px]">
-                          {feature}
-                        </Badge>
-                      ))}
-                      <Badge variant="outline" className="text-[10px]">
-                        {activeModules.length} modules
+                  <div className="flex flex-wrap gap-1.5">
+                    {template.features.slice(0, 2).map((feature) => (
+                      <Badge key={feature} variant="secondary" className="max-w-32 truncate text-[10px]">
+                        {feature}
                       </Badge>
-                    </div>
+                    ))}
+                    <Badge variant="outline" className="text-[10px]">
+                      {activeModules.length} modules
+                    </Badge>
                   </div>
                 </button>
               );
@@ -209,10 +219,10 @@ export function TemplateSelector({ selectedTemplateId, onSelect }: TemplateSelec
               </Card>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         {selectedTemplate && (
-          <Card className="h-fit border-primary/20 bg-card/80">
+          <Card className="h-fit border-primary/20 bg-card/80 xl:sticky xl:top-4">
             <CardHeader className="p-4">
               <div className="flex items-start gap-3">
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">

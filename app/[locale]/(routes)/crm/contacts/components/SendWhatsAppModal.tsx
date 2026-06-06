@@ -17,9 +17,6 @@ interface SendWhatsAppModalProps {
 }
 
 export function SendWhatsAppModal({ isOpen, onClose, contactName, contactPhone }: SendWhatsAppModalProps) {
-  // Hardcoded tenantId for demo, in a real app fetch from auth context
-  const tenantId = "demo-tenant-123";
-  
   const [instances, setInstances] = useState<any[] | null>(null);
   const [selectedInstance, setSelectedInstance] = useState<string>("");
   const [message, setMessage] = useState("");
@@ -27,9 +24,9 @@ export function SendWhatsAppModal({ isOpen, onClose, contactName, contactPhone }
 
   useEffect(() => {
     if (isOpen) {
-      listInstances(tenantId).then(setInstances).catch(console.error);
+      listInstances().then(setInstances).catch(console.error);
     }
-  }, [isOpen, tenantId]);
+  }, [isOpen]);
 
   const handleSend = async () => {
     if (!selectedInstance) {

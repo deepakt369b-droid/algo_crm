@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WhatsAppClient } from "@/lib/whatsapp/client";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getTenantId } from "@/lib/get-tenant";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,8 +12,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Fetch instance settings from Postgres
-    const instance = (await supabaseAdmin.from("crm_Whatsapp_Instances").select("*").eq("id", instanceId).single()).data;
+    const tenantId = await getTenantId();
+    if (!tenantId) {
+      return NextResponse.json({ error: "Tenant context is required" }, { status: 403 });
+    }
+
+    const instance = (await supabaseAdmin
+      .from("crm_Whatsapp_Instances")
+      .select("*")
+      .eq("id", instanceId)
+      .eq("tenantId", tenantId)
+      .single()).data;
     
     if (!instance) {
       return NextResponse.json({ error: "Instance not found" }, { status: 404 });

@@ -31,7 +31,7 @@ export async function listInstances(tenantId?: string) {
   return instances;
 }
 
-export async function createInstance(data: { tenantId: string; instanceName: string; phoneNumber?: string }) {
+export async function createInstance(data: { tenantId?: string; instanceName: string; phoneNumber?: string }) {
   const resolvedTenantId = await resolveTenantId(data.tenantId);
   if (!resolvedTenantId) throw new Error("Tenant ID is required for WhatsApp instances.");
 
@@ -41,7 +41,7 @@ export async function createInstance(data: { tenantId: string; instanceName: str
         tenantId: resolvedTenantId,
         instanceName: data.instanceName,
         phoneNumber: data.phoneNumber || "",
-        status: "DISCONNECTED",
+        status: "PENDING",
       })
     .select("*")
     .single();
@@ -55,7 +55,7 @@ export async function createInstance(data: { tenantId: string; instanceName: str
   return instance;
 }
 
-export async function updateInstanceConfig(data: { id: string; credentials?: any; connectionConfig?: any; tenantId: string }) {
+export async function updateInstanceConfig(data: { id: string; credentials?: any; connectionConfig?: any; tenantId?: string }) {
   const resolvedTenantId = await resolveTenantId(data.tenantId);
   if (!resolvedTenantId) throw new Error("Tenant ID is required for WhatsApp instances.");
 
@@ -79,7 +79,7 @@ export async function updateInstanceConfig(data: { id: string; credentials?: any
   return instance;
 }
 
-export async function deleteInstance(data: { id: string; tenantId: string }) {
+export async function deleteInstance(data: { id: string; tenantId?: string }) {
   const resolvedTenantId = await resolveTenantId(data.tenantId);
   if (!resolvedTenantId) throw new Error("Tenant ID is required for WhatsApp instances.");
 

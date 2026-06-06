@@ -40,6 +40,7 @@ import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import { getDefaultCurrency, formatCurrency as formatCurrencyUtil } from "@/lib/currency";
 import Decimal from "decimal.js";
+import AIInsightCard from "../crm/dashboard/_components/AIInsightCard";
 
 const DashboardPage = async () => {
   const session = await getSession();
@@ -48,30 +49,46 @@ const DashboardPage = async () => {
 
   const userId = session?.user?.id;
 
-  const cookieStore = await cookies();
-  const defaultCurrency = await getDefaultCurrency();
+  const [cookieStore, defaultCurrency, dict] = await Promise.all([
+    cookies(),
+    getDefaultCurrency(),
+    getTranslations("DashboardPage"),
+  ]);
   const displayCurrency = cookieStore.get("display_currency")?.value || defaultCurrency;
 
-  //Get user language
-  const lang = session?.user?.userLanguage;
-
-  //Fetch translations from dictionary
-  const dict = await getTranslations("DashboardPage");
-  const leads = await getLeadsCount();
-  const tasks = await getTasksCount();
-  const invoices = await getInvoicesCount();
-  const campaigns = await getCampaignsCount();
-  const targets = await getTargetsCount();
-  const storage = await getStorageSize();
-  const projects = await getBoardsCount();
-  const contacts = await getContactCount();
-  const contracts = await getContractsCount();
-  const users = await getActiveUsersCount();
-  const accounts = await getAccountsCount();
-  const revenue = await getExpectedRevenue(displayCurrency);
-  const documents = await getDocumentsCount();
-  const opportunities = await getOpportunitiesCount();
-  const usersTasks = await getUsersTasksCount(userId);
+  const [
+    leads,
+    tasks,
+    invoices,
+    campaigns,
+    targets,
+    storage,
+    projects,
+    contacts,
+    contracts,
+    users,
+    accounts,
+    revenue,
+    documents,
+    opportunities,
+    usersTasks,
+  ] = await Promise.all([
+    getLeadsCount(),
+    getTasksCount(),
+    getInvoicesCount(),
+    getCampaignsCount(),
+    getTargetsCount(),
+    getStorageSize(),
+    getBoardsCount(),
+    getContactCount(),
+    getContractsCount(),
+    getActiveUsersCount(),
+    getAccountsCount(),
+    getExpectedRevenue(displayCurrency),
+    getDocumentsCount(),
+    getOpportunitiesCount(),
+    getUsersTasksCount(userId),
+  ]);
 
   return (
     <Container
@@ -80,6 +97,7 @@ const DashboardPage = async () => {
         "Welcome to Flowline Pro cockpit, here you can see your company overview"
       }
     >
+      <AIInsightCard />
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <Suspense fallback={<LoadingBox />}>
           <Card className="wa-card wa-hover-lift border border-border/40 overflow-hidden relative group">

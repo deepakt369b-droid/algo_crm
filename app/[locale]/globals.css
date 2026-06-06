@@ -168,6 +168,84 @@
   animation: pulse-glow 8s ease-in-out infinite;
 }
 
+@keyframes motion-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheen {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.motion-rise {
+  animation: motion-rise 700ms ease both;
+}
+
+.motion-delay-1 {
+  animation-delay: 90ms;
+}
+
+.motion-delay-2 {
+  animation-delay: 180ms;
+}
+
+.motion-delay-3 {
+  animation-delay: 270ms;
+}
+
+.motion-hover-lift {
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.motion-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px -28px hsl(var(--primary) / 0.45);
+}
+
+.landing-product-shell {
+  position: relative;
+}
+
+.landing-product-shell::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(var(--primary) / 0.16),
+    transparent
+  );
+  background-size: 200% 100%;
+  content: "";
+  height: 1px;
+  inset: 0 0 auto 0;
+  pointer-events: none;
+  position: absolute;
+  animation: sheen 5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-pulse-glow,
+  .motion-rise,
+  .landing-product-shell::before {
+    animation: none;
+  }
+
+  .motion-hover-lift:hover {
+    transform: none;
+  }
+}
+
 /* RTL / Arabic typography support */
 html[lang="ar"] {
   font-family: var(--font-arabic), var(--font-dm-sans), sans-serif;
@@ -223,6 +301,5 @@ html[lang="ar"] {
 ::-webkit-scrollbar-thumb {
   @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/35;
 }
-
 
 
