@@ -50,7 +50,7 @@ const rateSchema = z.object({
 export async function getCurrencies(): Promise<CurrencyValue[]> {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
-  const currencies = (await supabaseAdmin.from("Currency").select("*").order("code", { ascending: true })).data;
+  const currencies = (await supabaseAdmin.from("Currency").select("*").order("code", { ascending: true })).data ?? [];
   return currencies.map((c) => ({
     code: c.code,
     name: c.name,
@@ -63,7 +63,7 @@ export async function getCurrencies(): Promise<CurrencyValue[]> {
 export async function getExchangeRatesAdmin(): Promise<ExchangeRateValue[]> {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
-  const rates = (await supabaseAdmin.from("ExchangeRate").select("*").order("fromCurrency", { ascending: true }).order("toCurrency", { ascending: true })).data;
+  const rates = (await supabaseAdmin.from("ExchangeRate").select("*").order("fromCurrency", { ascending: true }).order("toCurrency", { ascending: true })).data ?? [];
   return rates.map((r) => ({
     id: r.id,
     fromCurrency: r.fromCurrency,
@@ -94,7 +94,7 @@ export async function setDefaultCurrency(code: string) {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
   await Promise.all([
-    ((await supabaseAdmin.from("Currency").update({ isDefault: false }).select("*").single()).data).data,
+    supabaseAdmin.from("Currency").update({ isDefault: false }).eq("isDefault", true),
     supabaseAdmin.from("crm_SystemSettings").upsert({ key: "default_currency", value: code }, { onConflict: "key" }),
   ]);
   revalidatePath("/", "layout");
@@ -121,7 +121,7 @@ export async function updateExchangeRate(data: {
 export async function getEcbAutoUpdate(): Promise<boolean> {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
-  const setting = (await supabaseAdmin.from("crm_SystemSettings").select("*").eq("key", "ecb_auto_update").single()).data;
+  const setting = (await supabaseAdmin.from("crm_SystemSettings").select("*").eq("key", "ecb_auto_update").maybeSingle()).data;
   return setting?.value === "true";
 }
 

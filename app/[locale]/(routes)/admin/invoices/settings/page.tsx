@@ -5,10 +5,10 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export default async function InvoiceSettingsPage() {
   const [settings, currencies, series, taxRates] = await Promise.all([
-    (await supabaseAdmin.from("Invoice_Settings").select("*").single()).data,
-    (await supabaseAdmin.from("Currency").select("*").eq("isEnabled", true).order("code", { ascending: true })).data,
-    (await supabaseAdmin.from("Invoice_Series").select("*").eq("active", true).order("name", { ascending: true })).data,
-    (await supabaseAdmin.from("Invoice_TaxRates").select("*").eq("active", true).order("rate", { ascending: false })).data,
+    (await supabaseAdmin.from("Invoice_Settings").select("*").maybeSingle()).data,
+    (await supabaseAdmin.from("Currency").select("*").eq("isEnabled", true).order("code", { ascending: true })).data ?? [],
+    (await supabaseAdmin.from("Invoice_Series").select("*").eq("active", true).order("name", { ascending: true })).data ?? [],
+    (await supabaseAdmin.from("Invoice_TaxRates").select("*").eq("active", true).order("rate", { ascending: false })).data ?? [],
   ]);
 
   return (

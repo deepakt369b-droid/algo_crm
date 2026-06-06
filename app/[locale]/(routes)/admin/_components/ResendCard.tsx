@@ -46,7 +46,7 @@ const ResendCard = async () => {
     }
   };
 
-  const resend_key = (await supabaseAdmin.from("systemServices").select("*").eq("name", "resend_smtp").single()).data;
+  const resend_key = (await supabaseAdmin.from("systemServices").select("*").eq("name", "resend_smtp").maybeSingle()).data;
 
   return (
     <Card className="min-w-[350px] max-w-[450px]">

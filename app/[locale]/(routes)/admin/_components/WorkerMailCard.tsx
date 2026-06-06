@@ -53,7 +53,7 @@ const WorkerMailCard = async () => {
     }
   };
 
-  const workerMail = (await supabaseAdmin.from("systemServices").select("*").eq("name", "worker_mailer").single()).data;
+  const workerMail = (await supabaseAdmin.from("systemServices").select("*").eq("name", "worker_mailer").maybeSingle()).data;
 
   const envUrl = process.env.WORKER_MAILER_URL;
   const envKey = process.env.WORKER_MAILER_API_KEY;
