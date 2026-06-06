@@ -21,6 +21,8 @@ export default function WhatsAppInstancesPage() {
       setInstances(data);
     } catch (err) {
       console.error(err);
+      setError("Failed to load WhatsApp instances.");
+      setInstances([]);
     }
   };
 

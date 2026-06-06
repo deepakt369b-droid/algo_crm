@@ -40,7 +40,25 @@ export interface PurchaseOrderLineItemDetail {
 }
 
 export async function getPurchaseOrderById(id: string): Promise<PurchaseOrderDetail | null> {
-  const order = (await supabaseAdmin.from("PurchaseOrders").select("*, vendor(id, name, email, website), requestedByUser(id, name), approvedByUser(id, name), lineItems(*, product(id, name, sku))").eq("id", id).single()).data;
+  const { data: order, error } = await supabaseAdmin
+    .from("PurchaseOrders")
+    .select(`
+      *,
+      vendor:crm_Accounts!PurchaseOrders_vendorId_fkey(id, name, email, website),
+      requestedByUser:Users!PurchaseOrders_requestedBy_fkey(id, name),
+      approvedByUser:Users!PurchaseOrders_approvedBy_fkey(id, name),
+      lineItems:PurchaseOrderLineItems!PurchaseOrderLineItems_purchaseOrderId_fkey(
+        *,
+        product:crm_Products!PurchaseOrderLineItems_productId_fkey(id, name, sku)
+      )
+    `)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[PURCHASE_ORDER_DETAIL_ERROR]", error);
+    return null;
+  }
 
   if (!order || order.deletedAt) return null;
 
@@ -66,7 +84,7 @@ export async function getPurchaseOrderById(id: string): Promise<PurchaseOrderDet
     vendor: order.vendor ? { id: order.vendor.id, name: order.vendor.name, email: order.vendor.email, website: order.vendor.website } : null,
     requestedByUser: order.requestedByUser ? { id: order.requestedByUser.id, name: order.requestedByUser.name } : null,
     approvedByUser: order.approvedByUser ? { id: order.approvedByUser.id, name: order.approvedByUser.name } : null,
-    lineItems: order.lineItems.map((li) => ({
+    lineItems: (order.lineItems || []).map((li) => ({
       id: li.id,
       description: li.description,
       quantity: Number(li.quantity),
