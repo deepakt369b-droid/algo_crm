@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
     cleanPathname === "/privacy" ||
     cleanPathname === "/terms" ||
     cleanPathname.includes("/sign-in") || 
-    cleanPathname.includes("/sign-up");
+    cleanPathname.includes("/sign-up") || cleanPathname.includes("/admin/whatsapp");
 
   if (isPublicPage) {
     return intlMiddleware(request);

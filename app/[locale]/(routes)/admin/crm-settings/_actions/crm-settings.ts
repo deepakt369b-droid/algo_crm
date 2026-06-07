@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireRole, AuthenticationError, AuthorizationError } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 async function ensureAdmin(): Promise<{ error: string } | null> {
   try {
@@ -29,13 +30,13 @@ export type ConfigValue = { id: string; name: string; usageCount: number };
 const nameSchema = z.string().trim().min(1, "Name is required").max(100, "Max 100 characters");
 
 const configMap = {
-  industry:        { model: () => prisma.crm_Industry_Type,               countRelation: "accounts",                              updateMany: null },
-  contactType:     { model: () => prisma.crm_Contact_Types,               countRelation: "contacts",                              updateMany: () => prisma.crm_Contacts },
-  leadSource:      { model: () => prisma.crm_Lead_Sources,                countRelation: "leads",                                 updateMany: () => prisma.crm_Leads },
-  leadStatus:      { model: () => prisma.crm_Lead_Statuses,               countRelation: "leads",                                 updateMany: () => prisma.crm_Leads },
-  leadType:        { model: () => prisma.crm_Lead_Types,                  countRelation: "leads",                                 updateMany: () => prisma.crm_Leads },
-  opportunityType: { model: () => prisma.crm_Opportunities_Type,          countRelation: "assigned_opportunities",                updateMany: null },
-  salesStage:      { model: () => prisma.crm_Opportunities_Sales_Stages,  countRelation: "assigned_opportunities_sales_stage",    updateMany: null },
+  industry:        { model: "crm_Industry_Type",               updateMany: null,               countTable: "crm_Accounts" },
+  contactType:     { model: "crm_Contact_Types",               updateMany: "crm_Contacts",     countTable: "crm_Contacts" },
+  leadSource:      { model: "crm_Lead_Sources",                updateMany: "crm_Leads",        countTable: "crm_Leads" },
+  leadStatus:      { model: "crm_Lead_Statuses",               updateMany: "crm_Leads",        countTable: "crm_Leads" },
+  leadType:        { model: "crm_Lead_Types",                  updateMany: "crm_Leads",        countTable: "crm_Leads" },
+  opportunityType: { model: "crm_Opportunities_Type",          updateMany: null,               countTable: "crm_Opportunities" },
+  salesStage:      { model: "crm_Opportunities_Sales_Stages",  updateMany: null,               countTable: "crm_Opportunities" },
 } as const;
 
 const fkField: Record<CrmConfigType, string | null> = {
@@ -51,15 +52,37 @@ const fkField: Record<CrmConfigType, string | null> = {
 export async function getConfigValues(configType: CrmConfigType): Promise<ConfigValue[]> {
   const denied = await ensureAdmin();
   if (denied) throw new Error(denied.error);
-  const { model, countRelation } = configMap[configType];
-  const rows = await (model() as any).findMany({
-    include: { _count: { select: { [countRelation]: true } } },
-    orderBy: { name: "asc" },
-  });
-  return rows.map((r: any) => ({
+  const { model, countTable } = configMap[configType];
+  const fk = fkField[configType];
+
+  const { data, error } = await supabaseAdmin
+    .from(model)
+    .select("id, name")
+    .order("name", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  const rows = data || [];
+
+  if (countTable && fk) {
+    const { data: usageData } = await supabaseAdmin.from(countTable).select(fk);
+    const counts = (usageData || []).reduce((acc: any, row: any) => {
+      const val = row[fk];
+      if (val) acc[val] = (acc[val] || 0) + 1;
+      return acc;
+    }, {});
+
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      usageCount: counts[r.id] || 0,
+    }));
+  }
+
+  return rows.map((r) => ({
     id: r.id,
     name: r.name,
-    usageCount: r._count[countRelation] ?? 0,
+    usageCount: 0,
   }));
 }
 
@@ -68,7 +91,8 @@ export async function createConfigValue(configType: CrmConfigType, name: string)
   if (denied) throw new Error(denied.error);
   const parsed = nameSchema.parse(name);
   const { model } = configMap[configType];
-  await (model() as any).create({ data: { name: parsed, v: 0 } });
+  const { error } = await supabaseAdmin.from(model).insert({ name: parsed, v: 0 });
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -81,7 +105,8 @@ export async function updateConfigValue(
   if (denied) throw new Error(denied.error);
   const parsed = nameSchema.parse(name);
   const { model } = configMap[configType];
-  await (model() as any).update({ where: { id }, data: { name: parsed } });
+  const { error } = await supabaseAdmin.from(model).update({ name: parsed }).eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -104,16 +129,15 @@ export async function deleteConfigValue(
   const field = fkField[configType];
 
   if (replacementId && updateMany && field) {
-    await prisma.$transaction([
-      (updateMany() as any).updateMany({
-        where: { [field]: id },
-        data: { [field]: replacementId },
-      }),
-      (model() as any).delete({ where: { id } }),
-    ]);
-  } else {
-    await (model() as any).delete({ where: { id } });
+    const { error: updateErr } = await supabaseAdmin
+      .from(updateMany)
+      .update({ [field]: replacementId })
+      .eq(field, id);
+    if (updateErr) throw new Error(updateErr.message);
   }
+
+  const { error: delErr } = await supabaseAdmin.from(model).delete().eq("id", id);
+  if (delErr) throw new Error(delErr.message);
 
   revalidatePath("/", "layout");
 }

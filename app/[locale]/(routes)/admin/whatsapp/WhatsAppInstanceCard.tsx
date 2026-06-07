@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, QrCode, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateInstanceConfig } from "@/actions/whatsapp";
+import { updateInstanceConfig, deleteInstance } from "@/actions/whatsapp";
 
 interface WhatsAppInstanceCardProps {
   instance: {
@@ -18,10 +18,9 @@ interface WhatsAppInstanceCardProps {
     connectionConfig?: any;
     credentials?: any;
   };
-  onDelete: (id: string) => void;
 }
 
-export function WhatsAppInstanceCard({ instance, onDelete }: WhatsAppInstanceCardProps) {
+export function WhatsAppInstanceCard({ instance }: WhatsAppInstanceCardProps) {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loadingQr, setLoadingQr] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -161,7 +160,13 @@ export function WhatsAppInstanceCard({ instance, onDelete }: WhatsAppInstanceCar
             variant="ghost" 
             size="sm" 
             className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
-            onClick={() => onDelete(instance.id)}
+            onClick={async () => {
+              try {
+                await deleteInstance({ id: instance.id });
+              } catch (e: any) {
+                setError(e.message || "Failed to disconnect instance.");
+              }
+            }}
           >
             Disconnect
           </Button>
