@@ -1,4 +1,3 @@
-    "use server";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,6 +16,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const WorkerMailCard = async () => {
   const setWorkerMail = async (formData: FormData) => {
+    "use server";
     const schema = z.object({
       id: z.string().optional(),
       mailerUrl: z.string(),

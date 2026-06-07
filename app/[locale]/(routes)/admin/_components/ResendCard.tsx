@@ -1,4 +1,3 @@
-    "use server";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,6 +18,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const ResendCard = async () => {
   const setSMTP = async (formData: FormData) => {
+    "use server";
     const schema = z.object({
       id: z.string(),
       serviceKey: z.string(),
