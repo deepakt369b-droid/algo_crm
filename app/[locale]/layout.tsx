@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/app/providers/ThemeProvider";
 import { SWRProvider } from "@/app/providers/SWRProvider";
 import Script from "next/script";
 import { HydrationZapper } from "@/components/HydrationZapper";
+import { ProgressBarProvider } from "@/app/providers/ProgressBarProvider";
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
@@ -146,7 +147,9 @@ export default async function RootLayout(props: Props) {
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
             <SWRProvider>
-              {children}
+              <ProgressBarProvider>
+                {children}
+              </ProgressBarProvider>
             </SWRProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

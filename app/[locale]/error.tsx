@@ -21,8 +21,8 @@ export default function LocaleError({
           An unexpected error occurred on this page.
         </p>
         {process.env.NODE_ENV === "development" && (
-          <pre className="text-sm text-left bg-muted p-4 rounded overflow-auto max-h-48">
-            {error.message}
+          <pre className="text-sm text-left bg-muted p-4 rounded overflow-auto max-h-96">
+            {error.stack || error.message}
           </pre>
         )}
         <button

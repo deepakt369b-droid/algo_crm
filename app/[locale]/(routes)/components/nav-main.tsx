@@ -136,8 +136,6 @@ export function NavMain({ items, dict }: NavMainProps) {
                             >
                               <Link
                                 href={subItem.url}
-                                onFocus={() => prefetchRoute(subItem.url)}
-                                onMouseEnter={() => prefetchRoute(subItem.url)}
                               >
                                 <span>{subItem.title}</span>
                               </Link>
@@ -168,8 +166,6 @@ export function NavMain({ items, dict }: NavMainProps) {
               >
                 <Link
                   href={item.url}
-                  onFocus={() => prefetchRoute(item.url)}
-                  onMouseEnter={() => prefetchRoute(item.url)}
                 >
                   {item.icon && <item.icon className={cn("w-5 h-5 transition-transform duration-200 group-hover:scale-105", isActive ? "text-primary" : "text-muted-foreground")} />}
                   <span className="font-medium">{item.title}</span>

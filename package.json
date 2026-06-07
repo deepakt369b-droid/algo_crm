@@ -100,6 +100,7 @@
     "mongodb": "^7.1.0",
     "next": "^16.2.6",
     "next-intl": "^4.11.1",
+    "next-nprogress-bar": "^2.4.7",
     "next-themes": "^0.4.6",
     "nodemailer": "^8.0.5",
     "openai": "^6.25.0",
