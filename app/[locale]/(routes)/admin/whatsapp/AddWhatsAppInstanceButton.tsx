@@ -10,9 +10,13 @@ export function AddWhatsAppInstanceButton() {
   const handleAddInstance = async () => {
     setLoading(true);
     try {
-      await createInstance({
+      const result = await createInstance({
         instanceName: `Instance ${Math.floor(Math.random() * 1000)}`,
       });
+      
+      if (result && "error" in result && result.error) {
+        alert(result.error);
+      }
       // The server action calls revalidatePath, which will refresh the instances list
     } catch (err: any) {
       alert(err.message || "Failed to add instance. Check tier limits.");

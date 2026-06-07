@@ -33,11 +33,12 @@ export async function listInstances(tenantId?: string) {
 
 export async function createInstance(data: { tenantId?: string; instanceName: string; phoneNumber?: string }) {
   const resolvedTenantId = await resolveTenantId(data.tenantId);
-  if (!resolvedTenantId) throw new Error("Tenant ID is required for WhatsApp instances.");
+  if (!resolvedTenantId) return { error: "Tenant ID is required for WhatsApp instances." };
 
   const { data: instance, error } = await supabaseAdmin
     .from("crm_Whatsapp_Instances")
     .insert({
+        id: crypto.randomUUID(),
         tenantId: resolvedTenantId,
         instanceName: data.instanceName,
         phoneNumber: data.phoneNumber || "",
@@ -48,16 +49,16 @@ export async function createInstance(data: { tenantId?: string; instanceName: st
 
   if (error) {
     console.error("[WHATSAPP_CREATE_INSTANCE_ERROR]", error);
-    throw new Error("Failed to create WhatsApp instance.");
+    return { error: error.message || "Failed to create WhatsApp instance." };
   }
 
   revalidatePath("/admin/whatsapp");
-  return instance;
+  return { data: instance };
 }
 
 export async function updateInstanceConfig(data: { id: string; credentials?: any; connectionConfig?: any; tenantId?: string }) {
   const resolvedTenantId = await resolveTenantId(data.tenantId);
-  if (!resolvedTenantId) throw new Error("Tenant ID is required for WhatsApp instances.");
+  if (!resolvedTenantId) return { error: "Tenant ID is required for WhatsApp instances." };
 
   const { data: instance, error } = await supabaseAdmin
     .from("crm_Whatsapp_Instances")
@@ -72,16 +73,16 @@ export async function updateInstanceConfig(data: { id: string; credentials?: any
 
   if (error) {
     console.error("[WHATSAPP_UPDATE_INSTANCE_ERROR]", error);
-    throw new Error("Failed to update WhatsApp instance.");
+    return { error: error.message || "Failed to update WhatsApp instance." };
   }
 
   revalidatePath("/admin/whatsapp");
-  return instance;
+  return { data: instance };
 }
 
 export async function deleteInstance(data: { id: string; tenantId?: string }) {
   const resolvedTenantId = await resolveTenantId(data.tenantId);
-  if (!resolvedTenantId) throw new Error("Tenant ID is required for WhatsApp instances.");
+  if (!resolvedTenantId) return { error: "Tenant ID is required for WhatsApp instances." };
 
   const { error } = await supabaseAdmin
     .from("crm_Whatsapp_Instances")
@@ -91,7 +92,7 @@ export async function deleteInstance(data: { id: string; tenantId?: string }) {
 
   if (error) {
     console.error("[WHATSAPP_DELETE_INSTANCE_ERROR]", error);
-    throw new Error("Failed to delete WhatsApp instance.");
+    return { error: error.message || "Failed to delete WhatsApp instance." };
   }
 
   revalidatePath("/admin/whatsapp");

@@ -31,14 +31,18 @@ export function WhatsAppInstanceCard({ instance }: WhatsAppInstanceCardProps) {
 
   const handleSaveConfig = async () => {
     try {
-      await updateInstanceConfig({
+      const result = await updateInstanceConfig({
         id: instance.id,
         connectionConfig: {
           whatsappOfficialApiUrl: configUrl,
           whatsappOfficialApiKey: configKey,
         }
       });
-      setIsConfiguring(false);
+      if (result && "error" in result && result.error) {
+        setError(result.error);
+      } else {
+        setIsConfiguring(false);
+      }
     } catch (e: any) {
       setError(e.message || "Failed to save configuration");
     }
@@ -162,7 +166,10 @@ export function WhatsAppInstanceCard({ instance }: WhatsAppInstanceCardProps) {
             className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
             onClick={async () => {
               try {
-                await deleteInstance({ id: instance.id });
+                const result = await deleteInstance({ id: instance.id });
+                if (result && "error" in result && result.error) {
+                  setError(result.error);
+                }
               } catch (e: any) {
                 setError(e.message || "Failed to disconnect instance.");
               }
