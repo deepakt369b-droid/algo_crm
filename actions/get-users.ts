@@ -3,13 +3,13 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 //Get all users  for admin module
 export const getUsers = async () => {
   const data = (await supabaseAdmin.from("Users").select("*").order("created_on", { ascending: false })).data;
-  return data;
+  return data ?? [];
 };
 
 //Get active users for Selects in app etc
 export const getActiveUsers = async () => {
   const data = (await supabaseAdmin.from("Users").select("id, name, avatar").eq("userStatus", "ACTIVE").order("name", { ascending: true })).data;
-  return data;
+  return data ?? [];
 };
 
 //Get new users by month for chart

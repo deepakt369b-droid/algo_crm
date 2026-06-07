@@ -1,2 +1,61 @@
-"import { createClient } from '@supabase/supabase-js';\nimport { PrismaClient } from "@/lib/prisma-types";\nimport dotenv from 'dotenv';\n\n// Load environment variables\ndotenv.config({ path: '.env.local' });\n\nconst supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;\nconst supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;\n\nif (!supabaseUrl || !supabaseServiceKey) {\n  console.error(\"Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY\");\n  process.exit(1);\n}\n\nconst supabase = createClient(supabaseUrl, supabaseServiceKey, {\n  auth: {\n    autoRefreshToken: false,\n    persistSession: false\n  }\n});\n\nconst prisma = new PrismaClient();\n\nasync function main() {\n  const adminEmail = 'deepakt369b@gmail.com'; // Admin email to migrate\n  \n  // Find the admin user in Prisma\n  const appUser = await prisma.users.findUnique({\n    where: { email: adminEmail }\n  });\n\n  if (!appUser) {\n    console.error(`User with email ${adminEmail} not found in database.`);\n    return;\n  }\n\n  console.log(`Found app user: ${appUser.id}`);\n\n  // Create user in Supabase Auth with the EXACT SAME ID\n  const { data: user, error } = await supabase.auth.admin.createUser({\n    email: appUser.email,\n    password: 'TemporaryPassword123!', // You can reset this later or use magic links\n    email_confirm: true, // Auto confirm\n    user_metadata: {\n      role: appUser.role,\n      name: appUser.name\n    }\n  });\n\n  // If the ID isn't exactly the same for some reason (Supabase might ignore custom ID in createUser without specific setup or it generates a new UUID),\n  // we actually CANNOT set `id` directly via `.createUser()` in all Supabase versions. \n  // Wait, let's check if the created user has a different ID.\n  \n  if (error) {\n    if (error.message.includes('already registered')) {\n      console.log('User already exists in Supabase Auth.');\n      // Update ID in Prisma to match Supabase if needed? Or just let it be.\n    } else {\n      console.error('Error creating user:', error.message);\n    }\n  } 
-<truncated 831 bytes>
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config({ path: '.env.local' });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl as string, supabaseServiceKey as string, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+
+async function main() {
+  const adminEmail = 'deepakt369b@gmail.com'; // Admin email to migrate
+  
+  // Find the admin user in Supabase
+  const { data: appUser, error: fetchError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', adminEmail)
+    .single();
+
+  if (!appUser) {
+    console.error(`User with email ${adminEmail} not found in database.`);
+    return;
+  }
+
+  console.log(`Found app user: ${appUser.id}`);
+
+  // Create user in Supabase Auth with the EXACT SAME ID
+  const { data: user, error } = await supabase.auth.admin.createUser({
+    email: appUser.email,
+    password: 'TemporaryPassword123!', // You can reset this later or use magic links
+    email_confirm: true, // Auto confirm
+    user_metadata: {
+      role: appUser.role,
+      name: appUser.name
+    }
+  });
+
+  if (error) {
+    if (error.message.includes('already registered')) {
+      console.log('User already exists in Supabase Auth.');
+    } else {
+      console.error('Error creating user:', error.message);
+    }
+  } else {
+    console.log('User created successfully in Supabase Auth.');
+  }
+}
+
+main().catch(console.error);

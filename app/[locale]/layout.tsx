@@ -10,6 +10,7 @@ import { getTranslations, getMessages } from "next-intl/server";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/app/providers/ThemeProvider";
+import { SWRProvider } from "@/app/providers/SWRProvider";
 import Script from "next/script";
 import { HydrationZapper } from "@/components/HydrationZapper";
 
@@ -144,7 +145,9 @@ export default async function RootLayout(props: Props) {
         />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+            <SWRProvider>
               {children}
+            </SWRProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
         <Toaster />

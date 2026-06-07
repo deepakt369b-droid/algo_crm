@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useOptimistic } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, AlertCircle, Clock, Check, Reply, User, Mail, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,13 @@ export default function FeedbackManager({ initialTickets }: FeedbackManagerProps
   const [selectedStatus, setSelectedStatus] = useState<any>("RESOLVED");
   const [isPending, startTransition] = useTransition();
 
+  const [optimisticTickets, addOptimisticTicket] = useOptimistic<FeedbackTicket[], any>(
+    initialTickets,
+    (state, updatedTicket) => {
+      return state.map(t => t.id === updatedTicket.id ? { ...t, ...updatedTicket } : t);
+    }
+  );
+
   const handleUpdate = async (ticketId: string) => {
     if (!selectedStatus) {
       toast.error("Please select a status.");
@@ -73,13 +80,19 @@ export default function FeedbackManager({ initialTickets }: FeedbackManagerProps
     }
 
     startTransition(async () => {
+      addOptimisticTicket({ 
+        id: ticketId, 
+        status: selectedStatus, 
+        response: responseText || null, 
+        respondedAt: new Date() 
+      });
+
       try {
         const result = await updateTicketStatus(ticketId, selectedStatus, responseText || undefined);
         if (result.success) {
           toast.success("Feedback ticket updated successfully!");
           setExpandedTicketId(null);
           setResponseText("");
-          router.refresh();
         } else {
           toast.error(result.error || "Failed to update ticket.");
         }
@@ -89,7 +102,7 @@ export default function FeedbackManager({ initialTickets }: FeedbackManagerProps
     });
   };
 
-  const filteredTickets = initialTickets.filter((ticket) => {
+  const filteredTickets = optimisticTickets.filter((ticket) => {
     if (activeTab === "ALL") return true;
     return ticket.status === activeTab;
   });
@@ -112,7 +125,7 @@ export default function FeedbackManager({ initialTickets }: FeedbackManagerProps
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
-            {tab.replace("_", " ")} ({tab === "ALL" ? initialTickets.length : initialTickets.filter((t) => t.status === tab).length})
+            {tab.replace("_", " ")} ({tab === "ALL" ? optimisticTickets.length : optimisticTickets.filter((t) => t.status === tab).length})
           </button>
         ))}
       </div>

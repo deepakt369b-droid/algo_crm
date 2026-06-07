@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useEffect } from "react";
+import React, { useState, useTransition, useEffect, useOptimistic } from "react";
 import { 
   createTemplate, 
   updateTemplate, 
@@ -61,6 +61,20 @@ export default function TemplatesManager({ initialTemplates }: TemplatesManagerP
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [isPending, startTransition] = useTransition();
 
+  const [optimisticTemplates, addOptimisticTemplate] = useOptimistic<any[], { action: 'delete' | 'toggle', payload: any }>(
+    initialTemplates,
+    (state, { action, payload }) => {
+      switch (action) {
+        case 'delete':
+          return state.filter(t => t.id !== payload.id);
+        case 'toggle':
+          return state.map(t => t.id === payload.id ? { ...t, isActive: payload.isActive } : t);
+        default:
+          return state;
+      }
+    }
+  );
+
   // AI states
   const [aiPrompt, setAiPrompt] = useState("");
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -114,10 +128,13 @@ export default function TemplatesManager({ initialTemplates }: TemplatesManagerP
 
   // Actions
   const handleToggleActive = async (id: any, currentActive: boolean) => {
+    const newActive = !currentActive;
+    startTransition(() => {
+      addOptimisticTemplate({ action: 'toggle', payload: { id, isActive: newActive } });
+    });
     try {
-      await runToggleStatus({ id, isActive: !currentActive });
+      await runToggleStatus({ id, isActive: newActive });
       toast.success("Template status toggled!");
-      window.location.reload();
     } catch (err) {
       toast.error("Failed to toggle status.");
     }
@@ -125,10 +142,12 @@ export default function TemplatesManager({ initialTemplates }: TemplatesManagerP
 
   const handleDelete = async (id: any) => {
     if (!confirm("Are you sure you want to delete this template permanently?")) return;
+    startTransition(() => {
+      addOptimisticTemplate({ action: 'delete', payload: { id } });
+    });
     try {
       await runDeleteTemplate({ id });
       toast.success("Template deleted successfully!");
-      window.location.reload();
     } catch (err) {
       toast.error("Failed to delete template.");
     }
@@ -260,7 +279,7 @@ export default function TemplatesManager({ initialTemplates }: TemplatesManagerP
   };
 
   // Filters
-  const filteredTemplates = initialTemplates.filter((temp) => {
+  const filteredTemplates = optimisticTemplates.filter((temp) => {
     const matchesSearch = temp.name.toLowerCase().includes(search.toLowerCase()) || 
                           temp.industry.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = activeCategory === "ALL" || temp.industry.toUpperCase() === activeCategory.toUpperCase();

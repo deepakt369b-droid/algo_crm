@@ -1,4 +1,3 @@
-
 import { junctionTableHelpers } from "@/lib/junction-helpers";
 import {
   requireAuthenticated,
@@ -16,5 +15,5 @@ export const getBoards = async (_userId?: string) => {
     throw e;
   }
   const data = (await supabaseAdmin.from("Boards").select("*, assigned_user(name)").order("updatedAt", { ascending: false })).data;
-  return data;
+  return data ?? [];
 };

@@ -1,10 +1,13 @@
 "use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
 
 export async function getTemplates() {
   const templates = (await supabaseAdmin.from("crm_Industry_Templates").select("*").order("createdAt", { ascending: false })).data;
-  return templates;
+  return templates ?? [];
 }
 
 export async function createTemplate(data: any) {
@@ -44,24 +47,20 @@ export async function deleteTemplate(data: { id: string }) {
 
 export async function seedTemplates(data: { templates: any[] }) {
   const count = (await supabaseAdmin.from("crm_Industry_Templates").select("*", { count: 'exact', head: true })).count;
-  if (count > 0) return { success: true };
+  if ((count ?? 0) > 0) return { success: true };
 
   for (const t of data.templates) {
     await supabaseAdmin.from("crm_Industry_Templates").upsert({
-      where: { slug: t.slug },
-      update: {},
-      create: {
-        name: t.name,
-        slug: t.slug,
-        industry: t.industry,
-        description: t.description,
-        icon: t.icon,
-        features: t.features || [],
-        crmCustomFields: t.crmCustomFields || [],
-        whatsappTemplates: t.whatsappTemplates || [],
-        isActive: true,
-      },
-    });
+      name: t.name,
+      slug: t.slug,
+      industry: t.industry,
+      description: t.description,
+      icon: t.icon,
+      features: t.features || [],
+      crmCustomFields: t.crmCustomFields || [],
+      whatsappTemplates: t.whatsappTemplates || [],
+      isActive: true,
+    }, { onConflict: 'slug' });
   }
   revalidatePath("/superadmin/templates");
   return { success: true };

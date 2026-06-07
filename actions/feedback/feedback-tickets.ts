@@ -40,6 +40,8 @@ export async function createFeedbackTicket(data: CreateTicketInput) {
             status: FeedbackStatus.OPEN,
           }).select("*").single()).data;
 
+    if (!ticket) throw new Error("Failed to insert ticket.");
+
     // 2. Try sending an email notification
     try {
       const resend = await resendHelper();
@@ -90,15 +92,9 @@ export async function getSuperadminFeedbackTickets() {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // Hard delete tickets older than 30 days to keep the log only for one month
-    await supabaseAdmin.from("FeedbackTicket").deleteMany({
-      where: {
-        createdAt: {
-          lt: thirtyDaysAgo,
-        },
-      },
-    });
+    await supabaseAdmin.from("FeedbackTicket").delete().lt("createdAt", thirtyDaysAgo.toISOString());
 
-    return (await supabaseAdmin.from("FeedbackTicket").select("*, user(id, name, email, avatar), responder(id, name, email)").order("createdAt", { ascending: false })).data;
+    return (await supabaseAdmin.from("FeedbackTicket").select("*, user(id, name, email, avatar), responder(id, name, email)").order("createdAt", { ascending: false })).data ?? [];
   } catch (error) {
     console.error("[FEEDBACK_FETCH_ALL_ERROR]", error);
     throw new Error("Failed to retrieve feedback tickets.");
