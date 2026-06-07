@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Helper to parse date fields that come as ISO strings from serialized data
 const dateSchema = z.union([
-  z.date(),
+  z.coerce.date(),
   z.string().datetime({ message: "Invalid ISO date string" }).transform((val) => new Date(val)),
 ]);
 

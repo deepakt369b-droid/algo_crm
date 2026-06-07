@@ -59,7 +59,7 @@ const NewTaskForm = ({ account, onFinish }: NewTaskFormProps) => {
     title: z.string().min(3).max(255),
     user: z.string().min(3).max(255),
     account: z.string(),
-    dueDateAt: z.date().optional(),
+    dueDateAt: z.coerce.date().optional(),
     priority: z.string().min(3).max(10),
     content: z.string().min(3).max(500),
   });

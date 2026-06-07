@@ -5,8 +5,8 @@ import { z } from "zod";
 export const leadSchema = z.object({
   //TODO: fix all the types and nullable
   id: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
   firstName: z.string().optional().nullable(),
   lastName: z.string().min(3).max(30).nonempty(),
 });

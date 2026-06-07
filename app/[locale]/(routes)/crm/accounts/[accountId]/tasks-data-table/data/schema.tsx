@@ -6,7 +6,7 @@ export const taskSchema = z.object({
   id: z.string(),
   content: z.string(),
   taskStatus: z.string().nullable(),
-  dueDateAt: z.date().nullable(),
+  dueDateAt: z.coerce.date().nullable(),
   section: z.string().nullable().optional(),
   priority: z.string(),
 });

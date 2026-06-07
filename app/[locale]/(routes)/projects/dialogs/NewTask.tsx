@@ -68,7 +68,7 @@ const NewTaskDialog = ({ boards }: Props) => {
     board: z.string().min(3).max(255),
     priority: z.string().min(3).max(10),
     content: z.string().min(3).max(500),
-    dueDateAt: z.date(),
+    dueDateAt: z.coerce.date(),
   });
 
   type NewAccountFormValues = z.infer<typeof formSchema>;

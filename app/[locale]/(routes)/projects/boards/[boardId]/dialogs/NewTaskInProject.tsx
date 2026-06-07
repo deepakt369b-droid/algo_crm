@@ -61,7 +61,7 @@ const NewTaskInProjectDialog = ({ boardId, sections }: Props) => {
   const formSchema = z.object({
     title: z.string().min(3).max(255),
     user: z.string().min(3).max(255),
-    dueDateAt: z.date(),
+    dueDateAt: z.coerce.date(),
     priority: z.string().min(3).max(10),
     section: z.string().min(3).max(255),
     content: z.string().min(3).max(500),

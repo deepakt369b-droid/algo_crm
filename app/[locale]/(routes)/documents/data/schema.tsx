@@ -13,7 +13,7 @@ export const documentSchema = z.object({
   content_hash: z.string().nullable().optional(),
   version: z.number(),
   parent_document_id: z.string().nullable().optional(),
-  createdAt: z.date().nullable().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
   assigned_to_user: z.object({
     name: z.string().nullable(),
   }).nullable().optional(),

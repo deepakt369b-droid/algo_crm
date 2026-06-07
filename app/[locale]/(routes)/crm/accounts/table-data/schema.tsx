@@ -5,7 +5,7 @@ import { z } from "zod";
 export const accountSchema = z.object({
   //TODO: fix all the types and nullable
   id: z.string(),
-  createdAt: z.date().optional(),
+  createdAt: z.coerce.date().optional(),
   name: z.string(),
   assigned_to_user: z.object({}).nullable().optional(),
   contacts: z

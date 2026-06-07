@@ -33,7 +33,7 @@ export const productsSchema = z.object({
   _count: z.object({
     accountProducts: z.number(),
   }),
-  createdAt: z.date(),
+  createdAt: z.coerce.date(),
 });
 
 export type Product = z.infer<typeof productsSchema>;
