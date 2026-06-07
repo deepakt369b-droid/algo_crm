@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getTenantId } from "@/lib/get-tenant";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { randomUUID } from "crypto";
+
 
 async function resolveTenantId(fallbackTenantId?: string) {
   try {
@@ -45,7 +45,7 @@ export async function createInstance(data: { tenantId?: string; instanceName: st
     const { data: instance, error } = await supabaseAdmin
       .from("crm_Whatsapp_Instances")
       .insert({
-          id: randomUUID(),
+          id: globalThis.crypto.randomUUID(),
           tenantId: resolvedTenantId,
           instanceName: data.instanceName,
           phoneNumber: data.phoneNumber || "",
