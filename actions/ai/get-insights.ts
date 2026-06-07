@@ -6,17 +6,25 @@ import { OpenAI } from "openai";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const getOrganizationInsights = async () => {
-  const user = await requireAuthenticated();
-
-  // Verify AI upsell check (e.g. check if AI is enabled for this account or globally)
-  // Since we don't have a specific table, we will check if an OpenAI key is configured globally
-  const openaiService = (await supabaseAdmin.from("systemServices").select("*").eq("name", "OpenAI").single()).data;
-
-  if (!openaiService || !openaiService.serviceKey) {
-    return { error: "AI features are not configured. Please contact the administrator." };
-  }
-
   try {
+    const user = await requireAuthenticated();
+
+    // Verify AI upsell check (e.g. check if AI is enabled for this account or globally)
+    // Since we don't have a specific table, we will check if an OpenAI key is configured globally
+    const { data: openaiService, error: serviceError } = await supabaseAdmin
+      .from("systemServices")
+      .select("*")
+      .eq("name", "OpenAI")
+      .maybeSingle();
+
+    if (serviceError) {
+      console.error("Error fetching AI service config:", serviceError);
+    }
+
+    if (!openaiService || !openaiService.serviceKey) {
+      return { error: "AI features are not configured. Please contact the administrator." };
+    }
+
     const crmData = await getAllCrmData();
     const openai = new OpenAI({ apiKey: openaiService.serviceKey });
 

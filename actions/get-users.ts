@@ -2,8 +2,16 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 //Get all users  for admin module
 export const getUsers = async () => {
-  const data = (await supabaseAdmin.from("Users").select("*").order("created_on", { ascending: false })).data;
-  return data ?? [];
+  try {
+    const { data, error } = await supabaseAdmin.from("Users").select("*").order("created_on", { ascending: false });
+    if (error) {
+      console.error("Supabase error fetching users:", error);
+    }
+    return data ?? [];
+  } catch (error) {
+    console.error("Exception fetching users:", error);
+    return [];
+  }
 };
 
 //Get active users for Selects in app etc
