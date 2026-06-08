@@ -16,14 +16,14 @@ function getLocaleAndPathname(pathname: string) {
   return { locale: "en", cleanPathname: pathname };
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. Check if the path is static or API
   if (
     pathname.startsWith("/api") || 
     pathname.startsWith("/_next") || 
-    pathname.match(/\.(.*)$/)
+    pathname.match(/\\.(.*)$/)
   ) {
     return NextResponse.next();
   }
