@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
-    "build": "pnpm exec opennextjs-cloudflare build --noMinify=false && node scripts/resolve-symlinks.mjs && node scripts/fix-node-modules.mjs && node scripts/resolve-symlinks.mjs && node scripts/patch-worker.mjs",
+    "build": "next build",
+    "build:cloudflare": "pnpm exec opennextjs-cloudflare build --noMinify=false && node scripts/resolve-symlinks.mjs && node scripts/fix-node-modules.mjs && node scripts/resolve-symlinks.mjs && node scripts/patch-worker.mjs",
     "build:postprocess": "node scripts/resolve-symlinks.mjs && node scripts/fix-node-modules.mjs && node scripts/resolve-symlinks.mjs && node scripts/patch-worker.mjs",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
