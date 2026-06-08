@@ -1,0 +1,83 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import createMiddleware from "next-intl/middleware";
+import { routing } from "@/i18n/routing";
+
+const intlMiddleware = createMiddleware(routing);
+const locales = routing.locales;
+
+function getLocaleAndPathname(pathname: string) {
+  const segments = pathname.split("/");
+  if (segments.length > 1 && locales.includes(segments[1] as any)) {
+    const locale = segments[1];
+    const rest = "/" + segments.slice(2).join("/");
+    return { locale, cleanPathname: rest };
+  }
+  return { locale: routing.defaultLocale, cleanPathname: pathname };
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // 1. Skip static or API paths
+  if (
+    pathname.startsWith("/api") || 
+    pathname.startsWith("/_next") || 
+    pathname.match(/\.(.*)$/)
+  ) {
+    return NextResponse.next();
+  }
+
+  // 2. Pass request through intlMiddleware to get base response (with correct headers)
+  let response = intlMiddleware(request);
+
+  // 3. Supabase Auth checks
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dummy.supabase.co";
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "dummy";
+
+  const supabase = createServerClient(
+    supabaseUrl,
+    supabaseKey,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
+          response = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { locale, cleanPathname } = getLocaleAndPathname(pathname);
+
+  const isPublicPage = 
+    cleanPathname === "/" ||
+    cleanPathname === "/pricing" ||
+    cleanPathname === "/privacy" ||
+    cleanPathname === "/terms" ||
+    cleanPathname.includes("/sign-in") || 
+    cleanPathname.includes("/sign-up");
+
+  // 4. Redirect rules
+  if (!user && !isPublicPage) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/sign-in`;
+    return NextResponse.redirect(url);
+  }
+
+  return response;
+}
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)'],
+};
