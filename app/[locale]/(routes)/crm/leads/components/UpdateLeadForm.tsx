@@ -44,6 +44,14 @@ export function UpdateLeadForm({ initialData, setOpen, leadSources, leadStatuses
   const t = useTranslations("CrmLeadForm");
   const c = useTranslations("Common");
 
+  // Guard BEFORE any hooks. Returning early here used to happen *after*
+  // useForm(), which violated the Rules of Hooks and threw
+  // "Rendered fewer hooks than during the previous render." on dialog
+  // re-mount — surfacing as "Something went wrong" on the leads page.
+  if (!initialData) {
+    return <div>{c("somethingWentWrong")}</div>;
+  }
+
   const formSchema = z.object({
     id: z.uuid(),
     firstName: z.string().optional().nullable(),
@@ -93,9 +101,6 @@ export function UpdateLeadForm({ initialData, setOpen, leadSources, leadStatuses
       setOpen(false);
     }
   };
-
-  if (!initialData)
-    return <div>{c("somethingWentWrong")}</div>;
 
   return (
     <Form {...form}>
@@ -230,9 +235,9 @@ export function UpdateLeadForm({ initialData, setOpen, leadSources, leadStatuses
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("leadSource")}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                    <Select onValueChange={field.onChange} value={field.value ?? ""} disabled={leadSources.length === 0}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select source…" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={leadSources.length === 0 ? "No sources available" : "Select source…"} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {leadSources.map((s) => (
@@ -286,9 +291,9 @@ export function UpdateLeadForm({ initialData, setOpen, leadSources, leadStatuses
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Lead Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                    <Select onValueChange={field.onChange} value={field.value ?? ""} disabled={leadTypes.length === 0}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select type…" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={leadTypes.length === 0 ? "No types available" : "Select type…"} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {leadTypes.map((lt) => (
@@ -326,9 +331,9 @@ export function UpdateLeadForm({ initialData, setOpen, leadSources, leadStatuses
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Lead Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                    <Select onValueChange={field.onChange} value={field.value ?? ""} disabled={leadStatuses.length === 0}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select status…" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={leadStatuses.length === 0 ? "No statuses available" : "Select status…"} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {leadStatuses.map((s) => (

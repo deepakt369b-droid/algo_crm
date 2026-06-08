@@ -16,7 +16,11 @@ export const getLeads = cache(async () => {
     throw e;
   }
 
-  const { data, error } = await supabaseAdmin
+  // Build the query, then apply the read scope. PostgREST's `or()`
+  // takes a comma-separated list of filter conditions. Empty string
+  // for admins/superadmins (no extra filter needed).
+  const scope = leadReadScopeWhere(user);
+  const baseQuery = supabaseAdmin
     .from("crm_Leads")
     .select(`
       *,
@@ -27,7 +31,12 @@ export const getLeads = cache(async () => {
         document:Documents!DocumentsToLeads_document_id_fkey(id, document_name)
       )
     `)
+    .is("deletedAt", null)
     .order("createdAt", { ascending: false });
+
+  const query = scope ? baseQuery.or(scope) : baseQuery;
+
+  const { data, error } = await query;
   if (error) {
     console.error("[CRM_LEADS_LIST_ERROR]", error);
     return [];

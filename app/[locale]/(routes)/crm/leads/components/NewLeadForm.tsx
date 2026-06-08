@@ -226,9 +226,9 @@ export function NewLeadForm({ accounts, leadSources, leadStatuses, leadTypes, on
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("leadSource")}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={leadSources.length === 0}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select source…" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={leadSources.length === 0 ? "No sources available" : "Select source…"} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {leadSources.map((s) => (
@@ -265,9 +265,9 @@ export function NewLeadForm({ accounts, leadSources, leadStatuses, leadTypes, on
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Lead Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={leadStatuses.length === 0}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select status…" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={leadStatuses.length === 0 ? "No statuses available" : "Select status…"} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {leadStatuses.map((s) => (
@@ -285,9 +285,9 @@ export function NewLeadForm({ accounts, leadSources, leadStatuses, leadTypes, on
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Lead Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={leadTypes.length === 0}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select type…" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={leadTypes.length === 0 ? "No types available" : "Select type…"} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {leadTypes.map((lt) => (
@@ -346,10 +346,11 @@ export function NewLeadForm({ accounts, leadSources, leadStatuses, leadTypes, on
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    disabled={accounts.length === 0}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t("assignAccountPlaceholder")} />
+                        <SelectValue placeholder={accounts.length === 0 ? "No accounts available" : t("assignAccountPlaceholder")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

@@ -10,9 +10,11 @@ import { getLeads } from "@/actions/crm/get-leads";
 import { getTranslations } from "next-intl/server";
 
 const LeadsPage = async () => {
-  const t = await getTranslations("CrmPage");
-  const crmData = await getAllCrmData();
-  const leads = await getLeads();
+  const [t, crmData, leads] = await Promise.all([
+    getTranslations("CrmPage"),
+    getAllCrmData(),
+    getLeads(),
+  ]);
 
   console.log(leads[0], "leads");
   return (

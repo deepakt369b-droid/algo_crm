@@ -4,6 +4,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "@/lib/authz";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface AuditLogAdminFilters {
   entityType?: string;
@@ -27,29 +28,25 @@ export const getAuditLogAdmin = async (filters: AuditLogAdminFilters = {}) => {
   const take = 50;
   const skip = (page - 1) * take;
 
-  const where: Record<string, unknown> = {};
-  if (entityType) where.entityType = entityType;
-  if (action) where.action = action;
-  if (userId) where.userId = userId;
-  if (dateFrom || dateTo) {
-    where.createdAt = {
-      ...(dateFrom ? { gte: dateFrom } : {}),
-      ...(dateTo ? { lte: dateTo } : {}),
-    };
+  let query = supabaseAdmin
+    .from("crm_AuditLog")
+    .select("*, user:Users(id, name, avatar)", { count: "exact" })
+    .order("createdAt", { ascending: false })
+    .range(skip, skip + take - 1);
+
+  if (entityType) query = query.eq("entityType", entityType);
+  if (action) query = query.eq("action", action);
+  if (userId) query = query.eq("userId", userId);
+  if (dateFrom) query = query.gte("createdAt", dateFrom.toISOString());
+  if (dateTo) query = query.lte("createdAt", dateTo.toISOString());
+
+  const { data: entries, count, error } = await query;
+
+  if (error) {
+    console.error("Audit log error:", error);
+    return { error: "Failed to fetch audit logs" };
   }
 
-  const [entries, total] = await Promise.all([
-    (prismadb as any).crm_AuditLog.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take,
-      skip,
-      include: {
-        user: { select: { id: true, name: true, avatar: true } },
-      },
-    }),
-    (prismadb as any).crm_AuditLog.count({ where }),
-  ]);
-
+  const total = count || 0;
   return { data: entries, total, page, totalPages: Math.ceil(total / take) };
 };
