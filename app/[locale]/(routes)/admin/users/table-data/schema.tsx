@@ -3,10 +3,10 @@ import { z } from "zod";
 // We're keeping a simple non-relational schema here.
 // IRL, you will have a schema for your data models.
 export const adminUserSchema = z.object({
-  //TODO: fix all the types and nullable
   id: z.string(),
-  created_on: z.coerce.date(),
-  lastLoginAt: z.coerce.date().nullable().optional(),
+  // Supabase returns dates as ISO strings. We accept both string and date objects.
+  created_on: z.union([z.string(), z.date(), z.null()]).optional(),
+  lastLoginAt: z.union([z.string(), z.date(), z.null()]).optional(),
   role: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
   email: z.string(),
