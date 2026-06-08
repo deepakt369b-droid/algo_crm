@@ -5,6 +5,61 @@ All notable changes to Flowline Pro are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.0.0 (2026-06-08)
+
+
+### Features
+
+* stabilize onboarding dashboard and whatsapp ([489c2cd](https://github.com/deepakt369b-droid/algo_crm/commit/489c2cd34e51676972e62fd740af8f3637c427f6))
+
+
+### Bug Fixes
+
+* add post-build script to copy complete node_modules for wrangler bundling ([045901e](https://github.com/deepakt369b-droid/algo_crm/commit/045901e0396863a513a7c88f257a4713109641b2))
+* **admin:** allow superadmin user management access ([e2a569a](https://github.com/deepakt369b-droid/algo_crm/commit/e2a569a43ec2e975241f50cb44231d9d41f43f1e))
+* **admin:** prevent whatsapp and purchase crashes ([497f54f](https://github.com/deepakt369b-droid/algo_crm/commit/497f54f7864f99b115f4996bcd2b86518de87e3d))
+* **admin:** tolerate missing setup rows ([e694b52](https://github.com/deepakt369b-droid/algo_crm/commit/e694b521636d52581fe0e888f98e1ff3317b4746))
+* **app:** stabilize crm tabs and compact signup templates ([1da81d2](https://github.com/deepakt369b-droid/algo_crm/commit/1da81d21ae6c6319307bb1283ab23f40074d8467))
+* **auth:** accept common SMTP env names ([6e3865a](https://github.com/deepakt369b-droid/algo_crm/commit/6e3865aac3c086230d458382b2966cb5872f970e))
+* **auth:** ignore protected Vercel preview redirect URLs ([d57480a](https://github.com/deepakt369b-droid/algo_crm/commit/d57480a9b5bf3ec58acf3b7aef1c4818e6284920))
+* **auth:** pin Supabase redirects to production app ([398c223](https://github.com/deepakt369b-droid/algo_crm/commit/398c22311f3138a57e95d92fb87e460e9c123e35))
+* **auth:** provision Supabase users on login ([a4bd3d6](https://github.com/deepakt369b-droid/algo_crm/commit/a4bd3d669b1c5f6b67702dbf5c71484bab5bf0f3))
+* **auth:** route email links through callback ([c0e846b](https://github.com/deepakt369b-droid/algo_crm/commit/c0e846bf6d15035be20df988906501a643106d84))
+* **auth:** send numeric Supabase OTP emails ([83246f6](https://github.com/deepakt369b-droid/algo_crm/commit/83246f6c8eba952ed6a10aa7f93c1b03c7628d90))
+* **auth:** use numeric email otp flow ([2a5f9a8](https://github.com/deepakt369b-droid/algo_crm/commit/2a5f9a8c084d6e051dae16c510d34460549f933c))
+* **auth:** use Supabase sessions on Vercel ([6dfa5fa](https://github.com/deepakt369b-droid/algo_crm/commit/6dfa5fae61521d0b50a9ce19090438533bff64cd))
+* **branding:** show logo and favicon ([66a7715](https://github.com/deepakt369b-droid/algo_crm/commit/66a77153035e3512d70f8c99b1c57e8497a76333))
+* **cloudflare:** avoid next font manifest fs read ([42b53f7](https://github.com/deepakt369b-droid/algo_crm/commit/42b53f7e83fcc93a95617fc9ce92d79faf4cc16b))
+* **cloudflare:** delete default/handler.mjs to satisfy 25 MiB Pages limit ([3505d36](https://github.com/deepakt369b-droid/algo_crm/commit/3505d36bdad2be2feba0d5b85db29da9b44d1632))
+* **cloudflare:** dispatch split server-functions from worker.js to avoid 25 MiB handler.mjs limit ([f542e02](https://github.com/deepakt369b-droid/algo_crm/commit/f542e024d98491c92b3b5d1b8068e5588f0c0591))
+* **cloudflare:** exclude heavy optional api routes ([8bb3880](https://github.com/deepakt369b-droid/algo_crm/commit/8bb3880fa5575a29bafc28081afe4f213585f8da))
+* **cloudflare:** hydrate pages function dependencies ([16d77e9](https://github.com/deepakt369b-droid/algo_crm/commit/16d77e9b7ce28df24b2cafcfe5e98d3072a9a356))
+* **cloudflare:** inline next build id ([dfe0fce](https://github.com/deepakt369b-droid/algo_crm/commit/dfe0fceb162251f33acd8a506afe431b2b001065))
+* **cloudflare:** inline next manifest loader ([b920076](https://github.com/deepakt369b-droid/algo_crm/commit/b9200760728f751f05268f8966a20b0004acbcc6))
+* **cloudflare:** inline next startup manifests ([cc051d7](https://github.com/deepakt369b-droid/algo_crm/commit/cc051d7eb0acb4fb0926aa06ea5390d3cd4f68d8))
+* **cloudflare:** patch formatted next require hook ([e4b081c](https://github.com/deepakt369b-droid/algo_crm/commit/e4b081c52d21ff337c62b4682ec9f2473a43075b))
+* **cloudflare:** patch opennext require resolve ([797a3a2](https://github.com/deepakt369b-droid/algo_crm/commit/797a3a2ea5c58f93fa4b3ce481c4f90fad3e6c99))
+* **cloudflare:** reduce pages bundle payload ([9808e3c](https://github.com/deepakt369b-droid/algo_crm/commit/9808e3c91db59ad25df935c4fc94fa29a6496822))
+* **cloudflare:** refresh incomplete traced deps ([77675f4](https://github.com/deepakt369b-droid/algo_crm/commit/77675f4b8f2fe189382a3113a73c286b8092b667))
+* **cloudflare:** remove backticks from patch-worker template literal comments ([64c1f36](https://github.com/deepakt369b-droid/algo_crm/commit/64c1f36a4d032c38282d93db7810954e7c54786c))
+* **cloudflare:** resolve pnpm transitive deps ([fdbf123](https://github.com/deepakt369b-droid/algo_crm/commit/fdbf12372a8455a0ddb1725cfaf23cbebbc0d8d6))
+* **cloudflare:** restore critters runtime deps ([e388212](https://github.com/deepakt369b-droid/algo_crm/commit/e38821241e044c680c8d734f598f60cb3c6526d8))
+* **cloudflare:** restore deployable pages worker ([971f2a9](https://github.com/deepakt369b-droid/algo_crm/commit/971f2a9e02623a04650a7d48108797633f908b0c))
+* **cloudflare:** split heavy routes into separate server-functions to fit 25 MiB handler.mjs limit ([fc454a3](https://github.com/deepakt369b-droid/algo_crm/commit/fc454a3abebc5ef0c8ff01c7c19c5e903584ad18))
+* **cloudflare:** stub next require hook ([e61059a](https://github.com/deepakt369b-droid/algo_crm/commit/e61059a0a0ac5b72c1690d3857af95c2763e38d0))
+* **cloudflare:** trim pages function bundle ([adec4ce](https://github.com/deepakt369b-droid/algo_crm/commit/adec4ce4ffde11b88c5e6005832c5ebff8b9a671))
+* **cloudflare:** use bundled default handler ([9a83356](https://github.com/deepakt369b-droid/algo_crm/commit/9a8335671adf03bee2ac266999ef89d1160c5484))
+* **cloudflare:** use static-string dynamic imports in worker dispatcher ([f802566](https://github.com/deepakt369b-droid/algo_crm/commit/f802566b4ec3cf464d95e5edd69bc7eb00f39f88))
+* **cloudflare:** use wrangler 4 for opennext ([3ba4a70](https://github.com/deepakt369b-droid/algo_crm/commit/3ba4a7021baea917246c6a54f8efd9ccc13d6287))
+* remove build-time packages from serverExternalPackages to fix wrangler bundling errors ([d3f6e05](https://github.com/deepakt369b-droid/algo_crm/commit/d3f6e053c291108d9cae9d0e77a1d91216bfb792))
+* restore standard Next.js build command for Vercel deployment compatibility ([cfc834c](https://github.com/deepakt369b-droid/algo_crm/commit/cfc834cd91fa1e9c7242e10654cf3c5a4295dacb))
+* **signup:** compact industry template picker ([14fd1ed](https://github.com/deepakt369b-droid/algo_crm/commit/14fd1ed57fe574c095f21174d8c3252255cc68cf))
+* **supabase:** harden crm runtime queries ([d4137ac](https://github.com/deepakt369b-droid/algo_crm/commit/d4137ac0bd42cf52388fa52b435b4b1f497752cf))
+* **supabase:** match production table names ([2f0da4f](https://github.com/deepakt369b-droid/algo_crm/commit/2f0da4feeb113baeb482287bcea5814946f9d6c5))
+* **supabase:** use is null filters ([bdbd276](https://github.com/deepakt369b-droid/algo_crm/commit/bdbd27681c4234cbdd8bcf5934b81d2f1fc27add))
+* sync lockfile and clean env for Supabase-only deployment ([013537d](https://github.com/deepakt369b-droid/algo_crm/commit/013537db7b91db372fd891e34786155d34e4e2d0))
+* widen signup template picker ([0f45aaf](https://github.com/deepakt369b-droid/algo_crm/commit/0f45aafa6ff687325c4bf905fa114beede0b26cb))
+
 ## [0.12.1](https://github.com/pdovhomilja/flowlinepro-app/compare/v0.12.0...v0.12.1) (2026-05-11)
 
 
