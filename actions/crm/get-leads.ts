@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 import {
   requireAuthenticated,
@@ -16,11 +17,9 @@ export const getLeads = cache(async () => {
     throw e;
   }
 
-  // Build the query, then apply the read scope. PostgREST's `or()`
-  // takes a comma-separated list of filter conditions. Empty string
-  // for admins/superadmins (no extra filter needed).
-  const scope = leadReadScopeWhere(user);
-  const baseQuery = supabaseAdmin
+  return unstable_cache(
+    async () => {
+      const baseQuery = supabaseAdmin
     .from("crm_Leads")
     .select(`
       *,
@@ -34,12 +33,14 @@ export const getLeads = cache(async () => {
     .is("deletedAt", null)
     .order("createdAt", { ascending: false });
 
-  const query = scope ? baseQuery.or(scope) : baseQuery;
-
-  const { data, error } = await query;
-  if (error) {
-    console.error("[CRM_LEADS_LIST_ERROR]", error);
-    return [];
-  }
-  return data ?? [];
+      const { data, error } = await baseQuery;
+      if (error) {
+        console.error("[CRM_LEADS_LIST_ERROR]", error);
+        return [];
+      }
+      return data ?? [];
+    },
+    ["crm-leads"],
+    { tags: ["crm-leads"], revalidate: 300 }
+  )();
 });

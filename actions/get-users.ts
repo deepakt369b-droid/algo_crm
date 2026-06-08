@@ -1,17 +1,24 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { unstable_cache } from "next/cache";
 
 //Get all users  for admin module
 export const getUsers = async () => {
-  try {
-    const { data, error } = await supabaseAdmin.from("Users").select("*").order("created_on", { ascending: false });
-    if (error) {
-      console.error("Supabase error fetching users:", error);
-    }
-    return data ?? [];
-  } catch (error) {
-    console.error("Exception fetching users:", error);
-    return [];
-  }
+  return unstable_cache(
+    async () => {
+      try {
+        const { data, error } = await supabaseAdmin.from("Users").select("*").order("created_on", { ascending: false });
+        if (error) {
+          console.error("Supabase error fetching users:", error);
+        }
+        return data ?? [];
+      } catch (error) {
+        console.error("Exception fetching users:", error);
+        return [];
+      }
+    },
+    ["admin-users"],
+    { tags: ["admin-users"], revalidate: 300 }
+  )();
 };
 
 //Get active users for Selects in app etc

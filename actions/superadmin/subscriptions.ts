@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function getSubscriptions() {
   const subscriptions = (await supabaseAdmin.from("crm_Tenant_Subscriptions").select("*").order("createdAt", { ascending: false })).data;

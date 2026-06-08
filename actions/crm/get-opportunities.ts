@@ -6,6 +6,7 @@ import {
 } from "@/lib/authz";
 import { serializeDecimalsList } from "@/lib/serialize-decimals";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { unstable_cache } from "next/cache";
 
 export const getOpportunities = async () => {
   let user;
@@ -16,26 +17,32 @@ export const getOpportunities = async () => {
     throw e;
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("crm_Opportunities")
-    .select(`
-      *,
-      assigned_to_user:Users!crm_Opportunities_assigned_to_fkey(avatar, name),
-      created_by_user:Users!crm_Opportunities_createdBy_fkey(name),
-      contacts:ContactsToOpportunities!ContactsToOpportunities_opportunity_id_fkey(
-        *,
-        contact:crm_Contacts!ContactsToOpportunities_contact_id_fkey(id, first_name, last_name)
-      ),
-      documents:DocumentsToOpportunities!DocumentsToOpportunities_opportunity_id_fkey(
-        *,
-        document:Documents!DocumentsToOpportunities_document_id_fkey(id, document_name)
-      )
-    `);
-  if (error) {
-    console.error("[CRM_OPPORTUNITIES_LIST_ERROR]", error);
-    return [];
-  }
-  return serializeDecimalsList(data);
+  return unstable_cache(
+    async () => {
+      const { data, error } = await supabaseAdmin
+        .from("crm_Opportunities")
+        .select(`
+          *,
+          assigned_to_user:Users!crm_Opportunities_assigned_to_fkey(avatar, name),
+          created_by_user:Users!crm_Opportunities_createdBy_fkey(name),
+          contacts:ContactsToOpportunities!ContactsToOpportunities_opportunity_id_fkey(
+            *,
+            contact:crm_Contacts!ContactsToOpportunities_contact_id_fkey(id, first_name, last_name)
+          ),
+          documents:DocumentsToOpportunities!DocumentsToOpportunities_opportunity_id_fkey(
+            *,
+            document:Documents!DocumentsToOpportunities_document_id_fkey(id, document_name)
+          )
+        `);
+      if (error) {
+        console.error("[CRM_OPPORTUNITIES_LIST_ERROR]", error);
+        return [];
+      }
+      return serializeDecimalsList(data);
+    },
+    ["crm-opportunities"],
+    { tags: ["crm-opportunities"], revalidate: 300 }
+  )();
 };
 
 //Get opportunities by month for chart

@@ -1,6 +1,7 @@
 "use server";
 
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 import {
   requireAuthenticated,
@@ -21,15 +22,21 @@ export const getContractsWithIncludes = cache(async () => {
     throw e;
   }
 
-  const data = (await supabaseAdmin
-    .from("crm_Contracts")
-    .select(`
-      *,
-      assigned_to_user:Users!crm_Contracts_assigned_to_fkey(name),
-      assigned_account:crm_Accounts!crm_Contracts_account_fkey(name)
-    `)
-    .order("createdAt", { ascending: false })).data ?? [];
-  return serializeDecimalsList(data);
+  return unstable_cache(
+    async () => {
+      const data = (await supabaseAdmin
+        .from("crm_Contracts")
+        .select(`
+          *,
+          assigned_to_user:Users!crm_Contracts_assigned_to_fkey(name),
+          assigned_account:crm_Accounts!crm_Contracts_account_fkey(name)
+        `)
+        .order("createdAt", { ascending: false })).data ?? [];
+      return serializeDecimalsList(data);
+    },
+    ["crm-contracts"],
+    { tags: ["crm-contracts"], revalidate: 300 }
+  )();
 });
 
 export const getContractsByAccountId = async (accountId: string) => {

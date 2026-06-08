@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 import {
   requireAuthenticated,
@@ -16,7 +17,9 @@ export const getContacts = cache(async () => {
     throw e;
   }
 
-  const { data, error } = await supabaseAdmin
+  return unstable_cache(
+    async () => {
+      const { data, error } = await supabaseAdmin
     .from("crm_Contacts")
     .select(`
       *,
@@ -32,9 +35,13 @@ export const getContacts = cache(async () => {
         document:Documents!DocumentsToContacts_document_id_fkey(id, document_name)
       )
     `);
-  if (error) {
-    console.error("[CRM_CONTACTS_LIST_ERROR]", error);
-    return [];
-  }
-  return data ?? [];
+      if (error) {
+        console.error("[CRM_CONTACTS_LIST_ERROR]", error);
+        return [];
+      }
+      return data ?? [];
+    },
+    ["crm-contacts"],
+    { tags: ["crm-contacts"], revalidate: 300 }
+  )();
 });
